@@ -39,7 +39,9 @@ export default function VotePage() {
     const router = useRouter();
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [maxVotes, setMaxVotes] = useState<number>(5); // Default fallback
+
+    const [maxVotes, setMaxVotes] = useState<number>(5);
+    const [rounds, setRounds] = useState<{ [pos: string]: number }>({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [voterName, setVoterName] = useState('');
@@ -63,14 +65,23 @@ export default function VotePage() {
                 // Fetch Settings
                 const settingsSnap = await getDoc(doc(db, 'settings', 'config'));
                 if (settingsSnap.exists()) {
-                    setMaxVotes(settingsSnap.data().maxVotes || 5);
+                    const data = settingsSnap.data();
+                    setMaxVotes(data.maxVotes || 5);
+                    setRounds(data.rounds || { '장로': 1, '권사': 1, '안수집사': 1 });
                 }
 
                 // Fetch Candidates
                 const querySnapshot = await getDocs(collection(db, 'candidates'));
                 const loadedCandidates: Candidate[] = [];
+                const currentSettings = settingsSnap.exists() ? settingsSnap.data().rounds : { '장로': 1, '권사': 1, '안수집사': 1 };
+
                 querySnapshot.forEach((doc) => {
-                    loadedCandidates.push({ id: doc.id, ...doc.data() } as Candidate);
+                    const c = { id: doc.id, ...doc.data() } as Candidate;
+                    // Filter: Candidate Round MUST match System Round for their position
+                    const targetRound = currentSettings[c.position] || 1;
+                    if (c.round === targetRound) {
+                        loadedCandidates.push(c);
+                    }
                 });
 
                 // 3. Sort by Name (Korean) using localeCompare
@@ -124,26 +135,79 @@ export default function VotePage() {
 
         try {
             await runTransaction(db, async (transaction) => {
-                // 1. Re-check Voter Status
+                // --- READ PHASE ---
+                // 1. Read Voter
                 const voterRef = doc(db, 'voters', voterId);
                 const voterSnap = await transaction.get(voterRef);
 
                 if (!voterSnap.exists()) throw "선거인 정보를 찾을 수 없습니다.";
-                if (voterSnap.data().hasVoted) throw "이미 투표에 참여하셨습니다.";
+                const voterData = voterSnap.data();
 
-                // 2. Increment Vote Counts
+                // Multi-Round Check Per Position
+                // Instead of global block, we check if the user is voting for candidates 
+                // in positions they already voted for IN THIS ROUND.
+
+                // 1. Identify which "Position_Round" tuples are being voted on
+                const targetGroups = new Set<string>(); // e.g. "장로_2", "안수집사_1"
+
+                // Temporary read to build groups
+                // (We need to read candidates inside transaction anyway, so let's do it in step 2 and validate there)
+
+                // ... Moving Logic to Step 2 ... 
+
+                // Legacy Check Removal (or adapt if needed)
+                // if (!voterData.participatedRounds && currentRound === 1 && voterData.hasVoted) ...
+                // -> Let's treat legacy 'hasVoted' as "Round 1 Global" if we need to.
+                // For now, assume fresh start or robust new data.
+
+                // 2. Read All Candidates
+                // 2. Read All Candidates & Validate Group Voting Status
+                const candidateSnaps = [];
+                const groupsToUpdate = new Set<string>();
+
                 for (const candidateId of selectedIds) {
                     const candidateRef = doc(db, 'candidates', candidateId);
                     const candidateSnap = await transaction.get(candidateRef);
                     if (!candidateSnap.exists()) throw "후보자 정보가 변경되었습니다.";
 
-                    const newCount = (candidateSnap.data().voteCount || 0) + 1;
-                    transaction.update(candidateRef, { voteCount: newCount });
+                    const cData = candidateSnap.data() as Candidate;
+                    const groupKey = `${cData.position}_${cData.round || 1}`;
+
+                    // CHECK: Has voter already voted for this group?
+                    if (voterData.participated?.[groupKey]) {
+                        throw `이미 '${cData.position} ${cData.round || 1}차' 투표에 참여하셨습니다.`;
+                    }
+
+                    groupsToUpdate.add(groupKey);
+                    candidateSnaps.push({ ref: candidateRef, snap: candidateSnap, data: cData });
                 }
 
-                // 3. Mark Voter as Voted
+                // --- WRITE PHASE ---
+                // --- WRITE PHASE ---
+                // 3. Update Candidates
+                for (const { ref, data } of candidateSnaps) {
+                    const newTotal = (data.voteCount || 0) + 1;
+                    const cRound = data.round || 1;
+
+                    // Update votesByRound
+                    const votesByRound = data.votesByRound || {};
+                    votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
+
+                    transaction.update(ref, {
+                        voteCount: newTotal,
+                        votesByRound: votesByRound
+                    });
+                }
+
+                // 4. Update Voter Participation
+                const newParticipated = voterData.participated || {};
+                groupsToUpdate.forEach(groupKey => {
+                    newParticipated[groupKey] = true;
+                });
+
                 transaction.update(voterRef, {
-                    hasVoted: true,
+                    hasVoted: true, // Legacy support
+                    participated: newParticipated,
                     votedAt: Date.now()
                 });
             });
@@ -231,11 +295,17 @@ export default function VotePage() {
                                         sx={{ height: 180, objectFit: 'cover' }}
                                     />
                                     <CardContent sx={{ p: 1.5, pb: '1.5 !important', textAlign: 'center' }}>
+                                        <Chip
+                                            label={`${candidate.position} ${candidate.round || 1}차`}
+                                            size="small"
+                                            color="secondary"
+                                            sx={{ mb: 1, fontSize: '0.7rem' }}
+                                        />
                                         <Typography variant="h6" component="div" fontWeight="bold">
                                             {candidate.name}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            {candidate.position} | {candidate.age}세
+                                            {candidate.age}세
                                         </Typography>
                                     </CardContent>
 
@@ -285,6 +355,6 @@ export default function VotePage() {
                     </Button>
                 </Container>
             </Paper>
-        </Box>
+        </Box >
     );
 }

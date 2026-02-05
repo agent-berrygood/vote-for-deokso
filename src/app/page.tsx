@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Voter } from '@/types';
 import {
@@ -35,7 +35,10 @@ export default function LoginPage() {
         where('authKey', '==', authKey.trim())
       );
 
+      console.log(`[DEBUG] Attempting login with Name: "${name.trim()}", AuthKey: "${authKey.trim()}"`);
+
       const querySnapshot = await getDocs(q);
+      console.log(`[DEBUG] Query result size: ${querySnapshot.size}`);
 
       if (querySnapshot.empty) {
         setError('이름 또는 식별번호가 일치하지 않습니다. (명부에 등록되었는지 확인해주세요)');
@@ -46,11 +49,9 @@ export default function LoginPage() {
       const voterDoc = querySnapshot.docs[0];
       const voterData = voterDoc.data() as Voter;
 
-      if (voterData.hasVoted) {
-        setError('이미 투표에 참여하셨습니다.');
-        setLoading(false);
-        return;
-      }
+      // Multi-Round & Check Logic moved to /vote page to support partial voting
+      // Just authenticating here.
+
 
       // Store voter info in sessionStorage
       sessionStorage.setItem('voterId', voterDoc.id);

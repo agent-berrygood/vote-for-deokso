@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,6 +12,10 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+// Use initializeFirestore with experimentalForceLongPolling to bypass some firewalls
+console.log("[Firebase] Initializing with LongPolling. API Key exists?", !!firebaseConfig.apiKey);
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 
 export { app, db };
