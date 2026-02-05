@@ -35,12 +35,22 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
+import { useElection } from '@/hooks/useElection';
+
 export default function VotePage() {
     const router = useRouter();
+    const { activeElectionId, loading: electionLoading } = useElection(); // Add Hook
+
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-    const [maxVotes, setMaxVotes] = useState<number>(5);
+    // Changed maxVotes to a map
+    const [maxVotesMap, setMaxVotesMap] = useState<{ [pos: string]: number }>({
+        '장로': 5,
+        '권사': 5,
+        '안수집사': 5
+    });
+
     const [rounds, setRounds] = useState<{ [pos: string]: number }>({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -48,30 +58,58 @@ export default function VotePage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
+    // Sequential Voting State
+    const [votingQueue, setVotingQueue] = useState<string[]>([]);
+    const [currentPosition, setCurrentPosition] = useState<string>('');
+    const POSITION_ORDER = ['장로', '안수집사', '권사'];
+
     useEffect(() => {
+        if (electionLoading) return; // Wait for election ID
+        if (!activeElectionId) {
+            console.log("No active election");
+            return;
+        }
+
         // 1. Check Auth
         const storedVoterId = sessionStorage.getItem('voterId');
         const storedName = sessionStorage.getItem('voterName');
+        const storedElectionId = sessionStorage.getItem('electionId');
 
         if (!storedVoterId) {
             router.replace('/');
             return;
         }
+
+        // Safety check: Needs to match current election
+        // However, we might rely on the voterId being valid in the current collection.
+        // Better store electionId in session too during login (TODO)
+
         setVoterName(storedName || 'Unknown');
 
         // 2. Fetch Data
         const initData = async () => {
             try {
-                // Fetch Settings
-                const settingsSnap = await getDoc(doc(db, 'settings', 'config'));
+                // Fetch Settings from Active Election
+                const settingsSnap = await getDoc(doc(db, `elections/${activeElectionId}/settings`, 'config'));
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
-                    setMaxVotes(data.maxVotes || 5);
+
+                    // Handle Legacy maxVotes (number) vs New maxVotes (map)
+                    if (typeof data.maxVotes === 'number') {
+                        setMaxVotesMap({
+                            '장로': data.maxVotes,
+                            '권사': data.maxVotes,
+                            '안수집사': data.maxVotes
+                        });
+                    } else if (data.maxVotes) {
+                        setMaxVotesMap(data.maxVotes);
+                    }
+
                     setRounds(data.rounds || { '장로': 1, '권사': 1, '안수집사': 1 });
                 }
 
-                // Fetch Candidates
-                const querySnapshot = await getDocs(collection(db, 'candidates'));
+                // Fetch Candidates from Active Election
+                const querySnapshot = await getDocs(collection(db, `elections/${activeElectionId}/candidates`));
                 const loadedCandidates: Candidate[] = [];
                 const currentSettings = settingsSnap.exists() ? settingsSnap.data().rounds : { '장로': 1, '권사': 1, '안수집사': 1 };
 
@@ -84,10 +122,29 @@ export default function VotePage() {
                     }
                 });
 
-                // 3. Sort by Name (Korean) using localeCompare
-                loadedCandidates.sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
+                // 3. Determine Voting Queue
+                const voterRef = doc(db, `elections/${activeElectionId}/voters`, storedVoterId);
+                const voterSnap = await getDoc(voterRef);
+                const participated = voterSnap.exists() ? voterSnap.data().participated || {} : {};
+                const queue: string[] = [];
+
+                POSITION_ORDER.forEach(pos => {
+                    const roundForPos = currentSettings[pos] || 1;
+                    const key = `${pos}_${roundForPos}`;
+                    if (!participated[key]) {
+                        queue.push(pos);
+                    }
+                });
+
+                setVotingQueue(queue);
+                if (queue.length > 0) {
+                    setCurrentPosition(queue[0]);
+                } else {
+                    setSuccess(true); // Already finished everything
+                }
 
                 setCandidates(loadedCandidates);
+
             } catch (err) {
                 console.error(err);
                 setError('데이터를 불러오는 중 오류가 발생했습니다.');
@@ -97,14 +154,17 @@ export default function VotePage() {
         };
 
         initData();
-    }, [router]);
+    }, [router, activeElectionId, electionLoading]);
 
     const handleToggle = (id: string) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(prev => prev.filter(cId => cId !== id));
         } else {
-            if (selectedIds.length >= maxVotes) {
-                alert(`최대 ${maxVotes}명까지만 선택할 수 있습니다.`);
+            // Check maxVotes for CURRENT POSITION
+            const currentLimit = maxVotesMap[currentPosition] || 5;
+
+            if (selectedIds.length >= currentLimit) {
+                alert(`'${currentPosition}' 직분은 최대 ${currentLimit}명까지만 선택할 수 있습니다.`);
                 return;
             }
             setSelectedIds(prev => [...prev, id]);
@@ -119,16 +179,15 @@ export default function VotePage() {
 
     const handleSubmitVote = async () => {
         if (selectedIds.length === 0) {
-            alert('최소 1명 이상 선택해주세요.');
-            return;
+            if (!confirm("아무도 선택하지 않으셨습니다. 이 단계(직분)를 건너뛰시겠습니까?")) return;
+        } else {
+            if (!confirm(`${selectedIds.length}명에게 투표하시겠습니까? 제출 후에는 수정할 수 없습니다.`)) return;
         }
-
-        if (!confirm(`${selectedIds.length}명에게 투표하시겠습니까? 제출 후에는 수정할 수 없습니다.`)) return;
 
         setSubmitting(true);
         const voterId = sessionStorage.getItem('voterId');
 
-        if (!voterId) {
+        if (!voterId || !activeElectionId) {
             setError("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
             return;
         }
@@ -137,21 +196,25 @@ export default function VotePage() {
             await runTransaction(db, async (transaction) => {
                 // --- READ PHASE ---
                 // 1. Read Voter
-                const voterRef = doc(db, 'voters', voterId);
+                const voterRef = doc(db, `elections/${activeElectionId}/voters`, voterId);
                 const voterSnap = await transaction.get(voterRef);
 
                 if (!voterSnap.exists()) throw "선거인 정보를 찾을 수 없습니다.";
                 const voterData = voterSnap.data();
+
+                // Validate Current Step
+                const roundForThisPos = rounds[currentPosition] || 1;
+                const groupKey = `${currentPosition}_${roundForThisPos}`;
+
+                if (voterData.participated?.[groupKey]) {
+                    throw "이미 이 단계의 투표에 참여하셨습니다.";
+                }
 
                 // Multi-Round Check Per Position
                 // Instead of global block, we check if the user is voting for candidates 
                 // in positions they already voted for IN THIS ROUND.
 
                 // 1. Identify which "Position_Round" tuples are being voted on
-                const targetGroups = new Set<string>(); // e.g. "장로_2", "안수집사_1"
-
-                // Temporary read to build groups
-                // (We need to read candidates inside transaction anyway, so let's do it in step 2 and validate there)
 
                 // ... Moving Logic to Step 2 ... 
 
@@ -163,22 +226,22 @@ export default function VotePage() {
                 // 2. Read All Candidates
                 // 2. Read All Candidates & Validate Group Voting Status
                 const candidateSnaps = [];
-                const groupsToUpdate = new Set<string>();
+                // const groupsToUpdate = new Set<string>(); // No longer needed, we validate currentPosition's groupKey
 
                 for (const candidateId of selectedIds) {
-                    const candidateRef = doc(db, 'candidates', candidateId);
+                    const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
                     const candidateSnap = await transaction.get(candidateRef);
                     if (!candidateSnap.exists()) throw "후보자 정보가 변경되었습니다.";
 
                     const cData = candidateSnap.data() as Candidate;
-                    const groupKey = `${cData.position}_${cData.round || 1}`;
+                    // const groupKey = `${cData.position}_${cData.round || 1}`; // No longer needed here
 
-                    // CHECK: Has voter already voted for this group?
-                    if (voterData.participated?.[groupKey]) {
-                        throw `이미 '${cData.position} ${cData.round || 1}차' 투표에 참여하셨습니다.`;
-                    }
+                    // CHECK: Has voter already voted for this group? (Moved to before candidate loop)
+                    // if (voterData.participated?.[groupKey]) {
+                    //     throw `이미 '${cData.position} ${cData.round || 1}차' 투표에 참여하셨습니다.`;
+                    // }
 
-                    groupsToUpdate.add(groupKey);
+                    // groupsToUpdate.add(groupKey); // No longer needed
                     candidateSnaps.push({ ref: candidateRef, snap: candidateSnap, data: cData });
                 }
 
@@ -201,22 +264,35 @@ export default function VotePage() {
 
                 // 4. Update Voter Participation
                 const newParticipated = voterData.participated || {};
-                groupsToUpdate.forEach(groupKey => {
-                    newParticipated[groupKey] = true;
-                });
+                newParticipated[groupKey] = true;
 
                 transaction.update(voterRef, {
-                    hasVoted: true, // Legacy support
                     participated: newParticipated,
-                    votedAt: Date.now()
+                    votedAt: Date.now(),
+                    hasVoted: false
                 });
             });
 
-            setSuccess(true);
-            sessionStorage.clear(); // Clear session
+            // On Success: Move to next step
+            const remainingQueue = votingQueue.slice(1);
+            console.log(`[DEBUG] Vote submitted. Current: ${currentPosition}, Remaining: ${remainingQueue}`);
+
+            setVotingQueue(remainingQueue);
+            setSelectedIds([]); // Reset selection
+            window.scrollTo(0, 0);
+
+            if (remainingQueue.length > 0) {
+                setCurrentPosition(remainingQueue[0]);
+            } else {
+                setSuccess(true);
+                // Do NOT clear session here. Wait for user to click "Exit".
+                // sessionStorage.clear(); 
+            }
+
         } catch (err: any) {
             console.error(err);
-            setError(typeof err === 'string' ? err : '투표 제출 중 오류가 발생했습니다.');
+            alert(typeof err === 'string' ? err : '투표 제출 실패');
+        } finally {
             setSubmitting(false);
         }
     };
@@ -240,12 +316,18 @@ export default function VotePage() {
                     소중한 한 표가 정상적으로 처리되었습니다. <br />
                     참여해 주셔서 감사합니다.
                 </Typography>
-                <Button variant="contained" onClick={() => router.push('/')}>
+                <Button variant="contained" onClick={() => {
+                    sessionStorage.clear();
+                    router.push('/');
+                }}>
                     메인으로 돌아가기
                 </Button>
             </Container>
         );
     }
+
+    // Filter displayed candidates by Current Position
+    const displayedCandidates = candidates.filter(c => c.position === currentPosition);
 
     return (
         <Box sx={{ pb: 8, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
@@ -253,14 +335,14 @@ export default function VotePage() {
             <AppBar position="sticky" color="default" elevation={1} sx={{ bgcolor: 'white' }}>
                 <Toolbar>
                     <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-                        투표하기
+                        {currentPosition} 투표 ({rounds[currentPosition] || 1}차)
                     </Typography>
                     <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="caption" display="block" color="text.secondary">
                             안녕하세요, {voterName}님
                         </Typography>
                         <Typography variant="body2" color="primary" fontWeight="bold">
-                            {selectedIds.length} / {maxVotes} 명 선택됨
+                            {selectedIds.length} / {maxVotesMap[currentPosition] || 5} 명 선택됨
                         </Typography>
                     </Box>
                 </Toolbar>
@@ -269,12 +351,27 @@ export default function VotePage() {
             <Container maxWidth="md" sx={{ mt: 3 }}>
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
+                {/* Progress Indicator */}
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                        남은 투표: {votingQueue.map((q, i) => (
+                            <span key={q} style={{ fontWeight: i === 0 ? 'bold' : 'normal', color: i === 0 ? '#1976d2' : '#999' }}>
+                                {q}{i < votingQueue.length - 1 ? ' > ' : ''}
+                            </span>
+                        ))}
+                    </Typography>
+                </Box>
+
                 <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
                     후보자 목록
                 </Typography>
 
                 <Grid container spacing={2}>
-                    {candidates.map((candidate) => {
+                    {displayedCandidates.length === 0 ? (
+                        <Box sx={{ p: 4, width: '100%', textAlign: 'center' }}>
+                            <Typography color="text.secondary">해당 직분의 후보자가 없습니다.</Typography>
+                        </Box>
+                    ) : displayedCandidates.map((candidate) => {
                         const isSelected = selectedIds.includes(candidate.id!);
                         return (
                             <Grid size={{ xs: 6, sm: 4, md: 3 }} key={candidate.id}>
@@ -347,11 +444,11 @@ export default function VotePage() {
                         fullWidth
                         variant="contained"
                         size="large"
-                        disabled={selectedIds.length === 0 || submitting}
+                        disabled={submitting}
                         onClick={handleSubmitVote}
                         sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}
                     >
-                        {submitting ? '제출 중...' : '투표 완료'}
+                        {submitting ? '제출 중...' : (votingQueue.length > 1 ? `다음 단계 (${votingQueue[1]} 투표로 이동)` : '투표 최종 완료')}
                     </Button>
                 </Container>
             </Paper>
