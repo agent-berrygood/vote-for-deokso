@@ -452,6 +452,26 @@ export default function AdminPage() {
                             disabled={!activeElectionId}
                         />
                     ))}
+                    <TextField
+                        label="투표 시작 일시"
+                        type="datetime-local"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        size="small"
+                        sx={{ width: 220 }}
+                        InputLabelProps={{ shrink: true }}
+                        disabled={!activeElectionId}
+                    />
+                    <TextField
+                        label="투표 종료 일시"
+                        type="datetime-local"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        size="small"
+                        sx={{ width: 220 }}
+                        InputLabelProps={{ shrink: true }}
+                        disabled={!activeElectionId}
+                    />
                     <Button
                         variant="contained"
                         startIcon={<SaveIcon />}
