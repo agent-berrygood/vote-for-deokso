@@ -23,6 +23,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SaveIcon from '@mui/icons-material/Save';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CandidateManager from '@/components/CandidateManager';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 import { useElection } from '@/hooks/useElection';
 
