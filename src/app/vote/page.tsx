@@ -31,11 +31,16 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Paper
+    Paper,
+    Tabs,
+    Tab
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
 import { useElection } from '@/hooks/useElection';
+import { getHangulInitial, ALPHABET_TABS } from '@/utils/hangul';
 
 export default function VotePage() {
     const router = useRouter();
@@ -58,10 +63,31 @@ export default function VotePage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
+    // Filter & Sort State
+    const [activeTab, setActiveTab] = useState('ALL');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
     // Sequential Voting State
     const [votingQueue, setVotingQueue] = useState<string[]>([]);
     const [currentPosition, setCurrentPosition] = useState<string>('');
     const POSITION_ORDER = ['장로', '안수집사', '권사'];
+
+    // --- FILTER & SORT LOGIC ---
+    const filteredCandidates = candidates.filter(c => {
+        if (activeTab === 'ALL') return true;
+        return getHangulInitial(c.name) === activeTab;
+    }).sort((a, b) => {
+        const comparison = a.name.localeCompare(b.name, 'ko');
+        return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+        setActiveTab(newValue);
+    };
+
+    const toggleSortOrder = () => {
+        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    };
 
     useEffect(() => {
         if (electionLoading) return; // Wait for election ID
@@ -326,8 +352,17 @@ export default function VotePage() {
         );
     }
 
-    // Filter displayed candidates by Current Position
-    const displayedCandidates = candidates.filter(c => c.position === currentPosition);
+    // Filter & Sort Candidates
+    const finalCandidates = candidates
+        .filter(c => c.position === currentPosition)
+        .filter(c => {
+            if (activeTab === 'ALL') return true;
+            return getHangulInitial(c.name) === activeTab;
+        })
+        .sort((a, b) => {
+            const comparison = a.name.localeCompare(b.name, 'ko');
+            return sortOrder === 'asc' ? comparison : -comparison;
+        });
 
     return (
         <Box sx={{ pb: 8, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
@@ -346,6 +381,23 @@ export default function VotePage() {
                         </Typography>
                     </Box>
                 </Toolbar>
+
+                {/* Tabs for Alphabet Filtering */}
+                <Box sx={{ bgcolor: 'white', overflowX: 'auto', borderTop: '1px solid #eee' }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
+                        aria-label="candidate filter tabs"
+                        sx={{ minHeight: 48 }}
+                    >
+                        {ALPHABET_TABS.map((tab) => (
+                            <Tab key={tab} label={tab === 'ALL' ? '전체' : tab} value={tab} sx={{ minWidth: 50 }} />
+                        ))}
+                    </Tabs>
+                </Box>
             </AppBar>
 
             <Container maxWidth="md" sx={{ mt: 3 }}>
@@ -362,16 +414,26 @@ export default function VotePage() {
                     </Typography>
                 </Box>
 
-                <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
-                    후보자 목록
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h5" fontWeight="bold">
+                        후보자 목록 ({finalCandidates.length}명)
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={toggleSortOrder}
+                        startIcon={sortOrder === 'asc' ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
+                    >
+                        {sortOrder === 'asc' ? '가나다순' : '역순'}
+                    </Button>
+                </Box>
 
                 <Grid container spacing={2}>
-                    {displayedCandidates.length === 0 ? (
+                    {finalCandidates.length === 0 ? (
                         <Box sx={{ p: 4, width: '100%', textAlign: 'center' }}>
-                            <Typography color="text.secondary">해당 직분의 후보자가 없습니다.</Typography>
+                            <Typography color="text.secondary">해당 조건의 후보자가 없습니다.</Typography>
                         </Box>
-                    ) : displayedCandidates.map((candidate) => {
+                    ) : finalCandidates.map((candidate) => {
                         const isSelected = selectedIds.includes(candidate.id!);
                         return (
                             <Grid size={{ xs: 6, sm: 4, md: 3 }} key={candidate.id}>
