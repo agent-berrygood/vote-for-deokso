@@ -1,0 +1,1 @@
+src/app/admin/page.tsx(466,88): error TS7006: Parameter 'theme' implicitly has an 'any' type.

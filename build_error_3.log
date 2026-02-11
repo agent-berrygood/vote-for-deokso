@@ -1,0 +1,23 @@
+
+> vote-app@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.2s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/admin/page.tsx:466:88
+Type error: Parameter 'theme' implicitly has an 'any' type.
+
+[0m [90m 464 |[39m                 [33m<[39m[33mBox[39m sx[33m=[39m{{ display[33m:[39m [32m'flex'[39m[33m,[39m gap[33m:[39m [35m2[39m[33m,[39m mb[33m:[39m [35m2[39m[33m,[39m flexWrap[33m:[39m [32m'wrap'[39m }}[33m>[39m
+ [90m 465 |[39m                     {[{ pos[33m:[39m [32m'장로'[39m[33m,[39m color[33m:[39m [32m'primary'[39m }[33m,[39m { pos[33m:[39m [32m'안수집사'[39m[33m,[39m color[33m:[39m [32m'success'[39m }[33m,[39m { pos[33m:[39m [32m'권사'[39m[33m,[39m color[33m:[39m [32m'warning'[39m }][33m.[39mmap(({ pos[33m,[39m color }) [33m=>[39m (
+[31m[1m>[22m[39m[90m 466 |[39m                         [33m<[39m[33mPaper[39m key[33m=[39m{pos} sx[33m=[39m{{ p[33m:[39m [35m3[39m[33m,[39m flex[33m:[39m [35m1[39m[33m,[39m borderTop[33m:[39m [32m`4px solid ${(theme) => theme.palette[color as 'primary' | 'success' | 'warning'].main}`[39m[33m,[39m minWidth[33m:[39m [35m220[39m }}[33m>[39m
+ [90m     |[39m                                                                                        [31m[1m^[22m[39m
+ [90m 467 |[39m                             [33m<[39m[33mTypography[39m variant[33m=[39m[32m"h6"[39m gutterBottom color[33m=[39m{color [36mas[39m [32m'primary'[39m [33m|[39m [32m'success'[39m [33m|[39m [32m'warning'[39m}[33m>[39m {pos} 후보 업로드 [33m<[39m[33m/[39m[33mTypography[39m[33m>[39m
+ [90m 468 |[39m                             [33m<[39m[33mTypography[39m variant[33m=[39m[32m"body2"[39m color[33m=[39m[32m"text.secondary"[39m sx[33m=[39m{{ mb[33m:[39m [35m2[39m }}[33m>[39m {uploadRound}차 투표 대상 [33m<[39m[33m/[39m[33mTypography[39m[33m>[39m
+ [90m 469 |[39m                             [33m<[39m[33mButton[39m component[33m=[39m[32m"label"[39m variant[33m=[39m[32m"contained"[39m fullWidth color[33m=[39m{color [36mas[39m [32m'primary'[39m [33m|[39m [32m'success'[39m [33m|[39m [32m'warning'[39m} startIcon[33m=[39m{loading [33m?[39m [33m<[39m[33mCircularProgress[39m size[33m=[39m{[35m20[39m} color[33m=[39m[32m"inherit"[39m [35m/> : <CloudUploadIcon /[39m[33m>[39m} disabled[33m=[39m{loading [33m||[39m [33m![39mactiveElectionId} [33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null

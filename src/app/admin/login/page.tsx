@@ -17,6 +17,8 @@ export default function AdminLogin() {
 
         if (password === CORRECT_PASSWORD) {
             sessionStorage.setItem('admin_auth', 'true');
+            // Also set isAdmin for compatibility if needed, but my admin page uses admin_auth
+            sessionStorage.setItem('isAdmin', 'true');
             router.push('/admin');
         } else {
             setError('Incorrect password');

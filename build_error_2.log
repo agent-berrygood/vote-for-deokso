@@ -1,0 +1,39 @@
+
+> vote-app@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./src/app/admin/login/page.tsx:5:1
+Parsing ecmascript source code failed
+[0m [90m 3 |[39m [36mimport[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { useRouter } [36mfrom[39m [32m'next/navigation'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 5 |[39m [33m<<[39m[33m<<[39m[33m<<[39m[33m<[39m [33mHEAD[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { [33mBox[39m[33m,[39m [33mButton[39m[33m,[39m [33mContainer[39m[33m,[39m [33mTextField[39m[33m,[39m [33mTypography[39m[33m,[39m [33mPaper[39m[33m,[39m [33mAlert[39m } [36mfrom[39m [32m'@mui/material'[39m[33m;[39m
+ [90m 7 |[39m
+ [90m 8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mAdminLogin[39m() {[0m
+
+Merge conflict marker encountered.
+
+
+./src/app/admin/login/page.tsx:9:1
+Parsing ecmascript source code failed
+[0m [90m  7 |[39m
+ [90m  8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mAdminLogin[39m() {
+[31m[1m>[22m[39m[90m  9 |[39m [33m===[39m[33m===[39m[33m=[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 10 |[39m [36mimport[39m { [33mBox[39m[33m,[39m [33mButton[39m[33m,[39m [33mContainer[39m[33m,[39m [33mTextField[39m[33m,[39m [33mTypography[39m } [36mfrom[39m [32m'@mui/material'[39m[33m;[39m
+ [90m 11 |[39m
+ [90m 12 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mAdminLogin[39m() {[0m
+
+Merge conflict marker encountered.
+
+
+    at <unknown> (./src/app/admin/login/page.tsx:5:1)
+    at <unknown> (./src/app/admin/login/page.tsx:9:1)
