@@ -20,7 +20,31 @@ import {
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SaveIcon from '@mui/icons-material/Save';
-import ConfirmDialog from '@/components/ConfirmDialog';
+import CandidateManager from '@/components/CandidateManager';
+
+export default function AdminPage() {
+    // ... (existing code)
+
+    return (
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            {/* ... (existing UI components) */}
+
+            {/* Existing Single Voter Addition */}
+            <Paper sx={{ p: 4, mb: 4 }}>
+                {/* ... */}
+            </Paper>
+
+            <CandidateManager />
+
+            <ConfirmDialog
+                open={resetDialogOpen}
+            // ...
+            />
+
+            <VotingResultsSection />
+        </Container>
+    );
+}
 import PersonAddIcon from '@mui/icons-material/PersonAdd'; // Kept from remote
 
 import { useElection } from '@/hooks/useElection';
@@ -553,6 +577,8 @@ export default function AdminPage() {
                     </Button>
                 </Box>
             </Paper>
+
+            <CandidateManager />
 
             <ConfirmDialog
                 open={resetDialogOpen}
