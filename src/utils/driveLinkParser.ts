@@ -6,6 +6,11 @@
 export const getDriveImageUrl = (url: string): string => {
     if (!url) return '';
 
+    // Check if it's a Google Drive Link
+    if (!url.includes('drive.google.com') && !url.includes('docs.google.com')) {
+        return url;
+    }
+
     // Extract ID using Regex
     // Matches /d/ID or id=ID
     const idRegex = /[-\w]{25,}/;
