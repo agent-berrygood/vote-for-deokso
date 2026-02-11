@@ -16,7 +16,8 @@ import {
     Alert,
     CircularProgress,
     TextField,
-    Divider
+    Divider,
+    Chip
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SaveIcon from '@mui/icons-material/Save';
@@ -597,9 +598,11 @@ function VotingResultsSection() {
     const { activeElectionId } = useElection();
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [loading, setLoading] = useState(false);
-    const [totalVotes, setTotalVotes] = useState(0);
+    const [totalVotes, setTotalVotes] = useState(0); // Total candidate votes
+    const [totalBallots, setTotalBallots] = useState(0); // Total voters participated in this round/position
     const [viewRound, setViewRound] = useState<number>(1);
-    const [viewPosition, setViewPosition] = useState<string>('ALL');
+    const [viewPosition, setViewPosition] = useState<string>('장로'); // Default to Elder
+    const [maxVoteLimit, setMaxVoteLimit] = useState(5); // How many to show (from settings)
 
     const fetchResults = async () => {
         if (!activeElectionId) {
@@ -609,21 +612,51 @@ function VotingResultsSection() {
 
         setLoading(true);
         try {
-            const q = query(collection(db, `elections/${activeElectionId}/candidates`), where('round', '==', viewRound));
+            // 1. Get Max Votes setting for limit
+            const configRef = doc(db, `elections/${activeElectionId}/settings`, 'config');
+            const configSnap = await getDoc(configRef);
+            if (configSnap.exists()) {
+                const data = configSnap.data();
+                if (data.maxVotes) {
+                    if (typeof data.maxVotes === 'number') {
+                        setMaxVoteLimit(data.maxVotes);
+                    } else if (data.maxVotes[viewPosition]) {
+                        setMaxVoteLimit(data.maxVotes[viewPosition]);
+                    }
+                }
+            }
+
+            // 2. Count Total Ballots (Voters who participated in this specific Position_Round)
+            // Query: voters where participated.${viewPosition}_${viewRound} == true
+            // Firestore doesn't support wildcards easily in map keys for query without index or specific structure.
+            // But we store `participated: { "장로_1": true }`.
+            // We can Query `participated.장로_1 == true`.
+            // Note: Field paths with dots need to be handled carefully or just use client side if small.
+            // Let's try direct query.
+            const voterQuery = query(
+                collection(db, `elections/${activeElectionId}/voters`),
+                where(`participated.${viewPosition}_${viewRound}`, '==', true)
+            );
+            const voterSnap = await getDocs(voterQuery);
+            const ballotCount = voterSnap.size;
+            setTotalBallots(ballotCount);
+
+            // 3. Get Candidates
+            const q = query(collection(db, `elections/${activeElectionId}/candidates`), where('round', '==', viewRound), where('position', '==', viewPosition));
             const querySnapshot = await getDocs(q);
             const loaded: Candidate[] = [];
-            let total = 0;
+            let totalCandidateVotes = 0;
             querySnapshot.forEach((doc: any) => {
                 const data = doc.data() as Candidate;
                 loaded.push(data);
                 const roundVotes = data.votesByRound?.[viewRound] || 0;
-                total += roundVotes;
+                totalCandidateVotes += roundVotes;
             });
 
             loaded.sort((a, b) => (b.votesByRound?.[viewRound] || 0) - (a.votesByRound?.[viewRound] || 0));
 
             setCandidates(loaded);
-            setTotalVotes(total);
+            setTotalVotes(totalCandidateVotes);
         } catch (err) {
             console.error("Error fetching results:", err);
         } finally {
@@ -633,16 +666,21 @@ function VotingResultsSection() {
 
     useEffect(() => {
         fetchResults();
-    }, [viewRound, activeElectionId]);
-
-    const filteredCandidates = viewPosition === 'ALL' ? candidates : candidates.filter(c => c.position === viewPosition);
+    }, [viewRound, viewPosition, activeElectionId]);
 
     const handleDownloadCSV = () => {
-        const headers = ['Name', 'Position', 'Age', 'PhotoLink', `Votes_Round_${viewRound}`];
+        const headers = ['Name', 'Position', 'Age', 'PhotoLink', `Votes_Round_${viewRound}`, 'Total_Ballots', 'Elected?'];
         const csvContent = [headers.join(',')];
 
         candidates.forEach(c => {
-            const row = [c.name, c.position, c.age, c.photoUrl, c.votesByRound?.[viewRound] || 0];
+            const voteCount = c.votesByRound?.[viewRound] || 0;
+            let isElected = false;
+            if (viewPosition === '장로') {
+                isElected = voteCount >= (totalBallots * 2 / 3);
+            } else {
+                isElected = voteCount > (totalBallots / 2);
+            }
+            const row = [c.name, c.position, c.age, c.photoUrl, voteCount, totalBallots, isElected ? 'Yes' : 'No'];
             csvContent.push(row.join(','));
         });
 
@@ -650,24 +688,28 @@ function VotingResultsSection() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `${activeElectionId}_round_${viewRound}_results.csv`);
+        link.setAttribute('download', `${activeElectionId}_${viewPosition}_round_${viewRound}_results.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
+    // Calculate Thresholds
+    const elderThreshold = totalBallots * (2 / 3);
+    const commonThreshold = totalBallots / 2;
+
     return (
         <Paper sx={{ p: 4, bgcolor: '#fafafa' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="h5" fontWeight="bold" color="primary">
-                    📊 {viewRound}차 투표 득표 현황 ({activeElectionId || '선거 없음'})
+                    📊 {viewRound}차 {viewPosition} 개표 현황 ({activeElectionId})
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <TextField select label="차수 보기" value={viewRound} onChange={(e) => setViewRound(Number(e.target.value))} size="small" SelectProps={{ native: true }} sx={{ width: 120 }} disabled={!activeElectionId} >
                         {[1, 2, 3, 4, 5].map(r => <option key={r} value={r}>{r}차 투표</option>)}
                     </TextField>
                     <TextField select label="직책 필터" value={viewPosition} onChange={(e) => setViewPosition(e.target.value)} size="small" SelectProps={{ native: true }} sx={{ width: 120 }} disabled={!activeElectionId} >
-                        <option value="ALL">전체 보기</option>
+                        {/* <option value="ALL">전체 보기</option> Removed ALL to focus on specific criteria */}
                         <option value="장로">장로</option>
                         <option value="권사">권사</option>
                         <option value="안수집사">안수집사</option>
@@ -677,40 +719,66 @@ function VotingResultsSection() {
                 </Box>
             </Box>
 
-            <Typography variant="subtitle1" gutterBottom sx={{ mb: 3 }}>
-                해당 차수 총 투표수: <strong>{totalVotes}</strong>표
-            </Typography>
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold">
+                    🗳 투표 집계 정보
+                </Typography>
+                <Typography variant="body2">
+                    총 투표 참여자(Ballots): <strong>{totalBallots}</strong> 명
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    {viewPosition === '장로'
+                        ? `장로 피택 기준 (2/3 이상): ${Math.ceil(elderThreshold)}표 이상`
+                        : `${viewPosition} 피택 기준 (과반수 초과): ${Math.floor(commonThreshold) + 1}표 이상`}
+                </Typography>
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                    * 화면에는 상위 <strong>{maxVoteLimit}</strong>명까지만 표시됩니다.
+                </Typography>
+            </Box>
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}> <CircularProgress /> </Box>
             ) : !activeElectionId ? (
                 <Typography sx={{ textAlign: 'center', p: 4, color: 'text.secondary' }}>선택된 선거가 없습니다.</Typography>
             ) : candidates.length === 0 ? (
-                <Typography sx={{ textAlign: 'center', p: 4, color: 'text.secondary' }}>해당 차수({viewRound}차)에 대한 투표 결과가 없습니다.</Typography>
+                <Typography sx={{ textAlign: 'center', p: 4, color: 'text.secondary' }}>해당 차수 및 직분에 대한 투표 결과가 없습니다.</Typography>
             ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {filteredCandidates.map((candidate, index) => {
+                    {candidates.slice(0, maxVoteLimit).map((candidate, index) => {
                         const count = candidate.votesByRound?.[viewRound] || 0;
-                        const maxVoteCount = filteredCandidates.length > 0 ? (filteredCandidates[0].votesByRound?.[viewRound] || 0) : 0;
-                        const percentage = maxVoteCount > 0 ? (count / maxVoteCount) * 100 : 0;
-                        const isWinner = index === 0 && count > 0;
+                        const maxVoteCount = candidates.length > 0 ? (candidates[0].votesByRound?.[viewRound] || 0) : 0;
+                        const percentage = maxVoteCount > 0 ? (count / maxVoteCount) * 100 : 0; // Relative to leader for bar
+
+                        let isElected = false;
+                        if (viewPosition === '장로') {
+                            isElected = count >= elderThreshold && count > 0;
+                        } else {
+                            isElected = count > commonThreshold && count > 0;
+                        }
 
                         return (
-                            <Box key={candidate.id} sx={{ position: 'relative' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, alignItems: 'flex-end' }}>
+                            <Box key={candidate.id} sx={{ position: 'relative', p: 1, border: isElected ? '2px solid #4caf50' : '1px solid #eee', borderRadius: 2 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, alignItems: 'center' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <Typography variant="h6" fontWeight="bold"> {candidate.name} </Typography>
-                                        <Typography variant="body2" color="text.secondary"> {candidate.position} </Typography>
-                                        {isWinner && <Typography variant="caption" color="error" fontWeight="bold"> 👑 Current Leader </Typography>}
+                                        <Typography variant="h6" fontWeight="bold"> {index + 1}. {candidate.name} </Typography>
+                                        <Typography variant="body2" color="text.secondary"> {candidate.age}세 </Typography>
+                                        {isElected && (
+                                            <Chip label="피택" color="success" size="small" sx={{ fontWeight: 'bold' }} />
+                                        )}
                                     </Box>
                                     <Typography variant="h6" color="primary" fontWeight="bold"> {count}표 </Typography>
                                 </Box>
-                                <Box sx={{ height: 24, bgcolor: '#e0e0e0', borderRadius: 2, overflow: 'hidden' }}>
-                                    <Box sx={{ width: `${percentage}%`, height: '100%', bgcolor: isWinner ? '#f44336' : '#1976d2', transition: 'width 1s ease-in-out' }} />
+                                <Box sx={{ height: 10, bgcolor: '#e0e0e0', borderRadius: 5, overflow: 'hidden' }}>
+                                    <Box sx={{ width: `${percentage}%`, height: '100%', bgcolor: isElected ? '#4caf50' : '#1976d2' }} />
                                 </Box>
                             </Box>
                         );
                     })}
+                    {candidates.length > maxVoteLimit && (
+                        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 2 }}>
+                            ... 외 {candidates.length - maxVoteLimit}명 생략됨 ...
+                        </Typography>
+                    )}
                 </Box>
             )}
         </Paper>
