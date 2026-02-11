@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Voter } from '@/types';
 import {
@@ -44,6 +44,48 @@ export default function LoginPage() {
   const [matchedVoter, setMatchedVoter] = useState<Voter | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Voting Schedule State
+  const [scheduleStatus, setScheduleStatus] = useState<'open' | 'not_started' | 'ended'>('open');
+  const [scheduleMessage, setScheduleMessage] = useState('');
+
+  useEffect(() => {
+    if (!activeElectionId) return;
+
+    const checkSchedule = async () => {
+      try {
+        const settingsSnap = await getDoc(doc(db, `elections/${activeElectionId}/settings`, 'config'));
+        if (settingsSnap.exists()) {
+          const data = settingsSnap.data();
+          const now = new Date();
+
+          if (data.startDate) {
+            const start = new Date(data.startDate);
+            if (now < start) {
+              setScheduleStatus('not_started');
+              setScheduleMessage(`투표 시작 전입니다. (${start.toLocaleString()})`);
+              return;
+            }
+          }
+
+          if (data.endDate) {
+            const end = new Date(data.endDate);
+            if (now > end) {
+              setScheduleStatus('ended');
+              setScheduleMessage(`투표가 종료되었습니다. (${end.toLocaleString()})`);
+              return;
+            }
+          }
+        }
+        setScheduleStatus('open');
+        setScheduleMessage('');
+      } catch (err) {
+        console.error("Error checking schedule:", err);
+      }
+    };
+
+    checkSchedule();
+  }, [activeElectionId]);
 
   // Clear error on input change
   useEffect(() => { setError(''); }, [name, phone, birthdate, inputAuthKey]);
@@ -160,50 +202,57 @@ export default function LoginPage() {
 
         <Paper sx={{ p: 4, width: '100%' }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {scheduleStatus !== 'open' && (
+            <Alert severity="warning" sx={{ mb: 2, fontWeight: 'bold' }}>
+              {scheduleMessage}
+            </Alert>
+          )}
 
           {step === 1 ? (
             <form onSubmit={handleRequestAuth}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                선거인 본인 확인
-              </Typography>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                label="이름"
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                label="전화번호"
-                placeholder="010-0000-0000"
-                value={phone}
-                onChange={handlePhoneChange}
-                inputProps={{ maxLength: 13 }}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                label="생년월일 (6자리)"
-                placeholder="YYMMDD"
-                inputProps={{ maxLength: 6 }}
-                value={birthdate}
-                onChange={(e) => setBirthdate(e.target.value)}
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
-                disabled={loading}
-              >
-                {loading ? '확인 중...' : '인증번호 받기'}
-              </Button>
+              <fieldset disabled={scheduleStatus !== 'open'} style={{ border: 'none', padding: 0 }}>
+                <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                  선거인 본인 확인
+                </Typography>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  label="이름"
+                  autoFocus
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  label="전화번호"
+                  placeholder="010-0000-0000"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  inputProps={{ maxLength: 13 }}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  label="생년월일 (6자리)"
+                  placeholder="YYMMDD"
+                  inputProps={{ maxLength: 6 }}
+                  value={birthdate}
+                  onChange={(e) => setBirthdate(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
+                  disabled={loading || scheduleStatus !== 'open'}
+                >
+                  {loading ? '확인 중...' : '인증번호 받기'}
+                </Button>
+              </fieldset>
             </form>
           ) : (
             <form onSubmit={handleVerify}>

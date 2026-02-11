@@ -58,13 +58,17 @@ export default function AdminPage() {
         '안수집사': 5
     });
 
-    const [settingLoading, setSettingLoading] = useState(false);
-
-    const [roundSettings, setRoundSettings] = useState<{ [key: string]: number }>({
+    const [roundSettings, setRoundSettings] = useState<{ [pos: string]: number }>({
         '장로': 1,
         '권사': 1,
         '안수집사': 1
     });
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    const [settingLoading, setSettingLoading] = useState(false);
+
+
 
     const [uploadRound, setUploadRound] = useState<number>(1);
 
@@ -118,7 +122,9 @@ export default function AdminPage() {
         try {
             await setDoc(doc(db, `elections/${activeElectionId}/settings`, 'config'), {
                 maxVotes: maxVotesMap,
-                rounds: roundSettings
+                rounds: roundSettings,
+                startDate,
+                endDate
             });
             setMessage({ type: 'success', text: '시스템 설정이 성공적으로 저장되었습니다!' });
         } catch (err) {

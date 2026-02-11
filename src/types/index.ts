@@ -32,4 +32,6 @@ export interface SystemSettings {
     // currentRound is deprecated in favor of rounds mapping
     rounds: { [position: string]: number }; // e.g. { '장로': 2, '권사': 1, '안수집사': 1 }
     roundTitle?: string;
+    startDate?: string; // ISO String
+    endDate?: string;   // ISO String
 }
