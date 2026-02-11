@@ -409,6 +409,9 @@ export default function AdminPage() {
                     >
                         Reset Election Data
                     </Button>
+                    <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                        * Check Console (F12) for detailed logs if reset fails.
+                    </Typography>
                 </Box>
             </Paper>
 
