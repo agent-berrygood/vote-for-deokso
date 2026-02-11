@@ -23,6 +23,8 @@ export interface Voter {
     // If the User is allowed to vote for 'Elders Round 2', we track that they voted for 'Elders Round 2'.
     participated?: { [positionAndRound: string]: boolean }; // e.g. "장로_1": true, "안수집사_2": true
     votedAt?: number | null; // Timestamp of last vote
+    phone?: string;
+    birthdate?: string;
 }
 
 export interface SystemSettings {

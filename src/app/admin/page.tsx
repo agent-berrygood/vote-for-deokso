@@ -19,8 +19,11 @@ import {
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SaveIcon from '@mui/icons-material/Save';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 import { useElection } from '@/hooks/useElection';
+
+const generateAuthKey = () => Math.floor(1000000 + Math.random() * 9000000).toString();
 
 export default function AdminPage() {
     const { activeElectionId, electionList, createElection, switchElection, getElectionPath, loading: electionLoading } = useElection();
@@ -43,9 +46,16 @@ export default function AdminPage() {
         '안수집사': 1
     });
 
-    // Upload Filters
     const [uploadRound, setUploadRound] = useState<number>(1);
     const [uploadPosition, setUploadPosition] = useState<string>('장로');
+
+    // Reset Dialog
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
+    // Single Voter Add State
+    const [singleVoterName, setSingleVoterName] = useState('');
+    const [singleVoterPhone, setSingleVoterPhone] = useState('');
+    const [singleVoterBirthdate, setSingleVoterBirthdate] = useState('');
 
     useEffect(() => {
         if (!activeElectionId) return;
@@ -190,28 +200,45 @@ export default function AdminPage() {
             skipEmptyLines: true,
             complete: async (results) => {
                 try {
-                    const voters = results.data as any[];
+                    const votersData = results.data as any[];
+
                     const batch = writeBatch(db);
-                    // Use dynamic path
                     const collectionRef = collection(db, `elections/${activeElectionId}/voters`);
 
-                    voters.forEach((row) => {
-                        if (!row.Name || !row.AuthKey) return;
+                    // Check for existing voters logic
+                    const existingSnap = await getDocs(collectionRef);
+                    if (!existingSnap.empty) {
+                        if (!confirm('Voters already exist. Do you want to append/overwrite? (Click OK to proceed)')) {
+                            setLoading(false);
+                            return;
+                        }
+                    }
+
+                    let addedCount = 0;
+                    votersData.forEach((row) => {
+                        if (!row.Name) return;
 
                         const newDocRef = doc(collectionRef);
+                        // Access fields case-insensitively or strictly? CSV headers: Name, AuthKey, Phone, Birthdate
+                        // Papa parse with header: true gives objects with keys from CSV header.
+                        const authKey = row.AuthKey ? String(row.AuthKey).trim() : generateAuthKey();
+
                         const voterData: Voter = {
                             id: newDocRef.id,
                             name: row.Name,
-                            authKey: String(row.AuthKey).trim(),
+                            authKey: authKey,
                             hasVoted: false,
-                            votedAt: null
+                            votedAt: null,
+                            phone: row.Phone ? String(row.Phone).trim() : '',
+                            birthdate: row.Birthdate ? String(row.Birthdate).trim() : ''
                         };
 
                         batch.set(newDocRef, voterData);
+                        addedCount++;
                     });
 
-                    await batch.commit();
-                    setMessage({ type: 'success', text: `Successfully uploaded ${voters.length} voters!` });
+                    if (addedCount > 0) await batch.commit();
+                    setMessage({ type: 'success', text: `Successfully uploaded ${addedCount} voters!` });
                 } catch (error) {
                     console.error(error);
                     setMessage({ type: 'error', text: 'Error uploading voters.' });
@@ -225,6 +252,78 @@ export default function AdminPage() {
                 setLoading(false);
             }
         });
+    };
+
+    const handleAddSingleVoter = async () => {
+        if (!activeElectionId) return;
+        if (!singleVoterName) {
+            setMessage({ type: 'error', text: 'Name is required' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const collectionRef = collection(db, `elections/${activeElectionId}/voters`);
+            const newDocRef = doc(collectionRef);
+            const authKey = generateAuthKey();
+
+            const voterData: Voter = {
+                id: newDocRef.id,
+                name: singleVoterName,
+                authKey: authKey,
+                hasVoted: false,
+                votedAt: null,
+                phone: singleVoterPhone,
+                birthdate: singleVoterBirthdate
+            };
+
+            await setDoc(newDocRef, voterData);
+            setMessage({ type: 'success', text: `Voter '${singleVoterName}' added with Key: ${authKey}` });
+
+            // Clear inputs
+            setSingleVoterName('');
+            setSingleVoterPhone('');
+            setSingleVoterBirthdate('');
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: 'error', text: 'Error adding voter' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetData = async () => {
+        if (!activeElectionId) return;
+        setLoading(true);
+        try {
+            // 1. Delete Candidates
+            const cQuery = await getDocs(collection(db, `elections/${activeElectionId}/candidates`));
+            const batch1 = writeBatch(db);
+            let count1 = 0;
+            cQuery.forEach(doc => {
+                batch1.delete(doc.ref);
+                count1++;
+            });
+            if (count1 > 0) await batch1.commit();
+
+            // 2. Delete Voters
+            const vQuery = await getDocs(collection(db, `elections/${activeElectionId}/voters`));
+            const batch2 = writeBatch(db);
+            let count2 = 0;
+            vQuery.forEach(doc => {
+                batch2.delete(doc.ref);
+                count2++;
+            });
+            if (count2 > 0) await batch2.commit();
+
+            setMessage({ type: 'success', text: `Reset complete. Deleted ${count1} candidates and ${count2} voters.` });
+            setResetDialogOpen(false);
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: 'error', text: 'Error resetting data.' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -300,46 +399,7 @@ export default function AdminPage() {
                         variant="outlined"
                         color="error"
                         size="small"
-                        onClick={async () => {
-                            if (!activeElectionId) return;
-                            if (!confirm(`Are you sure you want to RESET data for '${activeElectionId}'? This cannot be undone.`)) return;
-
-                            const userInput = prompt(`Type '${activeElectionId}' to confirm reset:`);
-                            if (userInput !== activeElectionId) {
-                                alert('Confirmation failed.');
-                                return;
-                            }
-
-                            setLoading(true);
-                            try {
-                                // 1. Delete Candidates
-                                const cQuery = await getDocs(collection(db, `elections/${activeElectionId}/candidates`));
-                                const batch1 = writeBatch(db);
-                                let count1 = 0;
-                                cQuery.forEach(doc => {
-                                    batch1.delete(doc.ref);
-                                    count1++;
-                                });
-                                if (count1 > 0) await batch1.commit();
-
-                                // 2. Delete Voters
-                                const vQuery = await getDocs(collection(db, `elections/${activeElectionId}/voters`));
-                                const batch2 = writeBatch(db);
-                                let count2 = 0;
-                                vQuery.forEach(doc => {
-                                    batch2.delete(doc.ref);
-                                    count2++;
-                                });
-                                if (count2 > 0) await batch2.commit();
-
-                                setMessage({ type: 'success', text: `Reset complete. Deleted ${count1} candidates and ${count2} voters.` });
-                            } catch (err) {
-                                console.error(err);
-                                setMessage({ type: 'error', text: 'Error resetting data.' });
-                            } finally {
-                                setLoading(false);
-                            }
-                        }}
+                        onClick={() => setResetDialogOpen(true)}
                     >
                         Reset Election Data
                     </Button>
@@ -484,7 +544,7 @@ export default function AdminPage() {
                     Upload Voters
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    CSV Format: Name, AuthKey (Birthday/Phone)
+                    CSV Format: Name, Phone, Birthdate (Optional: AuthKey)
                 </Typography>
                 <Button
                     component="label"
@@ -497,6 +557,53 @@ export default function AdminPage() {
                     <input type="file" hidden accept=".csv" onChange={handleVoterUpload} />
                 </Button>
             </Paper>
+
+            {/* Single Voter Addition */}
+            <Paper sx={{ p: 4, mb: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                    Add Single Voter
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <TextField
+                        label="Name"
+                        value={singleVoterName}
+                        onChange={(e) => setSingleVoterName(e.target.value)}
+                        size="small"
+                        sx={{ width: 150 }}
+                    />
+                    <TextField
+                        label="Phone"
+                        value={singleVoterPhone}
+                        onChange={(e) => setSingleVoterPhone(e.target.value)}
+                        size="small"
+                        sx={{ width: 150 }}
+                        placeholder="010-0000-0000"
+                    />
+                    <TextField
+                        label="Birthdate"
+                        value={singleVoterBirthdate}
+                        onChange={(e) => setSingleVoterBirthdate(e.target.value)}
+                        size="small"
+                        sx={{ width: 150 }}
+                        placeholder="YYMMDD"
+                    />
+                    <Button
+                        variant="contained"
+                        onClick={handleAddSingleVoter}
+                        disabled={loading || !singleVoterName}
+                    >
+                        Add Voter
+                    </Button>
+                </Box>
+            </Paper>
+
+            <ConfirmDialog
+                open={resetDialogOpen}
+                title="Reset Election Data?"
+                description={`Are you sure you want to RESET data for '${activeElectionId}'? This cannot be undone.`}
+                onConfirm={handleResetData}
+                onCancel={() => setResetDialogOpen(false)}
+            />
 
             {/* Voting Results */}
             <VotingResultsSection />
