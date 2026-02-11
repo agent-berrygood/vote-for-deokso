@@ -48,6 +48,19 @@ export default function LoginPage() {
   // Clear error on input change
   useEffect(() => { setError(''); }, [name, phone, birthdate, inputAuthKey]);
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
+    let formatted = rawValue;
+
+    if (rawValue.length > 3 && rawValue.length <= 7) {
+      formatted = `${rawValue.slice(0, 3)}-${rawValue.slice(3)}`;
+    } else if (rawValue.length > 7) {
+      formatted = `${rawValue.slice(0, 3)}-${rawValue.slice(3, 7)}-${rawValue.slice(7, 11)}`;
+    }
+
+    setPhone(formatted);
+  };
+
   const handleRequestAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeElectionId) return;
@@ -169,7 +182,8 @@ export default function LoginPage() {
                 label="전화번호"
                 placeholder="010-0000-0000"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
+                inputProps={{ maxLength: 13 }}
               />
               <TextField
                 margin="normal"
