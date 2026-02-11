@@ -1,6 +1,11 @@
-Name,Position,Age,PhotoLink
-김권사,권사,55,https://placehold.co/150
-이권사,권사,52,https://placehold.co/150
-박권사,권사,50,https://placehold.co/150
-최권사,권사,48,https://placehold.co/150
-정권사,권사,53,https://placehold.co/150
+Name,Position,Age,PhotoLink,Round
+고나현,권사,55,/images/candidates/고나현.jpg,1
+김도연,권사,52,/images/candidates/김도연.JPG,1
+김영숙,권사,65,/images/candidates/김영숙.JPG,1
+김은호,권사,50,/images/candidates/김은호.jpg,1
+마병찬,권사,58,/images/candidates/마병찬.jpg,1
+배혜은,권사,54,/images/candidates/배혜은.jpg,1
+오대식,권사,60,/images/candidates/오대식.JPG,1
+윤조현,권사,51,/images/candidates/윤조현.jpg,1
+이수연,권사,57,/images/candidates/이수연.jpg,1
+한경인,권사,59,/images/candidates/한경인.jpg,1
