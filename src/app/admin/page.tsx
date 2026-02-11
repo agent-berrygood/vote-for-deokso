@@ -292,28 +292,36 @@ export default function AdminPage() {
         if (!activeElectionId) return;
         setLoading(true);
         try {
+            const deleteCollectionInBatches = async (collectionPath: string) => {
+                const q = query(collection(db, collectionPath));
+                const snapshot = await getDocs(q);
+                const BATCH_SIZE = 450; // Safety margin below 500
+
+                const chunks = [];
+                for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
+                    chunks.push(snapshot.docs.slice(i, i + BATCH_SIZE));
+                }
+
+                let totalDeleted = 0;
+                for (const chunk of chunks) {
+                    const batch = writeBatch(db);
+                    chunk.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    totalDeleted += chunk.length;
+                }
+                return totalDeleted;
+            };
+
             // 1. Delete Candidates
-            const cQuery = await getDocs(collection(db, `elections/${activeElectionId}/candidates`));
-            const batch1 = writeBatch(db);
-            let count1 = 0;
-            cQuery.forEach(doc => {
-                batch1.delete(doc.ref);
-                count1++;
-            });
-            if (count1 > 0) await batch1.commit();
+            const count1 = await deleteCollectionInBatches(`elections/${activeElectionId}/candidates`);
 
             // 2. Delete Voters
-            const vQuery = await getDocs(collection(db, `elections/${activeElectionId}/voters`));
-            const batch2 = writeBatch(db);
-            let count2 = 0;
-            vQuery.forEach(doc => {
-                batch2.delete(doc.ref);
-                count2++;
-            });
-            if (count2 > 0) await batch2.commit();
+            const count2 = await deleteCollectionInBatches(`elections/${activeElectionId}/voters`);
 
             setMessage({ type: 'success', text: `Reset complete. Deleted ${count1} candidates and ${count2} voters.` });
             setResetDialogOpen(false);
+
+            // Force refresh of stats if needed, or rely on activeElectionId hook updates
         } catch (err) {
             console.error(err);
             setMessage({ type: 'error', text: 'Error resetting data.' });
@@ -510,7 +518,16 @@ export default function AdminPage() {
                     <TextField
                         label="Phone"
                         value={singleVoterPhone}
-                        onChange={(e) => setSingleVoterPhone(e.target.value)}
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, '');
+                            let formatted = val;
+                            if (val.length > 3 && val.length <= 7) {
+                                formatted = `${val.slice(0, 3)}-${val.slice(3)}`;
+                            } else if (val.length > 7) {
+                                formatted = `${val.slice(0, 3)}-${val.slice(3, 7)}-${val.slice(7, 11)}`;
+                            }
+                            setSingleVoterPhone(formatted);
+                        }}
                         size="small"
                         sx={{ width: 150 }}
                         placeholder="010-0000-0000"
