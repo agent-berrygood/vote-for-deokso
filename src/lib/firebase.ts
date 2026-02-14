@@ -17,9 +17,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 console.log("[Firebase] Initializing with LongPolling. API Key exists?", !!firebaseConfig.apiKey);
 console.log("[Firebase] Project ID:", firebaseConfig.projectId);
 console.log("[Firebase] Storage Bucket:", firebaseConfig.storageBucket);
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
+const db = initializeFirestore(app, {});
 const storage = getStorage(app);
 
 export { app, db, storage };
