@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { collection, writeBatch, doc, getDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Candidate, Voter } from '@/types';
@@ -135,19 +136,55 @@ export default function AdminPage() {
         }
     };
 
-    const proceedWithUpload = (file: File, collectionRef: any, parseLogic: (data: any[]) => void) => {
+    const handleDownloadTemplate = (type: 'candidate' | 'voter') => {
+        let headers: string[] = [];
+        let filename = '';
+
+        if (type === 'candidate') {
+            headers = ['Name', 'Age', 'PhotoLink', 'ProfileDesc'];
+            filename = 'candidate_upload_template.xlsx';
+        } else {
+            headers = ['Name', 'Phone', 'Birthdate', 'AuthKey'];
+            filename = 'voter_upload_template.xlsx';
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet([headers]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.writeFile(wb, filename);
+    };
+
+    const proceedWithUpload = async (file: File, collectionRef: any, parseLogic: (data: any[]) => void) => {
         setLoading(true);
         setMessage(null);
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => parseLogic(results.data as any[]),
-            error: (error) => {
-                console.error(error);
-                setMessage({ type: 'error', text: 'CSV 파싱 오류' });
+
+        const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+        if (isExcel) {
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                const worksheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[worksheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                parseLogic(jsonData);
+            } catch (err) {
+                console.error("Excel parse error:", err);
+                setMessage({ type: 'error', text: '엑셀 파일 처리 중 오류가 발생했습니다.' });
                 setLoading(false);
             }
-        });
+        } else {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => parseLogic(results.data as any[]),
+                error: (error) => {
+                    console.error(error);
+                    setMessage({ type: 'error', text: 'CSV 파싱 오류' });
+                    setLoading(false);
+                }
+            });
+        }
     };
 
     const handleCandidateUpload = async (event: React.ChangeEvent<HTMLInputElement>, position: string) => {
@@ -505,10 +542,15 @@ export default function AdminPage() {
                         <Paper key={pos} sx={{ p: 3, flex: 1, borderTop: `4px solid ${(theme: any) => theme.palette[color as 'primary' | 'success' | 'warning'].main}`, minWidth: 220 }}>
                             <Typography variant="h6" gutterBottom color={color as 'primary' | 'success' | 'warning'}> {pos} 후보 업로드 </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}> {uploadRound}차 투표 대상 </Typography>
-                            <Button component="label" variant="contained" fullWidth color={color as 'primary' | 'success' | 'warning'} startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />} disabled={loading || !activeElectionId} >
-                                CSV 업로드
-                                <input type="file" hidden accept=".csv" onChange={(e) => handleCandidateUpload(e, pos)} />
-                            </Button>
+                            <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                                <Button component="label" variant="contained" fullWidth color={color as 'primary' | 'success' | 'warning'} startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />} disabled={loading || !activeElectionId} >
+                                    CSV/Excel 업로드
+                                    <input type="file" hidden accept=".csv, .xlsx, .xls" onChange={(e) => handleCandidateUpload(e, pos)} />
+                                </Button>
+                                <Button size="small" onClick={() => handleDownloadTemplate('candidate')}>
+                                    양식 다운로드
+                                </Button>
+                            </Box>
                         </Paper>
                     ))}
                 </Box>
@@ -519,18 +561,23 @@ export default function AdminPage() {
                     Upload Voters
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    CSV Format: Name, Phone, Birthdate (Optional: AuthKey)
+                    CSV/Excel Format: Name, Phone, Birthdate (Optional: AuthKey)
                 </Typography>
-                <Button
-                    component="label"
-                    variant="contained"
-                    color="secondary"
-                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
-                    disabled={loading}
-                >
-                    Select Voter CSV
-                    <input type="file" hidden accept=".csv" onChange={handleVoterUpload} />
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Button
+                        component="label"
+                        variant="contained"
+                        color="secondary"
+                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
+                        disabled={loading}
+                    >
+                        Select Voter File
+                        <input type="file" hidden accept=".csv, .xlsx, .xls" onChange={handleVoterUpload} />
+                    </Button>
+                    <Button variant="outlined" onClick={() => handleDownloadTemplate('voter')}>
+                        양식 다운로드
+                    </Button>
+                </Box>
             </Paper>
 
             {/* Single Voter Addition */}

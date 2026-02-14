@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, query, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
+import imageCompression from 'browser-image-compression';
 import { Candidate } from '@/types';
 import { useElection } from '@/hooks/useElection';
 import {
@@ -22,6 +24,7 @@ import {
     Divider,
     Alert
 } from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -31,7 +34,9 @@ export default function CandidateManager() {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [deleteTarget, setDeleteTarget] = useState<Candidate | null>(null);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
+
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
 
     const fetchCandidates = async () => {
         if (!activeElectionId) return;
@@ -76,6 +81,130 @@ export default function CandidateManager() {
         }
     };
 
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, candidateId: string) => {
+        const file = event.target.files?.[0];
+        if (!file || !activeElectionId) return;
+
+        setUploadingId(candidateId);
+        try {
+            // Options for compression
+            const options = {
+                maxSizeMB: 0.05, // 50KB
+                maxWidthOrHeight: 300, // Reasonable size for avatar
+                useWebWorker: true,
+            };
+
+            const compressedFile = await imageCompression(file, options);
+
+            // Upload to Firebase Storage
+            const storageRef = ref(storage, `elections/${activeElectionId}/candidates/${candidateId}/profile.jpg`);
+            await uploadBytes(storageRef, compressedFile);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // Update Firestore
+            const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
+            await updateDoc(candidateRef, { photoUrl: downloadURL });
+
+            // Update local state
+            setCandidates(prev => prev.map(c =>
+                c.id === candidateId ? { ...c, photoUrl: downloadURL } : c
+            ));
+
+            setMessage({ type: 'success', text: '사진이 성공적으로 업로드되었습니다.' });
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            setMessage({ type: 'error', text: '사진 업로드 중 오류가 발생했습니다.' });
+        } finally {
+            setUploadingId(null);
+            // Reset file input
+            event.target.value = '';
+        }
+    };
+
+    const handleBulkImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0 || !activeElectionId) return;
+
+        setLoading(true);
+        setMessage(null);
+
+        let successCount = 0;
+        let failCount = 0;
+        const failedNames: string[] = [];
+
+        try {
+            const options = {
+                maxSizeMB: 0.05,
+                maxWidthOrHeight: 300,
+                useWebWorker: true,
+            };
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                // Expected format: Name_YYYYMMDD_Position.jpg/png
+                const filename = file.name;
+                const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
+                const parts = nameWithoutExt.split('_');
+
+                if (parts.length < 3) {
+                    failCount++;
+                    failedNames.push(`${filename} (Format Mismatch)`);
+                    continue;
+                }
+
+                const name = parts[0];
+                // parts[1] is YYYYMMDD (ignored)
+                const position = parts[2];
+
+                // Find candidate
+                const candidate = candidates.find(c => c.name === name && c.position === position);
+
+                if (!candidate || !candidate.id) {
+                    failCount++;
+                    failedNames.push(`${filename} (Candidate Not Found)`);
+                    continue;
+                }
+
+                try {
+                    const compressedFile = await imageCompression(file, options);
+                    const storageRef = ref(storage, `elections/${activeElectionId}/candidates/${candidate.id}/profile.jpg`);
+                    await uploadBytes(storageRef, compressedFile);
+                    const downloadURL = await getDownloadURL(storageRef);
+
+                    const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidate.id);
+                    await updateDoc(candidateRef, { photoUrl: downloadURL });
+
+                    // Update local state immediately for better UX
+                    setCandidates(prev => prev.map(c =>
+                        c.id === candidate.id ? { ...c, photoUrl: downloadURL } : c
+                    ));
+
+                    successCount++;
+                } catch (err) {
+                    console.error(`Error uploading ${filename}:`, err);
+                    failCount++;
+                    failedNames.push(`${filename} (Upload Error)`);
+                }
+            }
+
+            if (failCount > 0) {
+                setMessage({
+                    type: 'warning',
+                    text: `Upload Complete. Success: ${successCount}, Failed: ${failCount}. Failed Files: ${failedNames.join(', ')}`
+                });
+            } else {
+                setMessage({ type: 'success', text: `Successfully uploaded ${successCount} images!` });
+            }
+
+        } catch (err) {
+            console.error("Bulk upload error:", err);
+            setMessage({ type: 'error', text: 'Bulk upload failed.' });
+        } finally {
+            setLoading(false);
+            event.target.value = '';
+        }
+    };
+
     const filteredCandidates = candidates.filter(c =>
         c.name.includes(searchTerm) || c.position.includes(searchTerm)
     );
@@ -83,10 +212,10 @@ export default function CandidateManager() {
     return (
         <Paper sx={{ p: 4, mb: 4 }}>
             <Typography variant="h6" gutterBottom fontWeight="bold">
-                👤 후보자 관리 (사퇴 처리)
+                👤 후보자 관리 (사퇴 처리 및 사진 업로드)
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                후보자를 검색하여 목록에서 삭제(사퇴)할 수 있습니다.
+                후보자를 검색하여 목록에서 삭제하거나 사진을 업로드할 수 있습니다.
             </Typography>
 
             {message && (
@@ -95,19 +224,38 @@ export default function CandidateManager() {
                 </Alert>
             )}
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                 <TextField
                     label="이름 검색"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     size="small"
-                    fullWidth
+                    sx={{ flexGrow: 1 }}
                     placeholder="홍길동"
                 />
                 <Button variant="outlined" onClick={fetchCandidates} disabled={loading}>
                     새로고침
                 </Button>
+                <Button
+                    component="label"
+                    variant="contained"
+                    color="primary"
+                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
+                    disabled={loading}
+                >
+                    일괄 사진 업로드 (Bulk)
+                    <input
+                        type="file"
+                        hidden
+                        multiple
+                        accept="image/*"
+                        onChange={handleBulkImageUpload}
+                    />
+                </Button>
             </Box>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                * 일괄 업로드 파일명 형식: <strong>이름_YYYYMMDD_직분.jpg</strong> (예: 홍길동_19800101_장로.jpg)
+            </Typography>
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
@@ -130,7 +278,22 @@ export default function CandidateManager() {
                                         primary={`${candidate.name} (${candidate.position})`}
                                         secondary={`${candidate.age}세 | 현재 득표: ${Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}`}
                                     />
-                                    <ListItemSecondaryAction>
+                                    <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Button
+                                            component="label"
+                                            variant="outlined"
+                                            size="small"
+                                            disabled={uploadingId === candidate.id}
+                                            startIcon={uploadingId === candidate.id ? <CircularProgress size={16} /> : <CloudUploadIcon />}
+                                        >
+                                            사진
+                                            <input
+                                                type="file"
+                                                hidden
+                                                accept="image/*"
+                                                onChange={(e) => handleImageUpload(e, candidate.id!)}
+                                            />
+                                        </Button>
                                         <IconButton edge="end" aria-label="delete" color="error" onClick={() => setDeleteTarget(candidate)}>
                                             <DeleteIcon />
                                         </IconButton>
