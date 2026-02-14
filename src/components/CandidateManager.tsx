@@ -142,43 +142,49 @@ export default function CandidateManager() {
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                // Expected format: Name_YYYYMMDD_Position.jpg/png
+                // Expected format: Name.jpg/png
                 const filename = file.name;
-                const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
-                const parts = nameWithoutExt.split('_');
+                // Remove extension and trim
+                const name = filename.substring(0, filename.lastIndexOf('.')).trim();
 
-                if (parts.length < 3) {
+                if (!name) {
                     failCount++;
-                    failedNames.push(`${filename} (Format Mismatch)`);
+                    failedNames.push(`${filename} (No Name)`);
                     continue;
                 }
 
-                const name = parts[0];
-                // parts[1] is YYYYMMDD (ignored)
-                const position = parts[2];
+                // Find candidate by Name only
+                // If duplicates exist, pick the first one? Or ALL? 
+                // Let's match ALL candidates with that name (e.g. same person multiple positions? Unlikely but possible)
+                // Actually usually unique. Let's find matches.
+                const matchedCandidates = candidates.filter(c => c.name === name);
 
-                // Find candidate
-                const candidate = candidates.find(c => c.name === name && c.position === position);
-
-                if (!candidate || !candidate.id) {
+                if (matchedCandidates.length === 0) {
                     failCount++;
-                    failedNames.push(`${filename} (Candidate Not Found)`);
+                    failedNames.push(`${filename} (No Match)`);
                     continue;
                 }
 
                 try {
                     const compressedFile = await imageCompression(file, options);
-                    const storageRef = ref(storage, `elections/${activeElectionId}/candidates/${candidate.id}/profile.jpg`);
-                    await uploadBytes(storageRef, compressedFile);
-                    const downloadURL = await getDownloadURL(storageRef);
 
-                    const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidate.id);
-                    await updateDoc(candidateRef, { photoUrl: downloadURL });
+                    // Upload for EACH matched candidate (if duplicates exist)
+                    // Usually just 1
+                    for (const candidate of matchedCandidates) {
+                        if (!candidate.id) continue;
 
-                    // Update local state immediately for better UX
-                    setCandidates(prev => prev.map(c =>
-                        c.id === candidate.id ? { ...c, photoUrl: downloadURL } : c
-                    ));
+                        const storageRef = ref(storage, `elections/${activeElectionId}/candidates/${candidate.id}/profile.jpg`);
+                        await uploadBytes(storageRef, compressedFile);
+                        const downloadURL = await getDownloadURL(storageRef);
+
+                        const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidate.id);
+                        await updateDoc(candidateRef, { photoUrl: downloadURL });
+
+                        // Update local state immediately
+                        setCandidates(prev => prev.map(c =>
+                            c.id === candidate.id ? { ...c, photoUrl: downloadURL } : c
+                        ));
+                    }
 
                     successCount++;
                 } catch (err) {
@@ -255,7 +261,7 @@ export default function CandidateManager() {
                 </Button>
             </Box>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-                * 일괄 업로드 파일명 형식: <strong>이름_YYYYMMDD_직분.jpg</strong> (예: 홍길동_19800101_장로.jpg)
+                * 일괄 업로드 파일명 형식: <strong>이름.jpg</strong> (예: 홍길동.jpg) - 이름이 일치하는 후보자에게 자동 적용됩니다.
             </Typography>
 
             {loading ? (
