@@ -14,7 +14,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 // Use initializeFirestore with experimentalForceLongPolling to bypass some firewalls
-console.log("[Firebase] Initializing with LongPolling. API Key exists?", !!firebaseConfig.apiKey);
+console.log("[Firebase] Initializing Firestore...");
 console.log("[Firebase] Project ID:", firebaseConfig.projectId);
 console.log("[Firebase] Storage Bucket:", firebaseConfig.storageBucket);
 const db = initializeFirestore(app, {});
