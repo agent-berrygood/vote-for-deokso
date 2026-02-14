@@ -288,7 +288,17 @@ export default function CandidateManager() {
                                     </ListItemAvatar>
                                     <ListItemText
                                         primary={`${candidate.name} (${candidate.position})`}
-                                        secondary={`${calculateAge(candidate.birthdate, candidate.age)}세 | 현재 득표: ${Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}`}
+                                        secondary={
+                                            <>
+                                                <Typography component="span" variant="body2" color="text.primary">
+                                                    {calculateAge(candidate.birthdate, candidate.age)}세 | 현재 득표: {Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}
+                                                </Typography>
+                                                <br />
+                                                <Typography component="span" variant="caption" color="text.secondary">
+                                                    {candidate.profileDesc || "이력 없음"}
+                                                </Typography>
+                                            </>
+                                        }
                                     />
                                     <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Button

@@ -263,7 +263,8 @@ export default function AdminPage() {
                         photoUrl: getDriveImageUrl(row.PhotoLink || ''),
                         voteCount: 0,
                         votesByRound: { [uploadRound]: 0 },
-                        round: uploadRound
+                        round: uploadRound,
+                        profileDesc: row.ProfileDesc ? String(row.ProfileDesc).trim() : ''
                     };
                     batch.set(newDocRef, candidateData);
                 });

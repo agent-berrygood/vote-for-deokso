@@ -2,66 +2,55 @@
 
 ## 1. 현재 상태 (Current Status)
 - **프로젝트**: `vote-for-deokso` (Next.js + Firebase)
-- **Firebase 프로젝트**: `vote-for-deokso-back` (신규 프로젝트)
-- **DB (Firestore)**:
-    - 선거 ID: `당회보고용`
-    - 후보자 데이터: 약 750명 업로드 완료.
-    - 사진 경로: `/images/candidates/[type]/[name].jpg` (로컬 경로) 형식으로 업데이트 완료.
-- **사진 (Images)**:
-    - 위치: `public/images/candidates` (권사, 안수집사, 장로 폴더 및 파일들)
-    - 상태: **300px, 80% 품질 (약 30~50KB)**로 리사이징 및 고화질 압축 완료.
-    - 확장자: **모두 `.jpg`로 통일됨** (기존 .png 등 혼용 문제 해결).
+- **배포**: Vercel (Static Assets)
+- **주요 변경 사항**:
+    - **이미지 최적화**: 300px, 80% 품질 (JPG), 로컬 호스팅 방식으로 변경 (DB 의존성 제거).
+    - **봉사 이력 추가**: 후보자 데이터에 `profileDesc` 추가 및 엑셀 업로드 지원.
+    - **UI 개선**:
+        - **PC**: 2열 그리드, 가로형 카드 배치 (좌측: 사진/정보, 우측: 봉사 이력).
+        - **Mobile**: 1열 그리드, 꽉 찬 카드 배치.
 
-## 2. 주요 이슈 및 해결 방안 (Issues & Fixes)
+## 2. 주요 기능 상세 (Key Features)
 
-### 🚨 Firestore 할당량 초과 (Quota Exceeded)
-- **증상**: 사이트 접속 시 데이터를 불러오지 못하고 에러 발생.
-- **원인**: 무료 플랜(Spark)의 일일 읽기 한도(50,000회) 초과. (후보자 750명 x 반복 새로고침)
+### A. 이미지 처리 (Image Optimization)
+- 기존의 불규칙한 크기와 포맷(PNG/JPG 혼용) 문제를 해결.
+- `scripts/copy_and_resize.mjs` 스크립트를 통해 일괄 변환:
+    - **Resize**: 가로 300px (세로 자동).
+    - **Format**: `.jpg`로 통일.
+    - **Quality**: 80% (용량 30~50KB 수준으로 최적화).
+- **경로**: `/images/candidates/[Name].jpg` (한글 이름은 자동 인코딩 처리).
+
+### B. 후보자 봉사 이력 (Service History)
+- **DB 필드**: `profileDesc` (String).
+- **업로드**: 관리자 페이지에서 엑셀/CSV 업로드 시 `ProfileDesc` 칼럼을 자동 인식하여 저장.
+- **표시**: 투표 화면 카드 우측에 상세 봉사 이력 표시 (줄바꿈 지원).
+
+### C. 반응형 디자인 (Responsive UI)
+- **Grid Layout**:
+    - PC/Tablet (sm 이상): `6` (2 Columns) - 정보 밀도를 높이고 가독성 확보.
+    - Mobile (xs): `12` (1 Column) - 작은 화면에서 정보를 명확히 전달.
+- **Card Design**:
+    - 높이 맞춤 (`alignItems: stretch`).
+    - 직분/차수 칩(Chip) 디자인 통일.
+
+## 3. 남아있는 이슈 & 가이드 (Known Issues & Guide)
+
+### 🚨 Firestore 할당량 (Quota)
+- **현상**: 후보자 목록이 뜨지 않음 (빈 화면).
+- **원인**: 무료 플랜(Spark)의 일일 읽기 할당량(50k) 초과.
 - **해결**:
-    1. **기다리기**: 매일 오후 5시(한국시간) 리셋.
-    2. **업그레이드**: Blaze 요금제(종량제)로 변경.
+    - 한국 시간 **오후 5시**에 리셋됨.
+    - 리셋 후 정상 작동함. (이미지는 DB와 무관하게 뜨도록 수정됨).
 
-### ⚠️ 이미지 엑박 (Image Not Loading)
-- **증상**: 배포 후 이미지가 안 뜸.
-- **원인**: 리눅스(Vercel) 환경에서 **한글 파일명**을 제대로 인식하지 못할 가능성 큼.
-- **해결 예정 (To-Do)**:
-    - `src/components/CandidateManager.tsx`에서 이미지 `src`에 `encodeURI()` 적용 필요.
-    - 예: `<Avatar src={encodeURI(candidate.profileUrl)} ... />`
+### 🛠️ 개발/배포 가이드
+- **로컬 실행**: `npm run dev`
+- **배포**: `git push origin main` (Vercel 자동 배포)
+- **이미지 업데이트**:
+    1. 원본 이미지를 로컬 특정 폴더에 준비.
+    2. `npm run resize-images` (또는 `node scripts/copy_and_resize.mjs`) 실행.
+    3. `public/images/candidates` 폴더의 변경사항을 Git에 커밋 & 푸시.
 
-## 3. 다음 작업 가이드 (Next Steps)
-다른 컴퓨터에서 작업을 이어가시려면:
-
-1. **프로젝트 클론 및 설치**:
-   ```bash
-   git clone [레포지토리 주소]
-   cd vote-for-deokso
-   npm install
-   ```
-
-2. **환경 변수 확인**:
-   `.env.local` 파일이 있는지 확인 (없으면 Vercel 환경변수 참조하여 생성).
-
-3. **코드 수정 (이미지 인코딩)**:
-   `src/components/CandidateManager.tsx` 파일 열기.
-   `Avatar` 컴포넌트의 `src` 부분을 찾아서 아래와 같이 수정:
-   ```tsx
-   // 수정 전
-   src={candidate.profileUrl || ''}
-   
-   // 수정 후
-   src={candidate.profileUrl ? encodeURI(candidate.profileUrl) : ''}
-   ```
-
-4. **배포**:
-   ```bash
-   git add .
-   git commit -m "fix: encode image urls for korean filenames"
-   git push
-   ```
-
-## 4. 스크립트 도구 (Scripts)
-`scripts/` 폴더에 유용한 도구들이 있습니다:
-- `resize_images.mjs`: `public/images` 내의 이미지를 리사이징.
-- `copy_and_resize.mjs`: 구글 드라이브(원본)에서 이미지를 가져와 300px/80% 품질로 변환 및 `.jpg`로 통일하여 저장.
-- `upload_candidates.mjs`: 로컬 이미지를 스캔하여 DB의 `profileUrl` 업데이트 (스토리지 안 씀).
-- `fix_extensions.mjs`: DB의 `.png` 확장자를 `.jpg`로 일괄 수정.
+## 4. 유용한 스크립트
+- `scripts/copy_and_resize.mjs`: 이미지 리사이징 및 복사.
+- `scripts/upload_candidates.js`: (구버전) DB 업로드 스크립트.
+- `src/utils/hangul.ts`: 한글 초성 검색 유틸리티.

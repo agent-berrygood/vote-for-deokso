@@ -433,7 +433,7 @@ export default function VotePage() {
                     ) : finalCandidates.map((candidate) => {
                         const isSelected = selectedIds.includes(candidate.id!);
                         return (
-                            <Grid size={{ xs: 6, sm: 4, md: 3 }} key={candidate.id}>
+                            <Grid size={{ xs: 12, sm: 6 }} key={candidate.id}>
                                 <Card
                                     sx={{
                                         position: 'relative',
@@ -441,30 +441,47 @@ export default function VotePage() {
                                         border: isSelected ? '2px solid #1976d2' : '1px solid #eee',
                                         transition: 'all 0.2s',
                                         transform: isSelected ? 'scale(1.02)' : 'none',
+                                        display: 'flex', // Horizontal Layout
+                                        height: '100%',
+                                        minHeight: 180,
+                                        alignItems: 'stretch'
                                     }}
                                     onClick={() => handleToggle(candidate.id!)}
                                 >
-                                    <CardMedia
-                                        component="img"
-                                        image={`/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
-                                        alt={candidate.name}
-                                        sx={{ height: 180, objectFit: 'cover' }}
-                                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; }}
-                                    />
-                                    <CardContent sx={{ p: 1.5, pb: '1.5 !important', textAlign: 'center' }}>
-                                        <Chip
-                                            label={`${candidate.position} ${candidate.round || 1}차`}
-                                            size="small"
-                                            color="secondary"
-                                            sx={{ mb: 1, fontSize: '0.7rem' }}
+                                    {/* Left Side: Image & Basic Info (40% width) */}
+                                    <Box sx={{ width: '40%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
+                                        <CardMedia
+                                            component="img"
+                                            image={`/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
+                                            alt={candidate.name}
+                                            sx={{ height: 120, objectFit: 'cover' }}
+                                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; }}
                                         />
-                                        <Typography variant="h6" component="div" fontWeight="bold">
-                                            {candidate.name}
+                                        <CardContent sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                            <Typography variant="h6" component="div" fontWeight="bold" sx={{ fontSize: '1.1rem' }}>
+                                                {candidate.name}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {calculateAge(candidate.birthdate, candidate.age)}세
+                                            </Typography>
+                                            <Chip
+                                                label={`${candidate.position} ${candidate.round || 1}차`}
+                                                size="small"
+                                                color="secondary"
+                                                sx={{ mt: 0.5, fontSize: '0.7rem', alignSelf: 'center' }}
+                                            />
+                                        </CardContent>
+                                    </Box>
+
+                                    {/* Right Side: Service History (60% width) */}
+                                    <Box sx={{ width: '60%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center', bgcolor: '#fafafa' }}>
+                                        <Typography variant="caption" color="text.secondary" fontWeight="bold" gutterBottom>
+                                            주요 봉사 이력
                                         </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {calculateAge(candidate.birthdate, candidate.age)}세
+                                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                                            {candidate.profileDesc || "이력이 없습니다."}
                                         </Typography>
-                                    </CardContent>
+                                    </Box>
 
                                     {/* Selection Overlay/Checkbox */}
                                     <Checkbox
@@ -476,7 +493,8 @@ export default function VotePage() {
                                             color: 'primary.main',
                                             bgcolor: 'rgba(255,255,255,0.8)',
                                             '&:hover': { bgcolor: 'rgba(255,255,255,1)' },
-                                            borderRadius: '50%'
+                                            borderRadius: '50%',
+                                            zIndex: 10
                                         }}
                                     />
                                 </Card>

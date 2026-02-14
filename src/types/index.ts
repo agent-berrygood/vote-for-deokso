@@ -8,6 +8,7 @@ export interface Candidate {
     voteCount: number; // For backward compatibility (or current round total)
     votesByRound?: { [key: number]: number }; // e.g. { 1: 50, 2: 30 }
     round?: number; // The round this candidate belongs to (Default 1)
+    profileDesc?: string; // Career/Service History
 }
 
 export interface Voter {
