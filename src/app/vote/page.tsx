@@ -446,9 +446,10 @@ export default function VotePage() {
                                 >
                                     <CardMedia
                                         component="img"
-                                        image={candidate.photoUrl || 'https://via.placeholder.com/150?text=No+Image'}
+                                        image={`/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
                                         alt={candidate.name}
                                         sx={{ height: 180, objectFit: 'cover' }}
+                                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; }}
                                     />
                                     <CardContent sx={{ p: 1.5, pb: '1.5 !important', textAlign: 'center' }}>
                                         <Chip

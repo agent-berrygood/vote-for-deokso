@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -32,12 +31,12 @@ console.log("Initializing Firebase with config:", firebaseConfig.projectId);
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-// NOTE: Hardcoded based on user context, verify if this ID is active in 'settings/system' if needed.
-// But user seems to be using default-2026.
-const ELECTION_ID = 'default-2026';
+// Updated based on user feedback
+const ELECTION_ID = '당회보고용';
 
+// Start mapping from local drive
+// Target: Store paths as "/images/candidates/[type]/[filename]"
 const BASE_DIR = "j:\\내 드라이브\\선거 테스트\\당회보고용";
 
 const FOLDER_MAPPING = {
@@ -46,7 +45,7 @@ const FOLDER_MAPPING = {
     "장로후보": "elder"
 };
 
-async function uploadImages() {
+async function updateImagePaths() {
     console.log(`[Start] Fetching candidates for Election: ${ELECTION_ID}`);
     const candidatesRef = collection(db, `elections/${ELECTION_ID}/candidates`);
 
@@ -83,47 +82,27 @@ async function uploadImages() {
             if (!file.match(/\.(jpg|jpeg|png|gif)$/i)) continue;
 
             const rawName = path.parse(file).name;
-            // Normalize name: remove whitespace, normalize unicode
             const name = rawName.normalize('NFC').trim();
 
-            // Find candidate by exact name match
-            // Note: DB names might also need normalization if they were imported loosely
             const candidate = candidates.find(c => c.name.normalize('NFC').trim() === name);
 
             if (!candidate) {
-                // console.warn(`[Skip] No matched candidate for file: ${file} (Parsed: ${name})`);
                 continue;
             }
 
             console.log(`[Match] ${name} -> ${candidate.id}`);
 
             try {
-                const filePath = path.join(dirPath, file);
-                const fileBuffer = fs.readFileSync(filePath);
+                // Construct public path
+                // Assuming images will be moved to public/images/candidates/[type]/
+                const publicPath = `/images/candidates/${type}/${file}`;
 
-                // Upload to Storage
-                // Path: elections/{electionId}/candidates/{candidateId}/profile.jpg
-                // We use .jpg as standard or preserve original extension? 
-                // Let's preserve original extension to be safe, or convert. 
-                // But browser uses basic upload. Let's just use the file extension from the file.
-                const ext = path.parse(file).ext;
-                const storagePath = `elections/${ELECTION_ID}/candidates/${candidate.id}/profile${ext}`;
-                const storageRef = ref(storage, storagePath);
-
-                // Set content type
-                let contentType = 'image/jpeg';
-                if (ext.toLowerCase() === '.png') contentType = 'image/png';
-                if (ext.toLowerCase() === '.gif') contentType = 'image/gif';
-
-                await uploadBytes(storageRef, fileBuffer, { contentType });
-                const downloadURL = await getDownloadURL(storageRef);
-
-                // Update Firestore
+                // Update Firestore ONLY
                 await updateDoc(doc(db, `elections/${ELECTION_ID}/candidates`, candidate.id), {
-                    profileUrl: downloadURL
+                    profileUrl: publicPath
                 });
 
-                console.log(`[Success] Uploaded for ${name}: ${downloadURL}`);
+                console.log(`[Success] Path Updated for ${name}: ${publicPath}`);
                 successCount++;
             } catch (error) {
                 console.error(`[Error] Failed ${name}:`, error.message);
@@ -134,4 +113,4 @@ async function uploadImages() {
     console.log(`[Done] Success: ${successCount}, Failed: ${failCount}`);
 }
 
-uploadImages();
+updateImagePaths();

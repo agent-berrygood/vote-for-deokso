@@ -8,9 +8,9 @@
     - 후보자 데이터: 약 750명 업로드 완료.
     - 사진 경로: `/images/candidates/[type]/[name].jpg` (로컬 경로) 형식으로 업데이트 완료.
 - **사진 (Images)**:
-    - 위치: `public/images/candidates` (권사, 안수집사, 장로 폴더)
-    - 상태: **150px, 약 3KB**로 리사이징 및 압축 완료.
-    - 확장자: 모두 `.jpg`로 통일됨.
+    - 위치: `public/images/candidates` (권사, 안수집사, 장로 폴더 및 파일들)
+    - 상태: **300px, 80% 품질 (약 30~50KB)**로 리사이징 및 고화질 압축 완료.
+    - 확장자: **모두 `.jpg`로 통일됨** (기존 .png 등 혼용 문제 해결).
 
 ## 2. 주요 이슈 및 해결 방안 (Issues & Fixes)
 
@@ -61,6 +61,7 @@
 
 ## 4. 스크립트 도구 (Scripts)
 `scripts/` 폴더에 유용한 도구들이 있습니다:
-- `resize_images.mjs`: `public/images` 내의 이미지를 100px로 리사이징.
+- `resize_images.mjs`: `public/images` 내의 이미지를 리사이징.
+- `copy_and_resize.mjs`: 구글 드라이브(원본)에서 이미지를 가져와 300px/80% 품질로 변환 및 `.jpg`로 통일하여 저장.
 - `upload_candidates.mjs`: 로컬 이미지를 스캔하여 DB의 `profileUrl` 업데이트 (스토리지 안 씀).
 - `fix_extensions.mjs`: DB의 `.png` 확장자를 `.jpg`로 일괄 수정.
