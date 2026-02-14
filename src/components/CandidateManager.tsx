@@ -145,7 +145,10 @@ export default function CandidateManager() {
                 // Expected format: Name.jpg/png
                 const filename = file.name;
                 // Remove extension and trim
-                const name = filename.substring(0, filename.lastIndexOf('.')).trim();
+                const rawName = filename.substring(0, filename.lastIndexOf('.'));
+                const name = rawName.normalize('NFC').trim();
+
+                console.log(`[BulkUpload Debug] Processing file: ${filename} -> Parsed Name: '${name}' (Normalized)`);
 
                 if (!name) {
                     failCount++;
@@ -153,13 +156,11 @@ export default function CandidateManager() {
                     continue;
                 }
 
-                // Find candidate by Name only
-                // If duplicates exist, pick the first one? Or ALL? 
-                // Let's match ALL candidates with that name (e.g. same person multiple positions? Unlikely but possible)
-                // Actually usually unique. Let's find matches.
-                const matchedCandidates = candidates.filter(c => c.name === name);
+                // Find candidate by Name only (normalized)
+                const matchedCandidates = candidates.filter(c => c.name.normalize('NFC').trim() === name);
 
                 if (matchedCandidates.length === 0) {
+                    console.warn(`[BulkUpload] No match found for '${name}'. Candidate names available (first 5):`, candidates.slice(0, 5).map(c => c.name));
                     failCount++;
                     failedNames.push(`${filename} (No Match)`);
                     continue;
