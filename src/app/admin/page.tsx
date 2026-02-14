@@ -112,9 +112,17 @@ export default function AdminPage() {
 
     const handleCreateElection = async () => {
         if (!newElectionId.trim()) return;
-        await createElection(newElectionId);
-        setNewElectionId('');
-        setMessage({ type: 'success', text: `선거 '${newElectionId}'가 생성되었습니다!` });
+        setLoading(true);
+        try {
+            await createElection(newElectionId);
+            setNewElectionId('');
+            setMessage({ type: 'success', text: `선거 '${newElectionId}'가 생성되었습니다!` });
+        } catch (err: any) {
+            console.error("Failed to create election:", err);
+            setMessage({ type: 'error', text: `선거 생성 실패: ${err.message || err}` });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSaveSettings = async () => {
