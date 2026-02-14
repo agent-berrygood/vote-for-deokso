@@ -2,7 +2,8 @@ export interface Candidate {
     id?: string; // Firestore ID
     name: string;
     position: string; // e.g., '장로', '안수집사', '권사'
-    age: number;
+    birthdate?: string; // YYYYMMDD or equivalent
+    age?: number; // Deprecated, but keeping for legacy
     photoUrl: string; // Original or transformed URL
     voteCount: number; // For backward compatibility (or current round total)
     votesByRound?: { [key: number]: number }; // e.g. { 1: 50, 2: 30 }

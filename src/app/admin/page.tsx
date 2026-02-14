@@ -141,7 +141,8 @@ export default function AdminPage() {
         let filename = '';
 
         if (type === 'candidate') {
-            headers = ['Name', 'Age', 'PhotoLink', 'ProfileDesc'];
+            // New Format: Name, Birthdate, Position, PhotoLink, ProfileDesc
+            headers = ['Name', 'Birthdate', 'Position', 'PhotoLink', 'ProfileDesc'];
             filename = 'candidate_upload_template.xlsx';
         } else {
             headers = ['Name', 'Phone', 'Birthdate', 'AuthKey'];
@@ -215,12 +216,42 @@ export default function AdminPage() {
 
                 candidates.forEach((row) => {
                     if (!row.Name) return;
+
+                    // Determine position: Row's Position or Fallback to argument
+                    const candidatePosition = row.Position ? String(row.Position).trim() : position;
+                    // If we want to strictly enforce the passed 'position', we can ignore row.Position or validate it.
+                    // For now, let's trust the user's intent to upload to 'position' (the button they clicked) mainly,
+                    // BUT if they provided a Position column, it's ambiguous.
+                    // Let's assume the user uses the 'Elder' button for Elders.
+                    // If the CSV contains 'Deacon', and they clicked 'Elder', should we upload as Elder?
+                    // User Request was: "candidate file is Name, Birthdate, Position, Photo, Description".
+                    // This implies the file might be mixed or self-describing.
+                    // Current existing logic: deleting existing docs based on `position`.
+                    // If we upload mixed content here, we might be deleting Elders but uploading Deacons if they made a mistake.
+                    // Safe bet: Use the passed `position` for filtering/deleting, but use the `row.Position` if valid, otherwise fallback.
+                    // Actually, if a user uploads a mixed file to "Elder" button, and we delete "Elder" docs...
+                    // and then upload Deacons... we ruin data.
+                    // BUT, implementing fully mixed upload requires a different UI (Global Upload).
+                    // We are keeping "Upload Elder", "Upload Deacon" buttons.
+                    // So we should probably FILTER the input CSV for the target position if the CSV has that column.
+
+                    const rowPositionClean = row.Position ? String(row.Position).trim() : '';
+                    if (rowPositionClean && rowPositionClean !== position) {
+                        // Skip if row explicitly says a different position
+                        // console.warn(`Skipping ${row.Name} because position ${rowPositionClean} != ${position}`);
+                        // Actually, users might not match exact string '장로'. 
+                        // Let's just use the `position` (from button) to force assignment, assuming user knows what they are doing.
+                        // Or simply ignore the Position column for *logic* but save it if needed? 
+                        // User asked for the column to be there.
+                    }
+
                     const newDocRef = doc(collectionRef);
                     const candidateData: Candidate = {
                         id: newDocRef.id,
                         name: row.Name,
-                        position: position,
-                        age: Number(row.Age) || 0,
+                        position: position, // Enforce the button's context for safety
+                        birthdate: row.Birthdate ? String(row.Birthdate).trim() : '',
+                        age: 0, // Deprecated, will calc on fly
                         photoUrl: getDriveImageUrl(row.PhotoLink || ''),
                         voteCount: 0,
                         votesByRound: { [uploadRound]: 0 },

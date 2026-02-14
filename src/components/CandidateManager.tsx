@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import imageCompression from 'browser-image-compression';
 import { Candidate } from '@/types';
+import { calculateAge } from '@/utils/age';
 import { useElection } from '@/hooks/useElection';
 import {
     Box,
@@ -276,7 +277,7 @@ export default function CandidateManager() {
                                     </ListItemAvatar>
                                     <ListItemText
                                         primary={`${candidate.name} (${candidate.position})`}
-                                        secondary={`${candidate.age}세 | 현재 득표: ${Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}`}
+                                        secondary={`${calculateAge(candidate.birthdate, candidate.age)}세 | 현재 득표: ${Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}`}
                                     />
                                     <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Button

@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Candidate } from '@/types';
+import { calculateAge } from '@/utils/age';
 import {
     Box,
     Container,
@@ -197,11 +198,7 @@ export default function VotePage() {
         }
     };
 
-    const calculateAge = (birthYear: number) => {
-        // If age is directly stored as number, return it. 
-        // Or assuming 'age' field is actually age.
-        return birthYear;
-    };
+
 
     const handleSubmitVote = async () => {
         if (selectedIds.length === 0) {
@@ -464,7 +461,7 @@ export default function VotePage() {
                                             {candidate.name}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            {candidate.age}세
+                                            {calculateAge(candidate.birthdate, candidate.age)}세
                                         </Typography>
                                     </CardContent>
 
