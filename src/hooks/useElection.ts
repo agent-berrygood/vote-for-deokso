@@ -27,6 +27,9 @@ export function useElection() {
                 setElectionList([DEFAULT_ELECTION_ID]);
             }
             setLoading(false);
+        }, (error) => {
+            console.error("Failed to subscribe to election settings:", error);
+            setLoading(false);
         });
 
         return () => unsubscribe();

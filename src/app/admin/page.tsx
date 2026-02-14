@@ -425,7 +425,7 @@ export default function AdminPage() {
     return (
         <Container maxWidth="md" sx={{ py: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-                어드민 대시보드
+                어드민 대시보드 (v2)
             </Typography>
 
             {message && (
