@@ -139,13 +139,17 @@ export default function LoginPage() {
 
   const handleRequestAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Button Clicked - v0.2");
+
     if (!activeElectionId) {
+      console.log("No Active Election ID");
       setError('현재 진행 중인 선거가 없거나 설정을 불러오지 못했습니다.');
       return;
     }
 
     // Basic Validation
     if (!name || !phone || !birthdate) {
+      console.log("Validation Failed:", { name, phone, birthdate });
       setError('모든 정보를 입력해주세요.');
       return;
     }
@@ -273,7 +277,7 @@ export default function LoginPage() {
     <Container component="main" maxWidth="xs">
       <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          높은뜻덕소교회 장로, 안수집사, 권사 선거
+          높은뜻덕소교회 장로, 안수집사, 권사 선거 (v0.2)
         </Typography>
 
         <Box sx={{ mt: 1, width: '100%' }}>
