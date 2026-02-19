@@ -74,7 +74,7 @@ export default function LoginPage() {
         }
       });
     }
-  }, []); // Run once on mount
+  }, [electionLoading]); // Run when loading finishes and DOM exists
 
   // Voting Schedule State
   const [scheduleStatus, setScheduleStatus] = useState<'open' | 'not_started' | 'ended'>('open');
