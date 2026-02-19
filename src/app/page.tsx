@@ -201,7 +201,10 @@ export default function LoginPage() {
       sessionStorage.setItem('tempVoterName', name);
 
     } catch (err: any) {
-      console.error(err);
+      console.error("Auth Error Object:", err);
+
+      const errorCode = err.code || err.message || JSON.stringify(err);
+
       if (err.code === 'auth/invalid-phone-number') {
         setError('유효하지 않은 전화번호입니다.');
       } else if (err.code === 'auth/too-many-requests') {
@@ -209,7 +212,7 @@ export default function LoginPage() {
       } else if (err.code === 'auth/captcha-check-failed') {
         setError('로봇 인증에 실패했습니다. 다시 시도해주세요.');
       } else {
-        setError(`인증 번호 발송 실패 (${err.code}). 관리자에게 문의하세요.`);
+        setError(`인증 번호 발송 실패 (${errorCode}). 관리자에게 문의하세요.`);
       }
 
       // Reset Recaptcha on error if needed
@@ -261,9 +264,14 @@ export default function LoginPage() {
         setStep(1);
       }
 
-    } catch (err: any) {
-      console.error(err);
-      setError('인증번호가 올바르지 않습니다.');
+    } catch (error: any) {
+      console.error("Auth Error Object:", error);
+      const errorCode = error.code || error.message || JSON.stringify(error);
+      setError(`인증 번호 발송 실패 (${errorCode}). 관리자에게 문의하세요.`);
+
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+      }
     } finally {
       setLoading(false);
     }
