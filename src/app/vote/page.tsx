@@ -452,7 +452,7 @@ export default function VotePage() {
                                     <Box sx={{ width: '40%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
                                         <CardMedia
                                             component="img"
-                                            image={`/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
+                                            image={candidate.photoUrl || `/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
                                             alt={candidate.name}
                                             sx={{ height: 120, objectFit: 'cover' }}
                                             onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; }}

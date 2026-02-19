@@ -279,7 +279,7 @@ export default function CandidateManager() {
                                 <ListItem>
                                     <ListItemAvatar>
                                         <Avatar
-                                            src={`/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
+                                            src={candidate.photoUrl || `/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
                                             alt={candidate.name}
                                             imgProps={{ onError: (e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; } }}
                                         >

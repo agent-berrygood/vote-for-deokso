@@ -13,11 +13,23 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-// Use initializeFirestore with experimentalForceLongPolling to bypass some firewalls
+
+// Initialize Services
 console.log("[Firebase] Initializing Firestore...");
-console.log("[Firebase] Project ID:", firebaseConfig.projectId);
-console.log("[Firebase] Storage Bucket:", firebaseConfig.storageBucket);
 const db = initializeFirestore(app, {});
 const storage = getStorage(app);
 
-export { app, db, storage };
+// Analytics (Client Side Only)
+let analytics;
+if (typeof window !== "undefined") {
+  import("firebase/analytics").then(({ getAnalytics, isSupported }) => {
+    isSupported().then(supported => {
+      if (supported) {
+        analytics = getAnalytics(app);
+        console.log("[Firebase] Analytics initialized");
+      }
+    });
+  });
+}
+
+export { app, db, storage, analytics };
