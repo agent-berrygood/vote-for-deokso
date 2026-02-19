@@ -139,7 +139,10 @@ export default function LoginPage() {
 
   const handleRequestAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeElectionId) return;
+    if (!activeElectionId) {
+      setError('현재 진행 중인 선거가 없거나 설정을 불러오지 못했습니다.');
+      return;
+    }
 
     // Basic Validation
     if (!name || !phone || !birthdate) {
