@@ -45,10 +45,5 @@ src/lib/kakaoService.ts
 # Test Data
 test_data/
 
-# Report Data (Only allow images)
-당회보고용/**
-!당회보고용/**/
-!당회보고용/**/*.jpg
-!당회보고용/**/*.jpeg
-!당회보고용/**/*.png
-!당회보고용/**/*.gif
+# Report Data
+당회보고용/
