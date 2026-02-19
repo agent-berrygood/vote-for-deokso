@@ -346,13 +346,13 @@ export default function LoginPage() {
                 인증번호 확인
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                카카오톡으로 전송된 7자리 인증번호를 입력해주세요.
+                문자로 전송된 6자리 인증번호를 입력해주세요.
               </Typography>
               <TextField
                 margin="normal"
                 required
                 fullWidth
-                label="인증번호"
+                label="인증번호 (6자리)"
                 autoFocus
                 value={inputAuthKey}
                 onChange={(e) => setInputAuthKey(e.target.value)}
