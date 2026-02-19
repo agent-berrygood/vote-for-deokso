@@ -43,6 +43,33 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useElection } from '@/hooks/useElection';
 import { getHangulInitial, ALPHABET_TABS } from '@/utils/hangul';
 
+// Separate component to handle image error state independently and prevent re-render flickering
+const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string }) => {
+    const [hasError, setHasError] = useState(false);
+
+    // Resolve initial source. 
+    // Optimization: If photoUrl is empty, we assume local file path based on name.
+    const initialSrc = photoUrl || `/images/candidates/${encodeURIComponent(name)}.jpg`;
+
+    if (hasError) {
+        return (
+            <Box sx={{ height: 120, width: '100%', bgcolor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #eee' }}>
+                <Typography variant="caption" color="text.secondary">사진 없음</Typography>
+            </Box>
+        );
+    }
+
+    return (
+        <CardMedia
+            component="img"
+            image={initialSrc}
+            alt={name}
+            sx={{ height: 120, objectFit: 'cover', width: '100%' }}
+            onError={() => setHasError(true)}
+        />
+    );
+};
+
 export default function VotePage() {
     const router = useRouter();
     const { activeElectionId, loading: electionLoading } = useElection(); // Add Hook
@@ -450,13 +477,7 @@ export default function VotePage() {
                                 >
                                     {/* Left Side: Image & Basic Info (40% width) */}
                                     <Box sx={{ width: '40%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
-                                        <CardMedia
-                                            component="img"
-                                            image={candidate.photoUrl || `/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
-                                            alt={candidate.name}
-                                            sx={{ height: 120, objectFit: 'cover' }}
-                                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; }}
-                                        />
+                                        <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl} />
                                         <CardContent sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                             <Typography variant="h6" component="div" fontWeight="bold" sx={{ fontSize: '1.1rem' }}>
                                                 {candidate.name}
