@@ -18,6 +18,11 @@ import {
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
 
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
