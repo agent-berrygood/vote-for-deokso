@@ -1,9 +1,10 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { Voter } from '@/types';
 import {
   Box,
@@ -16,19 +17,11 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
-// import { sendKakaoAuthCode } from '@/lib/kakaoService';
 
-// Mock function inlined to avoid build errors with gitignored files
-const sendKakaoAuthCode = async (phone: string, name: string, authKey: string): Promise<boolean> => {
-  console.log(`[MOCK KAKAO] Sending AuthCode '${authKey}' to ${name} (${phone})`);
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return true;
-};
 
 export default function LoginPage() {
   const router = useRouter();
-  const { activeElectionId, loading: electionLoading } = useElection();
+  const { activeElectionId, loading: electionLoading, error: electionError } = useElection();
 
   const [step, setStep] = useState<1 | 2>(1); // 1: Info Input, 2: Auth Verification
 
@@ -45,10 +38,46 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Firebase Auth State
+  const [verificationId, setVerificationId] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Recaptcha
+  useEffect(() => {
+    // Only initialize if container exists and verifier doesn't
+    if (recaptchaContainerRef.current && !window.recaptchaVerifier) {
+      import('firebase/auth').then(({ RecaptchaVerifier }) => {
+        // Double check ref.current to satisfy TS
+        if (recaptchaContainerRef.current) {
+          try {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+              'size': 'invisible',
+              'callback': (response: any) => {
+                console.log("Recaptcha verified");
+              },
+              'expired-callback': () => {
+                console.log("Recaptcha expired");
+                // window.recaptchaVerifier.clear();
+                // window.recaptchaVerifier = null;
+              }
+            });
+          } catch (e) {
+            console.error("Recaptcha Init Error:", e);
+          }
+        }
+      });
+    }
+  }, []); // Run once on mount
+
   // Voting Schedule State
   const [scheduleStatus, setScheduleStatus] = useState<'open' | 'not_started' | 'ended'>('open');
   const [scheduleMessage, setScheduleMessage] = useState('');
 
+  // ... (Voting Schedule State remains)
+
+  // ... (useEffect for schedule remains)
   useEffect(() => {
     if (!activeElectionId) return;
 
@@ -113,79 +142,118 @@ export default function LoginPage() {
       return;
     }
 
+    // Format Phone for Firebase (+82)
+    const formattedPhone = phone.replace(/-/g, '').replace(/^0/, '+82');
+
     setLoading(true);
     setError('');
 
     try {
-      // Find voter in DB
+      // 1. Check if user exists in Firestore
       const votersRef = collection(db, `elections/${activeElectionId}/voters`);
-      // Note: Firestore querying with multiple fields requires an index. 
-      // If we query just by 'name' and filter in client, it might be safer for now to avoid Index creation errors during dev.
-      // But let's try strict query. If index error, I'll switch to client filtering.
-
       const q = query(
         votersRef,
         where('name', '==', name.trim()),
         where('phone', '==', phone.trim()),
         where('birthdate', '==', birthdate.trim())
       );
+      const snapshot = await getDocs(q);
 
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        // Fallback: Try querying by Name only and check fields manually (to handle loose matching or debug)
-        const nameQ = query(votersRef, where('name', '==', name.trim()));
-        const nameSnap = await getDocs(nameQ);
-
-        if (nameSnap.empty) {
-          setError('선거인 명부에 존재하지 않는 사용자입니다. (이름 확인)');
-          setLoading(false);
-          return;
-        } else {
-          // Name exists but other fields didn't match
-          setError('입력하신 정보(전화번호/생년월일)가 명부와 일치하지 않습니다.');
-          setLoading(false);
-          return;
-        }
+      if (snapshot.empty) {
+        setError('등록된 선거인 정보가 없습니다. (이름, 전화번호, 생년월일 확인)');
+        setLoading(false);
+        return;
       }
 
-      const voterDoc = querySnapshot.docs[0];
-      const voterData = voterDoc.data() as Voter;
+      const voterDoc = snapshot.docs[0];
+      const voterData = voterDoc.data();
 
-      console.log(`[DEBUG] Found Voter: ${voterData.name}, Key: ${voterData.authKey}`);
+      // 2. Send SMS via Firebase
+      const { signInWithPhoneNumber } = await import('firebase/auth');
 
-      // Send Kakao Mock
-      const sent = await sendKakaoAuthCode(voterData.phone || phone, voterData.name, voterData.authKey);
-
-      if (sent) {
-        setMatchedVoter(voterData);
-        setStep(2);
-        alert(`[인증번호 전송됨]\n(데모) 카카오톡으로 인증번호 [${voterData.authKey}] 가 전송되었습니다.`);
-      } else {
-        setError('인증번호 전송에 실패했습니다.');
+      // Ensure verifier exists (should be done in useEffect, but safe check)
+      if (!window.recaptchaVerifier) {
+        setError("보안 인증 초기화 중입니다. 잠시 후 다시 시도해주세요.");
+        setLoading(false);
+        return;
       }
 
-    } catch (err) {
+      const appVerifier = window.recaptchaVerifier;
+
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setStep(2);
+
+      // Save voter ID for later use
+      sessionStorage.setItem('tempVoterId', voterDoc.id);
+      sessionStorage.setItem('tempVoterName', name);
+
+    } catch (err: any) {
       console.error(err);
-      setError('서버 오류가 발생했습니다.');
+      if (err.code === 'auth/invalid-phone-number') {
+        setError('유효하지 않은 전화번호입니다.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.code === 'auth/captcha-check-failed') {
+        setError('로봇 인증에 실패했습니다. 다시 시도해주세요.');
+      } else {
+        setError(`인증 번호 발송 실패 (${err.code}). 관리자에게 문의하세요.`);
+      }
+
+      // Reset Recaptcha on error if needed
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.render().then((widgetId: any) => {
+          // window.recaptchaVerifier.reset(widgetId); // Optional
+        });
+      }
+
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerify = (e: React.FormEvent) => {
+  const handleConfirmCode = async (e: React.FormEvent) => { // Renamed from handleVerify
+    // ... (no changes needed here but required for context match if block big)
+    // I'll skip re-implementing this part in replacement if possible, 
+    // but replace_file_content needs contiguous block. 
+    // The instruction says Replace ID string with ref in useEffect and JSX.
+    // So I will target the useEffect block and the JSX block separately if possible.
+    // But multi_replace is better? No, I will use replace_file_content for the useEffect/logic part first.
+
+    // Wait, I can't leave the function half-implemented. 
+    // I will return the original handleConfirmCode logic in the replacement string.
     e.preventDefault();
-    if (!matchedVoter) return;
+    if (!confirmationResult) return;
 
-    if (inputAuthKey.trim() === matchedVoter.authKey) {
-      // Success
-      sessionStorage.setItem('voterId', matchedVoter.id || '');
-      sessionStorage.setItem('voterName', matchedVoter.name);
-      sessionStorage.setItem('electionId', activeElectionId || ''); // Store current election ID context
+    if (!inputAuthKey) {
+      setError('인증번호를 입력해주세요.');
+      return;
+    }
 
-      router.push('/vote');
-    } else {
+    setLoading(true);
+    try {
+      // 3. Confirm Code
+      await confirmationResult.confirm(inputAuthKey);
+
+      // 4. Success -> Proceed
+      const tempVoterId = sessionStorage.getItem('tempVoterId');
+      const tempVoterName = sessionStorage.getItem('tempVoterName');
+
+      if (tempVoterId && tempVoterName) {
+        sessionStorage.setItem('voterId', tempVoterId);
+        sessionStorage.setItem('voterName', tempVoterName);
+        sessionStorage.setItem('electionId', activeElectionId || '');
+        router.push('/vote');
+      } else {
+        setError("로그인 정보가 유실되었습니다. 처음부터 다시 시도해주세요.");
+        setStep(1);
+      }
+
+    } catch (err: any) {
+      console.error(err);
       setError('인증번호가 올바르지 않습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -200,14 +268,19 @@ export default function LoginPage() {
           높은뜻덕소교회 장로, 안수집사, 권사 선거
         </Typography>
 
-        <Paper sx={{ p: 4, width: '100%' }}>
+        <Box sx={{ mt: 1, width: '100%' }}>
+          <div ref={recaptchaContainerRef}></div>
+
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {scheduleStatus !== 'open' && (
             <Alert severity="warning" sx={{ mb: 2, fontWeight: 'bold' }}>
               {scheduleMessage}
             </Alert>
           )}
+        </Box>
 
+
+        <Paper sx={{ p: 4, width: '100%' }}>
           {step === 1 ? (
             <form onSubmit={handleRequestAuth}>
               <fieldset disabled={scheduleStatus !== 'open'} style={{ border: 'none', padding: 0 }}>
@@ -247,15 +320,16 @@ export default function LoginPage() {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
-                  disabled={loading || scheduleStatus !== 'open'}
+                  sx={{ mt: 3, mb: 2, bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
+                  onClick={handleConfirmCode}
+                  disabled={loading}
                 >
-                  {loading ? '확인 중...' : '인증번호 받기'}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : '인증 확인'}
                 </Button>
               </fieldset>
             </form>
           ) : (
-            <form onSubmit={handleVerify}>
+            <form onSubmit={handleConfirmCode}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="primary">
                 인증번호 확인
               </Typography>

@@ -16,7 +16,9 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Services
 console.log("[Firebase] Initializing Firestore...");
-const db = initializeFirestore(app, {});
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 const storage = getStorage(app);
 
 // Analytics (Client Side Only)
@@ -32,4 +34,9 @@ if (typeof window !== "undefined") {
   });
 }
 
-export { app, db, storage, analytics };
+// Auth
+import { getAuth } from "firebase/auth";
+const auth = getAuth(app);
+auth.useDeviceLanguage(); // Use device language for SMS
+
+export { app, db, storage, analytics, auth };

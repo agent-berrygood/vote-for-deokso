@@ -9,6 +9,7 @@ export function useElection() {
     const [activeElectionId, setActiveElectionId] = useState<string | null>(null);
     const [electionList, setElectionList] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, SYSTEM_SETTINGS_DOC), (docSnap) => {
@@ -16,6 +17,7 @@ export function useElection() {
                 const data = docSnap.data();
                 setActiveElectionId(data.activeElectionId || DEFAULT_ELECTION_ID);
                 setElectionList(data.electionList || [DEFAULT_ELECTION_ID]);
+                setError(null);
             } else {
                 // Initialize if not exists
                 const initData = {
@@ -27,8 +29,9 @@ export function useElection() {
                 setElectionList([DEFAULT_ELECTION_ID]);
             }
             setLoading(false);
-        }, (error) => {
-            console.error("Failed to subscribe to election settings:", error);
+        }, (err) => {
+            console.error("Failed to subscribe to election settings:", err);
+            setError(err.message);
             setLoading(false);
         });
 
@@ -67,6 +70,7 @@ export function useElection() {
         loading,
         createElection,
         switchElection,
-        getElectionPath
+        getElectionPath,
+        error
     };
 }

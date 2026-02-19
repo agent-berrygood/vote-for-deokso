@@ -63,7 +63,19 @@
 
 ---
 
-## 4. 향후 계획 (Next Steps)
+## 4. 최근 변경 사항 (Recent Updates - 2026.02.19)
+
+*   **Firebase 프로젝트 이전 (`deoksovote`) 완료**:
+    *   기존 개발용 프로젝트에서 정식 프로젝트로 연결 정보(`apiKey` 등) 변경 및 `process.env` 적용.
+    *   구글 애널리틱스(GA) 연동 추가.
+*   **후보자 이미지 로직 개선**:
+    *   **Cloud Prioritized**: Firebase Storage에 이미지가 있으면 우선 표시.
+    *   **Local Fallback**: 없을 경우 `public/images/candidates/` 폴더의 로컬 이미지 자동 사용.
+    *   이를 통해 배포 시 유연한 이미지 관리(코드 포함 vs 클라우드 관리) 가능.
+
+---
+
+## 5. 향후 계획 (Next Steps)
 
 1.  **카카오 알림톡 실연동**
     *   [카카오 비즈니스 채널 승인] 및 [알리고/솔라피] 등 대행사 계약 완료 필요.
