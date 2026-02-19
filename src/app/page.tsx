@@ -329,7 +329,7 @@ export default function LoginPage() {
                   fullWidth
                   variant="contained"
                   sx={{ mt: 3, mb: 2, bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
-                  onClick={handleConfirmCode}
+                  onClick={handleRequestAuth}
                   disabled={loading}
                 >
                   {loading ? <CircularProgress size={24} color="inherit" /> : '인증 확인'}
