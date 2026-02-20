@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Button, Container, TextField, Typography, Paper, Alert } from '@mui/material';
+import { Box, Button, Container, TextField, Typography, Paper } from '@mui/material';
 
 export default function AdminLogin() {
     const [password, setPassword] = useState('');

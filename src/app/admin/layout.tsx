@@ -11,21 +11,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Skip check for login page
-        if (pathname === '/admin/login') {
-            setAuthorized(true);
-            setLoading(false);
-            return;
-        }
+        if (pathname === '/admin/login') return;
 
         const auth = sessionStorage.getItem('admin_auth');
         if (auth === 'true') {
+            // eslint-disable-next-line
             setAuthorized(true);
         } else {
             router.replace('/admin/login');
         }
         setLoading(false);
     }, [pathname, router]);
+
+    if (pathname === '/admin/login') {
+        return <>{children}</>;
+    }
 
     if (loading) {
         return (
@@ -35,8 +35,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    if (!authorized && pathname !== '/admin/login') {
-        return null; // Or a restricted access message, but router.replace handles redirection
+    if (!authorized) {
+        return null;
     }
 
     return <>{children}</>;

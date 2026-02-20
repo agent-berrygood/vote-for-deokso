@@ -19,42 +19,41 @@ import {
     Card,
     Grid,
     CardMedia,
-    CardContent,
-    CardActions,
     Checkbox,
     Button,
     AppBar,
-    Toolbar,
-    Chip,
     Alert,
     CircularProgress,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Paper,
     Tabs,
-    Tab
+    Tab,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemAvatar,
+    Avatar
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import PersonIcon from '@mui/icons-material/Person';
 
 import { useElection } from '@/hooks/useElection';
 import { getHangulInitial, ALPHABET_TABS } from '@/utils/hangul';
 
-// Separate component to handle image error state independently and prevent re-render flickering
+// Constants
+const POSITION_ORDER = ['장로', '안수집사', '권사'];
+const TABS = [...POSITION_ORDER, '최종 확인'];
+
+// Separate component to handle image error state independently
 const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string }) => {
     const [hasError, setHasError] = useState(false);
-
-    // Resolve initial source. 
-    // Optimization: If photoUrl is empty, we assume local file path based on name.
     const initialSrc = photoUrl || `/images/candidates/${encodeURIComponent(name)}.jpg`;
 
     if (hasError) {
         return (
             <Box sx={{ height: 120, width: '100%', bgcolor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #eee' }}>
-                <Typography variant="caption" color="text.secondary">사진 없음</Typography>
+                <PersonIcon sx={{ color: 'text.secondary', fontSize: 40 }} />
             </Box>
         );
     }
@@ -72,12 +71,13 @@ const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string })
 
 export default function VotePage() {
     const router = useRouter();
-    const { activeElectionId, loading: electionLoading } = useElection(); // Add Hook
+    const { activeElectionId, loading: electionLoading } = useElection();
 
     const [candidates, setCandidates] = useState<Candidate[]>([]);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-    // Changed maxVotes to a map
+    // State: Votes per position
+    const [votes, setVotes] = useState<Record<string, string[]>>({});
+
     const [maxVotesMap, setMaxVotesMap] = useState<{ [pos: string]: number }>({
         '장로': 5,
         '권사': 5,
@@ -91,113 +91,68 @@ export default function VotePage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    // Filter & Sort State
-    const [activeTab, setActiveTab] = useState('ALL');
+    // Navigation State
+    const [activePositionTab, setActivePositionTab] = useState(0); // Index of POSITION_ORDER or SPECIAL TABS
+    const [activeAlphabetTab, setActiveAlphabetTab] = useState('ALL');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-    // Sequential Voting State
-    const [votingQueue, setVotingQueue] = useState<string[]>([]);
-    const [currentPosition, setCurrentPosition] = useState<string>('');
-    const POSITION_ORDER = ['장로', '안수집사', '권사'];
-
-    // --- FILTER & SORT LOGIC ---
-    const filteredCandidates = candidates.filter(c => {
-        if (activeTab === 'ALL') return true;
-        return getHangulInitial(c.name) === activeTab;
-    }).sort((a, b) => {
-        const comparison = a.name.localeCompare(b.name, 'ko');
-        return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
-        setActiveTab(newValue);
-    };
-
-    const toggleSortOrder = () => {
-        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    };
-
     useEffect(() => {
-        if (electionLoading) return; // Wait for election ID
+        if (electionLoading) return;
         if (!activeElectionId) {
             console.log("No active election");
             return;
         }
 
-        // 1. Check Auth
         const storedVoterId = sessionStorage.getItem('voterId');
         const storedName = sessionStorage.getItem('voterName');
-        const storedElectionId = sessionStorage.getItem('electionId');
 
         if (!storedVoterId) {
             router.replace('/');
             return;
         }
 
-        // Safety check: Needs to match current election
-        // However, we might rely on the voterId being valid in the current collection.
-        // Better store electionId in session too during login (TODO)
-
         setVoterName(storedName || 'Unknown');
 
-        // 2. Fetch Data
+        // Initialize Data
         const initData = async () => {
             try {
-                // Fetch Settings from Active Election
+                // Fetch Settings
                 const settingsSnap = await getDoc(doc(db, `elections/${activeElectionId}/settings`, 'config'));
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
-
-                    // Handle Legacy maxVotes (number) vs New maxVotes (map)
-                    if (typeof data.maxVotes === 'number') {
-                        setMaxVotesMap({
-                            '장로': data.maxVotes,
-                            '권사': data.maxVotes,
-                            '안수집사': data.maxVotes
-                        });
-                    } else if (data.maxVotes) {
-                        setMaxVotesMap(data.maxVotes);
+                    if (data.maxVotes) {
+                        setMaxVotesMap(typeof data.maxVotes === 'number'
+                            ? { '장로': data.maxVotes, '권사': data.maxVotes, '안수집사': data.maxVotes }
+                            : data.maxVotes
+                        );
                     }
-
                     setRounds(data.rounds || { '장로': 1, '권사': 1, '안수집사': 1 });
                 }
 
-                // Fetch Candidates from Active Election
+                // Fetch Candidates
                 const querySnapshot = await getDocs(collection(db, `elections/${activeElectionId}/candidates`));
                 const loadedCandidates: Candidate[] = [];
                 const currentSettings = settingsSnap.exists() ? settingsSnap.data().rounds : { '장로': 1, '권사': 1, '안수집사': 1 };
 
                 querySnapshot.forEach((doc) => {
                     const c = { id: doc.id, ...doc.data() } as Candidate;
-                    // Filter: Candidate Round MUST match System Round for their position
                     const targetRound = currentSettings[c.position] || 1;
                     if (c.round === targetRound) {
                         loadedCandidates.push(c);
                     }
                 });
 
-                // 3. Determine Voting Queue
-                const voterRef = doc(db, `elections/${activeElectionId}/voters`, storedVoterId);
-                const voterSnap = await getDoc(voterRef);
-                const participated = voterSnap.exists() ? voterSnap.data().participated || {} : {};
-                const queue: string[] = [];
-
-                POSITION_ORDER.forEach(pos => {
-                    const roundForPos = currentSettings[pos] || 1;
-                    const key = `${pos}_${roundForPos}`;
-                    if (!participated[key]) {
-                        queue.push(pos);
-                    }
-                });
-
-                setVotingQueue(queue);
-                if (queue.length > 0) {
-                    setCurrentPosition(queue[0]);
-                } else {
-                    setSuccess(true); // Already finished everything
-                }
-
                 setCandidates(loadedCandidates);
+
+                // Initialize votes state
+                const initialVotes: Record<string, string[]> = {};
+                POSITION_ORDER.forEach(pos => {
+                    initialVotes[pos] = [];
+                });
+                setVotes(initialVotes);
+
+                // Check invalidation/participation logic could go here if needed per-position
+                // But for now we allow re-voting until final submission if not implementing partial updates.
 
             } catch (err) {
                 console.error(err);
@@ -210,29 +165,46 @@ export default function VotePage() {
         initData();
     }, [router, activeElectionId, electionLoading]);
 
-    const handleToggle = (id: string) => {
-        if (selectedIds.includes(id)) {
-            setSelectedIds(prev => prev.filter(cId => cId !== id));
-        } else {
-            // Check maxVotes for CURRENT POSITION
-            const currentLimit = maxVotesMap[currentPosition] || 5;
-
-            if (selectedIds.length >= currentLimit) {
-                alert(`'${currentPosition}' 직분은 최대 ${currentLimit}명까지만 선택할 수 있습니다.`);
-                return;
-            }
-            setSelectedIds(prev => [...prev, id]);
-        }
+    const handlePositionTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setActivePositionTab(newValue);
+        setActiveAlphabetTab('ALL'); // Reset filter on tab change
+        window.scrollTo(0, 0);
     };
 
+    const handleAlphabetTabChange = (event: React.SyntheticEvent, newValue: string) => {
+        setActiveAlphabetTab(newValue);
+    };
 
+    const toggleSortOrder = () => {
+        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    };
 
-    const handleSubmitVote = async () => {
-        if (selectedIds.length === 0) {
-            if (!confirm("아무도 선택하지 않으셨습니다. 이 단계(직분)를 건너뛰시겠습니까?")) return;
-        } else {
-            if (!confirm(`${selectedIds.length}명에게 투표하시겠습니까? 제출 후에는 수정할 수 없습니다.`)) return;
-        }
+    const handleToggleVote = (candidateId: string, position: string) => {
+        setVotes(prev => {
+            const currentList = prev[position] || [];
+            const isSelected = currentList.includes(candidateId);
+            const limit = maxVotesMap[position] || 5;
+
+            if (isSelected) {
+                return {
+                    ...prev,
+                    [position]: currentList.filter(id => id !== candidateId)
+                };
+            } else {
+                if (currentList.length >= limit) {
+                    alert(`'${position}' 직분은 최대 ${limit}명까지만 선택할 수 있습니다.`);
+                    return prev;
+                }
+                return {
+                    ...prev,
+                    [position]: [...currentList, candidateId]
+                };
+            }
+        });
+    };
+
+    const handleSubmitAll = async () => {
+        if (!confirm("모든 투표를 완료하시겠습니까? 제출 후에는 수정할 수 없습니다.")) return;
 
         setSubmitting(true);
         const voterId = sessionStorage.getItem('voterId');
@@ -244,7 +216,6 @@ export default function VotePage() {
 
         try {
             await runTransaction(db, async (transaction) => {
-                // --- READ PHASE ---
                 // 1. Read Voter
                 const voterRef = doc(db, `elections/${activeElectionId}/voters`, voterId);
                 const voterSnap = await transaction.get(voterRef);
@@ -252,96 +223,74 @@ export default function VotePage() {
                 if (!voterSnap.exists()) throw "선거인 정보를 찾을 수 없습니다.";
                 const voterData = voterSnap.data();
 
-                // Validate Current Step
-                const roundForThisPos = rounds[currentPosition] || 1;
-                const groupKey = `${currentPosition}_${roundForThisPos}`;
+                // 2. Process ALL votes
+                const allSelectedIds: string[] = [];
+                const participatedUpdates: Record<string, boolean> = {};
 
-                if (voterData.participated?.[groupKey]) {
-                    throw "이미 이 단계의 투표에 참여하셨습니다.";
+                for (const pos of POSITION_ORDER) {
+                    const selectedForPos = votes[pos] || [];
+                    if (selectedForPos.length === 0) continue; // Skip empty votes? Or mark as participated with 0?
+
+                    // Logic: If user selected 0, we assume they skipped or didn't vote for that position.
+                    // But if they clicked submit, we process what they have.
+                    // IMPORTANT: Should we mark them as participated even if 0 votes? 
+                    // Let's assume yes, to prevent re-voting.
+
+                    const round = rounds[pos] || 1;
+                    const groupKey = `${pos}_${round}`;
+
+                    if (voterData.participated?.[groupKey]) {
+                        throw `이미 '${pos}' 투표에 참여하셨습니다.`;
+                    }
+
+                    participatedUpdates[groupKey] = true;
+                    allSelectedIds.push(...selectedForPos);
                 }
 
-                // Multi-Round Check Per Position
-                // Instead of global block, we check if the user is voting for candidates 
-                // in positions they already voted for IN THIS ROUND.
+                if (allSelectedIds.length === 0 && Object.keys(participatedUpdates).length === 0) {
+                    // If absolutely nothing selected
+                    if (!confirm("선택된 후보가 없습니다. 정말로 아무도 선택하지 않고 종료하시겠습니까?")) {
+                        throw "취소됨";
+                    }
+                }
 
-                // 1. Identify which "Position_Round" tuples are being voted on
-
-                // ... Moving Logic to Step 2 ... 
-
-                // Legacy Check Removal (or adapt if needed)
-                // if (!voterData.participatedRounds && currentRound === 1 && voterData.hasVoted) ...
-                // -> Let's treat legacy 'hasVoted' as "Round 1 Global" if we need to.
-                // For now, assume fresh start or robust new data.
-
-                // 2. Read All Candidates
-                // 2. Read All Candidates & Validate Group Voting Status
-                const candidateSnaps = [];
-                // const groupsToUpdate = new Set<string>(); // No longer needed, we validate currentPosition's groupKey
-
-                for (const candidateId of selectedIds) {
+                // 3. Read Candidates (Batch)
+                for (const candidateId of allSelectedIds) {
                     const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
                     const candidateSnap = await transaction.get(candidateRef);
+
                     if (!candidateSnap.exists()) throw "후보자 정보가 변경되었습니다.";
 
                     const cData = candidateSnap.data() as Candidate;
-                    // const groupKey = `${cData.position}_${cData.round || 1}`; // No longer needed here
-
-                    // CHECK: Has voter already voted for this group? (Moved to before candidate loop)
-                    // if (voterData.participated?.[groupKey]) {
-                    //     throw `이미 '${cData.position} ${cData.round || 1}차' 투표에 참여하셨습니다.`;
-                    // }
-
-                    // groupsToUpdate.add(groupKey); // No longer needed
-                    candidateSnaps.push({ ref: candidateRef, snap: candidateSnap, data: cData });
-                }
-
-                // --- WRITE PHASE ---
-                // --- WRITE PHASE ---
-                // 3. Update Candidates
-                for (const { ref, data } of candidateSnaps) {
-                    const newTotal = (data.voteCount || 0) + 1;
-                    const cRound = data.round || 1;
-
-                    // Update votesByRound
-                    const votesByRound = data.votesByRound || {};
+                    const newTotal = (cData.voteCount || 0) + 1;
+                    const cRound = cData.round || 1;
+                    const votesByRound = cData.votesByRound || {};
                     votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
 
-                    transaction.update(ref, {
+                    transaction.update(candidateRef, {
                         voteCount: newTotal,
                         votesByRound: votesByRound
                     });
                 }
 
-                // 4. Update Voter Participation
-                const newParticipated = voterData.participated || {};
-                newParticipated[groupKey] = true;
-
+                // 4. Update Voter
+                const newParticipated = { ...voterData.participated, ...participatedUpdates };
                 transaction.update(voterRef, {
                     participated: newParticipated,
                     votedAt: Date.now(),
-                    hasVoted: false
+                    hasVoted: true // Legacy support
                 });
             });
 
-            // On Success: Move to next step
-            const remainingQueue = votingQueue.slice(1);
-            console.log(`[DEBUG] Vote submitted. Current: ${currentPosition}, Remaining: ${remainingQueue}`);
-
-            setVotingQueue(remainingQueue);
-            setSelectedIds([]); // Reset selection
+            setSuccess(true);
             window.scrollTo(0, 0);
 
-            if (remainingQueue.length > 0) {
-                setCurrentPosition(remainingQueue[0]);
-            } else {
-                setSuccess(true);
-                // Do NOT clear session here. Wait for user to click "Exit".
-                // sessionStorage.clear(); 
-            }
-
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            alert(typeof err === 'string' ? err : '투표 제출 실패');
+            if (err !== "취소됨") {
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                alert(errorMessage || '투표 제출 실패');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -369,19 +318,23 @@ export default function VotePage() {
                 <Button variant="contained" onClick={() => {
                     sessionStorage.clear();
                     router.push('/');
-                }}>
+                }} size="large">
                     메인으로 돌아가기
                 </Button>
             </Container>
         );
     }
 
-    // Filter & Sort Candidates
-    const finalCandidates = candidates
+    const currentTabName = TABS[activePositionTab];
+    const isReviewTab = currentTabName === '최종 확인';
+    const currentPosition = isReviewTab ? 'REVIEW' : currentTabName;
+
+    // Filter Candidates for Current Tab
+    const filteredCandidates = candidates
         .filter(c => c.position === currentPosition)
         .filter(c => {
-            if (activeTab === 'ALL') return true;
-            return getHangulInitial(c.name) === activeTab;
+            if (activeAlphabetTab === 'ALL') return true;
+            return getHangulInitial(c.name) === activeAlphabetTab;
         })
         .sort((a, b) => {
             const comparison = a.name.localeCompare(b.name, 'ko');
@@ -389,143 +342,180 @@ export default function VotePage() {
         });
 
     return (
-        <Box sx={{ pb: 8, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
-            {/* Header */}
+        <Box sx={{ pb: 10, bgcolor: '#f8f9fa', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Header with Tabs */}
             <AppBar position="sticky" color="default" elevation={1} sx={{ bgcolor: 'white' }}>
-                <Toolbar>
-                    <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-                        {currentPosition} 투표 ({rounds[currentPosition] || 1}차)
-                    </Typography>
-                    <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                            안녕하세요, {voterName}님
+                <Box sx={{ p: 2, pb: 0 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="h6" fontWeight="bold">
+                            {voterName}님의 투표
                         </Typography>
-                        <Typography variant="body2" color="primary" fontWeight="bold">
-                            {selectedIds.length} / {maxVotesMap[currentPosition] || 5} 명 선택됨
-                        </Typography>
+                        <Box>
+                            {/* Mini stats if needed */}
+                        </Box>
                     </Box>
-                </Toolbar>
-
-                {/* Tabs for Alphabet Filtering */}
-                <Box sx={{ bgcolor: 'white', overflowX: 'auto', borderTop: '1px solid #eee' }}>
                     <Tabs
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        variant="scrollable"
-                        scrollButtons="auto"
-                        allowScrollButtonsMobile
-                        aria-label="candidate filter tabs"
-                        sx={{ minHeight: 48 }}
+                        value={activePositionTab}
+                        onChange={handlePositionTabChange}
+                        variant="fullWidth"
+                        aria-label="position tabs"
+                        sx={{ borderBottom: 1, borderColor: 'divider' }}
                     >
-                        {ALPHABET_TABS.map((tab) => (
-                            <Tab key={tab} label={tab === 'ALL' ? '전체' : tab} value={tab} sx={{ minWidth: 50 }} />
+                        {TABS.map((label, index) => (
+                            <Tab key={label} label={label} sx={{ fontWeight: activePositionTab === index ? 'bold' : 'normal' }} />
                         ))}
                     </Tabs>
                 </Box>
+
+                {/* Secondary Alphabet Filter (Only visible if NOT Review Tab) */}
+                {!isReviewTab && (
+                    <Box sx={{ bgcolor: 'white', overflowX: 'auto', borderBottom: '1px solid #eee' }}>
+                        <Tabs
+                            value={activeAlphabetTab}
+                            onChange={handleAlphabetTabChange}
+                            variant="scrollable"
+                            scrollButtons="auto"
+                            allowScrollButtonsMobile
+                            sx={{ minHeight: 40 }}
+                        >
+                            {ALPHABET_TABS.map((tab) => (
+                                <Tab key={tab} label={tab === 'ALL' ? '전체' : tab} value={tab} sx={{ minWidth: 50, py: 1, minHeight: 40 }} />
+                            ))}
+                        </Tabs>
+                    </Box>
+                )}
             </AppBar>
 
-            <Container maxWidth="md" sx={{ mt: 3 }}>
+            <Container maxWidth="md" sx={{ mt: 3, flexGrow: 1 }}>
+
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-                {/* Progress Indicator */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        남은 투표: {votingQueue.map((q, i) => (
-                            <span key={q} style={{ fontWeight: i === 0 ? 'bold' : 'normal', color: i === 0 ? '#1976d2' : '#999' }}>
-                                {q}{i < votingQueue.length - 1 ? ' > ' : ''}
-                            </span>
-                        ))}
-                    </Typography>
-                </Box>
+                {isReviewTab ? (
+                    // --- REVIEW TAB CONTENT ---
+                    <Box>
+                        <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
+                            최종 선택 확인
+                        </Typography>
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                            각 직분별 선택한 후보를 확인해주세요. &apos;투표 제출하기&apos;를 누르면 수정할 수 없습니다.
+                        </Alert>
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h5" fontWeight="bold">
-                        후보자 목록 ({finalCandidates.length}명)
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={toggleSortOrder}
-                        startIcon={sortOrder === 'asc' ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
-                    >
-                        {sortOrder === 'asc' ? '가나다순' : '역순'}
-                    </Button>
-                </Box>
+                        {POSITION_ORDER.map(pos => {
+                            const selectedForPos = votes[pos] || [];
+                            const selectedCandidates = candidates.filter(c => selectedForPos.includes(c.id!));
 
-                <Grid container spacing={2}>
-                    {finalCandidates.length === 0 ? (
-                        <Box sx={{ p: 4, width: '100%', textAlign: 'center' }}>
-                            <Typography color="text.secondary">해당 조건의 후보자가 없습니다.</Typography>
+                            return (
+                                <Paper key={pos} sx={{ mb: 3, p: 2 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, borderBottom: '1px solid #eee', pb: 1 }}>
+                                        <Typography variant="h6" fontWeight="bold">{pos}</Typography>
+                                        <Typography variant="body2" color={selectedForPos.length > 0 ? 'primary' : 'text.secondary'}>
+                                            {selectedForPos.length} / {maxVotesMap[pos]} 명 선택
+                                        </Typography>
+                                    </Box>
+
+                                    {selectedCandidates.length === 0 ? (
+                                        <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                            선택된 후보가 없습니다. (기권)
+                                        </Typography>
+                                    ) : (
+                                        <List dense>
+                                            {selectedCandidates.map(c => (
+                                                <ListItem key={c.id}>
+                                                    <ListItemAvatar>
+                                                        <Avatar src={c.photoUrl} alt={c.name}><PersonIcon /></Avatar>
+                                                    </ListItemAvatar>
+                                                    <ListItemText
+                                                        primary={`${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
+                                                        secondary={c.churchTitle || '교인'}
+                                                    />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    )}
+                                </Paper>
+                            );
+                        })}
+                    </Box>
+                ) : (
+                    // --- VOTING TAB CONTENT ---
+                    <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="body1" fontWeight="bold" color="primary">
+                                {currentPosition} 후보 선택 ({votes[currentPosition]?.length || 0}/{maxVotesMap[currentPosition]}명)
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                onClick={toggleSortOrder}
+                                startIcon={sortOrder === 'asc' ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
+                            >
+                                {sortOrder === 'asc' ? '가나다순' : '역순'}
+                            </Button>
                         </Box>
-                    ) : finalCandidates.map((candidate) => {
-                        const isSelected = selectedIds.includes(candidate.id!);
-                        return (
-                            <Grid size={{ xs: 12, sm: 6 }} key={candidate.id}>
-                                <Card
-                                    sx={{
-                                        position: 'relative',
-                                        cursor: 'pointer',
-                                        border: isSelected ? '2px solid #1976d2' : '1px solid #eee',
-                                        transition: 'all 0.2s',
-                                        transform: isSelected ? 'scale(1.02)' : 'none',
-                                        display: 'flex', // Horizontal Layout
-                                        height: '100%',
-                                        minHeight: 180,
-                                        alignItems: 'stretch'
-                                    }}
-                                    onClick={() => handleToggle(candidate.id!)}
-                                >
-                                    {/* Left Side: Image & Basic Info (40% width) */}
-                                    <Box sx={{ width: '40%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
-                                        <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl} />
-                                        <CardContent sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                            <Typography variant="h6" component="div" fontWeight="bold" sx={{ fontSize: '1.1rem' }}>
-                                                {candidate.name}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {calculateAge(candidate.birthdate, candidate.age)}세
-                                            </Typography>
-                                            <Chip
-                                                label={`${candidate.position} ${candidate.round || 1}차`}
-                                                size="small"
-                                                color="secondary"
-                                                sx={{ mt: 0.5, fontSize: '0.7rem', alignSelf: 'center' }}
+
+                        <Grid container spacing={2}>
+                            {filteredCandidates.length === 0 ? (
+                                <Box sx={{ p: 4, width: '100%', textAlign: 'center' }}>
+                                    <Typography color="text.secondary">해당 조건의 후보자가 없습니다.</Typography>
+                                </Box>
+                            ) : filteredCandidates.map((candidate) => {
+                                const isSelected = (votes[currentPosition] || []).includes(candidate.id!);
+                                return (
+                                    <Grid size={{ xs: 12, sm: 6 }} key={candidate.id}>
+                                        <Card
+                                            sx={{
+                                                position: 'relative',
+                                                cursor: 'pointer',
+                                                border: isSelected ? '2px solid #1976d2' : '1px solid #eee',
+                                                transition: 'all 0.2s',
+                                                transform: isSelected ? 'scale(1.02)' : 'none',
+                                                display: 'flex',
+                                                height: '100%',
+                                                minHeight: 160,
+                                            }}
+                                            onClick={() => handleToggleVote(candidate.id!, currentPosition)}
+                                        >
+                                            <Box sx={{ width: '35%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
+                                                <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl} />
+                                                <Box sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', bgcolor: isSelected ? '#e3f2fd' : 'transparent' }}>
+                                                    <Typography variant="subtitle2" fontWeight="bold">
+                                                        {candidate.name}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {calculateAge(candidate.birthdate, candidate.age)}세
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
+                                                    {candidate.profileDesc || "이력이 없습니다."}
+                                                </Typography>
+                                            </Box>
+
+                                            <Checkbox
+                                                checked={isSelected}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 4,
+                                                    right: 4,
+                                                    color: isSelected ? 'primary.main' : 'action.disabled',
+                                                    bgcolor: 'rgba(255,255,255,0.9)',
+                                                    '&:hover': { bgcolor: '#fff' },
+                                                    borderRadius: '50%',
+                                                    p: 0.5
+                                                }}
                                             />
-                                        </CardContent>
-                                    </Box>
-
-                                    {/* Right Side: Service History (60% width) */}
-                                    <Box sx={{ width: '60%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center', bgcolor: '#fafafa' }}>
-                                        <Typography variant="caption" color="text.secondary" fontWeight="bold" gutterBottom>
-                                            주요 봉사 이력
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                                            {candidate.profileDesc || "이력이 없습니다."}
-                                        </Typography>
-                                    </Box>
-
-                                    {/* Selection Overlay/Checkbox */}
-                                    <Checkbox
-                                        checked={isSelected}
-                                        sx={{
-                                            position: 'absolute',
-                                            top: 4,
-                                            right: 4,
-                                            color: 'primary.main',
-                                            bgcolor: 'rgba(255,255,255,0.8)',
-                                            '&:hover': { bgcolor: 'rgba(255,255,255,1)' },
-                                            borderRadius: '50%',
-                                            zIndex: 10
-                                        }}
-                                    />
-                                </Card>
-                            </Grid>
-                        );
-                    })}
-                </Grid>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
+                        </Grid>
+                    </Box>
+                )}
             </Container>
 
-            {/* Floating Action Button for Submit (or Bottom Bar) */}
+            {/* Sticky Bottom Action Bar */}
             <Paper
                 sx={{
                     position: 'fixed',
@@ -534,21 +524,41 @@ export default function VotePage() {
                     right: 0,
                     p: 2,
                     zIndex: 1000,
-                    borderTop: '1px solid #ddd'
+                    borderTop: '1px solid #ddd',
+                    bgcolor: 'white'
                 }}
-                elevation={3}
+                elevation={6}
             >
                 <Container maxWidth="md">
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        disabled={submitting}
-                        onClick={handleSubmitVote}
-                        sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}
-                    >
-                        {submitting ? '제출 중...' : (votingQueue.length > 1 ? `다음 단계 (${votingQueue[1]} 투표로 이동)` : '투표 최종 완료')}
-                    </Button>
+                    {isReviewTab ? (
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            size="large"
+                            disabled={submitting}
+                            onClick={handleSubmitAll}
+                            sx={{ py: 1.5, fontSize: '1.2rem', fontWeight: 'bold', boxShadow: 3 }}
+                        >
+                            {submitting ? '제출 중...' : '투표 제출하기 (수정 불가)'}
+                        </Button>
+                    ) : (
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            color="inherit" // Neutral color for next step
+                            size="large"
+                            onClick={() => {
+                                const nextTab = activePositionTab + 1;
+                                if (nextTab < TABS.length) {
+                                    handlePositionTabChange({} as React.SyntheticEvent, nextTab);
+                                }
+                            }}
+                            sx={{ py: 1.5, fontSize: '1.1rem', bgcolor: '#333', color: 'white', '&:hover': { bgcolor: '#555' } }}
+                        >
+                            다음 단계 ({TABS[activePositionTab + 1]})
+                        </Button>
+                    )}
                 </Container>
             </Paper>
         </Box >

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { collection, writeBatch, doc, getDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDoc, setDoc, getDocs, query, where, DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Candidate, Voter } from '@/types';
 import { getDriveImageUrl } from '@/utils/driveLinkParser';
@@ -35,11 +35,7 @@ export default function AdminPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        const isAdmin = sessionStorage.getItem('isAdmin');
-        // Check session storage or other auth method implemented
-        // Since I implemented a simple password login in /admin/login page that sets 'admin_auth', I should check that.
-        // Wait, my login page set 'admin_auth'. The remote might have used 'isAdmin'.
-        // I will check both to be safe or stick to my implementation 'admin_auth'.
+        // const isAdmin = sessionStorage.getItem('isAdmin');
         const auth = sessionStorage.getItem('admin_auth');
         if (auth !== 'true') {
             router.push('/admin/login');
@@ -69,8 +65,6 @@ export default function AdminPage() {
 
     const [settingLoading, setSettingLoading] = useState(false);
 
-
-
     const [uploadRound, setUploadRound] = useState<number>(1);
 
     // Reset Dialog
@@ -98,6 +92,8 @@ export default function AdminPage() {
                         }
                     }
                     if (data.rounds) setRoundSettings(data.rounds);
+                    if (data.startDate) setStartDate(data.startDate);
+                    if (data.endDate) setEndDate(data.endDate);
                 } else {
                     setMaxVotesMap({ '장로': 5, '권사': 5, '안수집사': 5 });
                     setRoundSettings({ '장로': 1, '권사': 1, '안수집사': 1 });
@@ -117,9 +113,10 @@ export default function AdminPage() {
             await createElection(newElectionId);
             setNewElectionId('');
             setMessage({ type: 'success', text: `선거 '${newElectionId}'가 생성되었습니다!` });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Failed to create election:", err);
-            setMessage({ type: 'error', text: `선거 생성 실패: ${err.message || err}` });
+            const msg = err instanceof Error ? err.message : String(err);
+            setMessage({ type: 'error', text: `선거 생성 실패: ${msg}` });
         } finally {
             setLoading(false);
         }
@@ -163,6 +160,7 @@ export default function AdminPage() {
         XLSX.writeFile(wb, filename);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const proceedWithUpload = async (file: File, collectionRef: any, parseLogic: (data: any[]) => void) => {
         setLoading(true);
         setMessage(null);
@@ -176,7 +174,8 @@ export default function AdminPage() {
                 const worksheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[worksheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                parseLogic(jsonData);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                parseLogic(jsonData as any[]);
             } catch (err) {
                 console.error("Excel parse error:", err);
                 setMessage({ type: 'error', text: '엑셀 파일 처리 중 오류가 발생했습니다.' });
@@ -186,6 +185,7 @@ export default function AdminPage() {
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 complete: (results) => parseLogic(results.data as any[]),
                 error: (error) => {
                     console.error(error);
@@ -225,32 +225,9 @@ export default function AdminPage() {
                 candidates.forEach((row) => {
                     if (!row.Name) return;
 
-                    // Determine position: Row's Position or Fallback to argument
-                    const candidatePosition = row.Position ? String(row.Position).trim() : position;
-                    // If we want to strictly enforce the passed 'position', we can ignore row.Position or validate it.
-                    // For now, let's trust the user's intent to upload to 'position' (the button they clicked) mainly,
-                    // BUT if they provided a Position column, it's ambiguous.
-                    // Let's assume the user uses the 'Elder' button for Elders.
-                    // If the CSV contains 'Deacon', and they clicked 'Elder', should we upload as Elder?
-                    // User Request was: "candidate file is Name, Birthdate, Position, Photo, Description".
-                    // This implies the file might be mixed or self-describing.
-                    // Current existing logic: deleting existing docs based on `position`.
-                    // If we upload mixed content here, we might be deleting Elders but uploading Deacons if they made a mistake.
-                    // Safe bet: Use the passed `position` for filtering/deleting, but use the `row.Position` if valid, otherwise fallback.
-                    // Actually, if a user uploads a mixed file to "Elder" button, and we delete "Elder" docs...
-                    // and then upload Deacons... we ruin data.
-                    // BUT, implementing fully mixed upload requires a different UI (Global Upload).
-                    // We are keeping "Upload Elder", "Upload Deacon" buttons.
-                    // So we should probably FILTER the input CSV for the target position if the CSV has that column.
-
                     const rowPositionClean = row.Position ? String(row.Position).trim() : '';
                     if (rowPositionClean && rowPositionClean !== position) {
-                        // Skip if row explicitly says a different position
-                        // console.warn(`Skipping ${row.Name} because position ${rowPositionClean} != ${position}`);
-                        // Actually, users might not match exact string '장로'. 
-                        // Let's just use the `position` (from button) to force assignment, assuming user knows what they are doing.
-                        // Or simply ignore the Position column for *logic* but save it if needed? 
-                        // User asked for the column to be there.
+                        // Optional: Warning logic here
                     }
 
                     const newDocRef = doc(collectionRef);
@@ -579,6 +556,7 @@ export default function AdminPage() {
                 </TextField>
                 <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     {[{ pos: '장로', color: 'primary' }, { pos: '안수집사', color: 'success' }, { pos: '권사', color: 'warning' }].map(({ pos, color }) => (
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         <Paper key={pos} sx={{ p: 3, flex: 1, borderTop: `4px solid ${(theme: any) => theme.palette[color as 'primary' | 'success' | 'warning'].main}`, minWidth: 220 }}>
                             <Typography variant="h6" gutterBottom color={color as 'primary' | 'success' | 'warning'}> {pos} 후보 업로드 </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}> {uploadRound}차 투표 대상 </Typography>
@@ -688,13 +666,13 @@ function VotingResultsSection() {
     const { activeElectionId } = useElection();
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [loading, setLoading] = useState(false);
-    const [totalVotes, setTotalVotes] = useState(0); // Total candidate votes
+    // const [totalVotes, setTotalVotes] = useState(0); // Removing unused var
     const [totalBallots, setTotalBallots] = useState(0); // Total voters participated in this round/position
     const [viewRound, setViewRound] = useState<number>(1);
     const [viewPosition, setViewPosition] = useState<string>('장로'); // Default to Elder
     const [maxVoteLimit, setMaxVoteLimit] = useState(5); // How many to show (from settings)
 
-    const fetchResults = async () => {
+    const fetchResults = useCallback(async () => {
         if (!activeElectionId) {
             setCandidates([]);
             return;
@@ -717,12 +695,6 @@ function VotingResultsSection() {
             }
 
             // 2. Count Total Ballots (Voters who participated in this specific Position_Round)
-            // Query: voters where participated.${viewPosition}_${viewRound} == true
-            // Firestore doesn't support wildcards easily in map keys for query without index or specific structure.
-            // But we store `participated: { "장로_1": true }`.
-            // We can Query `participated.장로_1 == true`.
-            // Note: Field paths with dots need to be handled carefully or just use client side if small.
-            // Let's try direct query.
             const voterQuery = query(
                 collection(db, `elections/${activeElectionId}/voters`),
                 where(`participated.${viewPosition}_${viewRound}`, '==', true)
@@ -735,28 +707,28 @@ function VotingResultsSection() {
             const q = query(collection(db, `elections/${activeElectionId}/candidates`), where('round', '==', viewRound), where('position', '==', viewPosition));
             const querySnapshot = await getDocs(q);
             const loaded: Candidate[] = [];
-            let totalCandidateVotes = 0;
-            querySnapshot.forEach((doc: any) => {
+            // let totalCandidateVotes = 0;
+            querySnapshot.forEach((doc: DocumentData) => {
                 const data = doc.data() as Candidate;
                 loaded.push(data);
-                const roundVotes = data.votesByRound?.[viewRound] || 0;
-                totalCandidateVotes += roundVotes;
+                // const roundVotes = data.votesByRound?.[viewRound] || 0;
+                // totalCandidateVotes += roundVotes;
             });
 
             loaded.sort((a, b) => (b.votesByRound?.[viewRound] || 0) - (a.votesByRound?.[viewRound] || 0));
 
             setCandidates(loaded);
-            setTotalVotes(totalCandidateVotes);
+            // setTotalVotes(totalCandidateVotes);
         } catch (err) {
             console.error("Error fetching results:", err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeElectionId, viewRound, viewPosition]);
 
     useEffect(() => {
         fetchResults();
-    }, [viewRound, viewPosition, activeElectionId]);
+    }, [fetchResults]);
 
     const handleDownloadCSV = () => {
         const headers = ['Name', 'Position', 'Age', 'PhotoLink', `Votes_Round_${viewRound}`, 'Total_Ballots', 'Elected?'];
@@ -874,4 +846,3 @@ function VotingResultsSection() {
         </Paper>
     );
 }
-

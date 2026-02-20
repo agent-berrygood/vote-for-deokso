@@ -1,11 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { Voter } from '@/types';
 import {
   Box,
   Button,
@@ -17,16 +15,17 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
+import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 
 declare global {
   interface Window {
-    recaptchaVerifier: any;
+    recaptchaVerifier: RecaptchaVerifier | undefined;
   }
 }
 
 export default function LoginPage() {
   const router = useRouter();
-  const { activeElectionId, loading: electionLoading, error: electionError } = useElection();
+  const { activeElectionId, loading: electionLoading } = useElection();
 
   const [step, setStep] = useState<1 | 2>(1); // 1: Info Input, 2: Auth Verification
 
@@ -39,13 +38,11 @@ export default function LoginPage() {
   const [inputAuthKey, setInputAuthKey] = useState('');
 
   // Internal State
-  const [matchedVoter, setMatchedVoter] = useState<Voter | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Firebase Auth State
-  const [verificationId, setVerificationId] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const recaptchaContainerRef = useRef<HTMLDivElement>(null);
 
@@ -59,13 +56,11 @@ export default function LoginPage() {
           try {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
               'size': 'invisible',
-              'callback': (response: any) => {
+              'callback': () => {
                 console.log("Recaptcha verified");
               },
               'expired-callback': () => {
                 console.log("Recaptcha expired");
-                // window.recaptchaVerifier.clear();
-                // window.recaptchaVerifier = null;
               }
             });
           } catch (e) {
@@ -80,9 +75,6 @@ export default function LoginPage() {
   const [scheduleStatus, setScheduleStatus] = useState<'open' | 'not_started' | 'ended'>('open');
   const [scheduleMessage, setScheduleMessage] = useState('');
 
-  // ... (Voting Schedule State remains)
-
-  // ... (useEffect for schedule remains)
   useEffect(() => {
     if (!activeElectionId) return;
 
@@ -178,7 +170,6 @@ export default function LoginPage() {
       }
 
       const voterDoc = snapshot.docs[0];
-      const voterData = voterDoc.data();
 
       // 2. Send SMS via Firebase
       const { signInWithPhoneNumber } = await import('firebase/auth');
@@ -200,16 +191,21 @@ export default function LoginPage() {
       sessionStorage.setItem('tempVoterId', voterDoc.id);
       sessionStorage.setItem('tempVoterName', name);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auth Error Object:", err);
 
-      const errorCode = err.code || err.message || JSON.stringify(err);
+      let errorCode = 'unknown';
+      if (err && typeof err === 'object' && 'code' in err) {
+        errorCode = (err as { code: string }).code;
+      } else if (err instanceof Error) {
+        errorCode = err.message;
+      }
 
-      if (err.code === 'auth/invalid-phone-number') {
+      if (errorCode === 'auth/invalid-phone-number') {
         setError('유효하지 않은 전화번호입니다.');
-      } else if (err.code === 'auth/too-many-requests') {
+      } else if (errorCode === 'auth/too-many-requests') {
         setError('너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.');
-      } else if (err.code === 'auth/captcha-check-failed') {
+      } else if (errorCode === 'auth/captcha-check-failed') {
         setError('로봇 인증에 실패했습니다. 다시 시도해주세요.');
       } else {
         setError(`인증 번호 발송 실패 (${errorCode}). 관리자에게 문의하세요.`);
@@ -217,9 +213,15 @@ export default function LoginPage() {
 
       // Reset Recaptcha on error if needed
       if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.render().then((widgetId: any) => {
-          // window.recaptchaVerifier.reset(widgetId); // Optional
-        });
+        try {
+          // RecaptchaVerifier might not have render method exposed easily on window object typed as 'any' previously
+          // But we can try to re-render or just let it be.
+          // window.recaptchaVerifier.render().then((widgetId: any) => { });
+          // Simply logging for now as reset is complex without widget ID stored
+          console.log("Recaptcha might need reset");
+        } catch (e) {
+          console.error(e);
+        }
       }
 
     } finally {
@@ -239,8 +241,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       // 3. Confirm Code
-      // @ts-ignore
-      await confirmationResult.confirm(inputAuthKey);
+      await confirmationResult?.confirm(inputAuthKey);
 
       // 4. Success -> Proceed
       const tempVoterId = sessionStorage.getItem('tempVoterId');
@@ -256,9 +257,14 @@ export default function LoginPage() {
         setStep(1);
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Verification Error:", error);
-      const errorCode = error.code || error.message || JSON.stringify(error);
+      let errorCode = 'unknown';
+      if (error && typeof error === 'object' && 'code' in error) {
+        errorCode = (error as { code: string }).code;
+      } else if (error instanceof Error) {
+        errorCode = error.message;
+      }
 
       if (errorCode.includes('invalid-verification-code')) {
         setError('인증번호가 올바르지 않습니다.');

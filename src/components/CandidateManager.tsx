@@ -62,6 +62,7 @@ export default function CandidateManager() {
 
     useEffect(() => {
         fetchCandidates();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeElectionId]);
 
     const handleDelete = async () => {

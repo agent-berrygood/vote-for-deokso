@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const SYSTEM_SETTINGS_DOC = 'settings/system';

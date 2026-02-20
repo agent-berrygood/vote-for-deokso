@@ -15,7 +15,8 @@ interface ConfirmDialogProps {
     description: string;
     onConfirm: () => void;
     onCancel: () => void;
-    confirmJson?: string; // Optional: Require typing a specific string to confirm
+    confirmLabel?: string;
+    cancelLabel?: string;
 }
 
 export default function ConfirmDialog({
@@ -24,7 +25,8 @@ export default function ConfirmDialog({
     description,
     onConfirm,
     onCancel,
-    confirmJson
+    confirmLabel = "확인",
+    cancelLabel = "취소"
 }: ConfirmDialogProps) {
     return (
         <Dialog
@@ -42,11 +44,11 @@ export default function ConfirmDialog({
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onCancel} color="primary">
-                    Cancel
+                <Button onClick={onCancel} color="inherit">
+                    {cancelLabel}
                 </Button>
-                <Button onClick={onConfirm} color="error" autoFocus>
-                    Confirm
+                <Button onClick={onConfirm} color="error" autoFocus variant="contained">
+                    {confirmLabel}
                 </Button>
             </DialogActions>
         </Dialog>
