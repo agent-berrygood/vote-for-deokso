@@ -44,6 +44,7 @@ import { getHangulInitial, ALPHABET_TABS } from '@/utils/hangul';
 // Constants
 const POSITION_ORDER = ['장로', '안수집사', '권사'];
 const TABS = [...POSITION_ORDER, '최종 확인'];
+const ADMIN_VOTER_NAME = '관리자';
 
 // Separate component to handle image error state independently
 const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string }) => {
@@ -239,7 +240,9 @@ export default function VotePage() {
                     const round = rounds[pos] || 1;
                     const groupKey = `${pos}_${round}`;
 
-                    if (voterData.participated?.[groupKey]) {
+                    const isAdmin = voterData.name === ADMIN_VOTER_NAME;
+
+                    if (!isAdmin && voterData.participated?.[groupKey]) {
                         throw `이미 '${pos}' 투표에 참여하셨습니다.`;
                     }
 
@@ -273,13 +276,16 @@ export default function VotePage() {
                     });
                 }
 
-                // 4. Update Voter
-                const newParticipated = { ...voterData.participated, ...participatedUpdates };
-                transaction.update(voterRef, {
-                    participated: newParticipated,
-                    votedAt: Date.now(),
-                    hasVoted: true // Legacy support
-                });
+                // 4. Update Voter (Skip for Admin to allow infinite voting)
+                const isAdmin = voterData.name === ADMIN_VOTER_NAME;
+                if (!isAdmin) {
+                    const newParticipated = { ...voterData.participated, ...participatedUpdates };
+                    transaction.update(voterRef, {
+                        participated: newParticipated,
+                        votedAt: Date.now(),
+                        hasVoted: true // Legacy support
+                    });
+                }
             });
 
             setSuccess(true);
