@@ -54,9 +54,10 @@ async function processImages() {
             const destPath = path.join(TargetDir, destFileName);
 
             try {
-                // 고화질 압축 조건 (MozJPEG 활용, 해상도 800px 최적화 등)
+                // 고화질 압축 조건 (MozJPEG 활용, 해상도 800px 최적화, 투명 배경은 흰색으로)
                 await sharp(sourcePath)
                     .resize({ width: 800, withoutEnlargement: true }) // 너비 800px 맞춤 (확대 안함)
+                    .flatten({ background: '#ffffff' }) // 투명 배경을 흰색으로 설정
                     .jpeg({
                         quality: 85,
                         mozjpeg: true, // 고화질 효율적 압축
