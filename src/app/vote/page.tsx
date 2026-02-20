@@ -421,7 +421,7 @@ export default function VotePage() {
 
                                     {selectedCandidates.length === 0 ? (
                                         <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                                            선택된 후보가 없습니다. (기권)
+                                            선택된 후보가 없습니다.
                                         </Typography>
                                     ) : (
                                         <List dense>
