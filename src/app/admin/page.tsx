@@ -146,8 +146,8 @@ export default function AdminPage() {
         let filename = '';
 
         if (type === 'candidate') {
-            // New Format: Name, Birthdate, Position, PhotoLink, ProfileDesc
-            headers = ['Name', 'Birthdate', 'Position', 'PhotoLink', 'ProfileDesc'];
+            // New Format: Name, Birthdate, Position, District, PhotoLink, ProfileDesc
+            headers = ['Name', 'Birthdate', 'Position', 'District', 'PhotoLink', 'ProfileDesc'];
             filename = 'candidate_upload_template.xlsx';
         } else {
             headers = ['Name', 'Phone', 'Birthdate', 'AuthKey'];
@@ -235,6 +235,7 @@ export default function AdminPage() {
                         id: newDocRef.id,
                         name: row.Name,
                         position: position, // Enforce the button's context for safety
+                        district: row.District ? String(row.District).trim() : '',
                         birthdate: row.Birthdate ? String(row.Birthdate).trim() : '',
                         age: 0, // Deprecated, will calc on fly
                         photoUrl: getDriveImageUrl(row.PhotoLink || ''),
@@ -731,7 +732,7 @@ function VotingResultsSection() {
     }, [fetchResults]);
 
     const handleDownloadCSV = () => {
-        const headers = ['Name', 'Position', 'Age', 'PhotoLink', `Votes_Round_${viewRound}`, 'Total_Ballots', 'Elected?'];
+        const headers = ['Name', 'District', 'Position', 'Age', 'PhotoLink', `Votes_Round_${viewRound}`, 'Total_Ballots', 'Elected?'];
         const csvContent = [headers.join(',')];
 
         candidates.forEach(c => {
@@ -742,7 +743,7 @@ function VotingResultsSection() {
             } else {
                 isElected = voteCount > (totalBallots / 2);
             }
-            const row = [c.name, c.position, c.age, c.photoUrl, voteCount, totalBallots, isElected ? 'Yes' : 'No'];
+            const row = [c.name, c.district || '', c.position, c.age, c.photoUrl, voteCount, totalBallots, isElected ? 'Yes' : 'No'];
             csvContent.push(row.join(','));
         });
 

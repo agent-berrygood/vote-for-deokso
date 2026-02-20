@@ -1,11 +1,9 @@
-# Project Initialization Tasks
+# 🗳 후보자 교구 정보 DB 입력 기능 구현
 
-- [x] 1. 깃 레포지토리 URL 확인 및 클론
-- [x] 2. 프로젝트 의존성 설치 (npm install / yarn install)
-- [x] 3. 초기 실행 및 에러 확인 (dev server)
-- [x] 4. 프로젝트 구조 파악 및 문서화
-- [x] 5. 개발 환경 설정 완료 보고
-- [/] 6. Firebase SMS 발신자 이름 설정 (Console)
-- [x] 7. 투표 페이지 탭 UI 및 일괄 제출 기능 구현
-- [x] 8. Lint 및 빌드 오류 수정 (Clean Code & Build Success)
-- [x] 9. 연속 로그인 허용 (Recaptcha Reset Fix)
+- [V] 1. `src/types/index.ts` 파일의 `Candidate` 인터페이스에 `district?: string;` (교구) 속성 추가
+- [V] 2. `src/app/admin/page.tsx` 파일 내 `handleDownloadTemplate` 함수의 후보자 CSV/Excel 업로드 템플릿 헤더에 'District' 항목 추가
+- [V] 3. `src/app/admin/page.tsx` 파일 내 `handleCandidateUpload` 함수에서 엑셀 파일 파싱 시 `District` 컬럼을 읽어 `candidateData` 객체에 저장하도록 수정
+- [V] 4. `src/components/CandidateManager.tsx` 파일에서 어드민이 관리 중인 후보자 목록을 볼 때 '교구(District)' 정보가 함께 표시되도록 UI 업데이트
+- [V] 5. 코드 수정 후 빌드 및 TypeScript 에러가 없는지 확인 (`npm run build` 또는 `npx tsc --noEmit` 등)
+
+**⚠️ 주의사항:** 사용자의 요청에 따라 반드시 **투표 후보란(`src/app/vote/page.tsx` 등 투표 페이지)에는 교구 정보가 노출되지 않아야 함.**

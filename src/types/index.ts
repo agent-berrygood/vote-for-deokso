@@ -10,6 +10,7 @@ export interface Candidate {
     round?: number; // The round this candidate belongs to (Default 1)
     profileDesc?: string; // Career/Service History
     churchTitle?: string; // e.g. '교인', '집사'
+    district?: string; // e.g. '1교구'
 }
 
 export interface Voter {
