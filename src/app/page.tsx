@@ -48,10 +48,19 @@ export default function LoginPage() {
 
   // Initialize Recaptcha
   useEffect(() => {
-    // Only initialize if container exists and verifier doesn't
-    if (recaptchaContainerRef.current && !window.recaptchaVerifier) {
+    // 1. Cleanup previous verifier if exists (important for SPA navigation)
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {
+        console.error("Failed to clear previous recaptcha", e);
+      }
+      window.recaptchaVerifier = undefined;
+    }
+
+    // 2. Initialize new verifier
+    if (recaptchaContainerRef.current) {
       import('firebase/auth').then(({ RecaptchaVerifier }) => {
-        // Double check ref.current to satisfy TS
         if (recaptchaContainerRef.current) {
           try {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
@@ -69,6 +78,18 @@ export default function LoginPage() {
         }
       });
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.error(e);
+        }
+        window.recaptchaVerifier = undefined;
+      }
+    };
   }, [electionLoading]); // Run when loading finishes and DOM exists
 
   // Voting Schedule State
