@@ -257,26 +257,34 @@ export default function VotePage() {
                     }
                 }
 
-                // 3. Read Candidates (Batch)
+                // 3. Read Candidates (Batch - ALl reads must happen before writes)
+                const candidateUpdates = [];
                 for (const candidateId of allSelectedIds) {
                     const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
                     const candidateSnap = await transaction.get(candidateRef);
 
                     if (!candidateSnap.exists()) throw "후보자 정보가 변경되었습니다.";
 
-                    const cData = candidateSnap.data() as Candidate;
-                    const newTotal = (cData.voteCount || 0) + 1;
-                    const cRound = cData.round || 1;
-                    const votesByRound = cData.votesByRound || {};
+                    candidateUpdates.push({
+                        ref: candidateRef,
+                        data: candidateSnap.data() as Candidate
+                    });
+                }
+
+                // 4. Write Candidates
+                for (const { ref, data } of candidateUpdates) {
+                    const newTotal = (data.voteCount || 0) + 1;
+                    const cRound = data.round || 1;
+                    const votesByRound = data.votesByRound || {};
                     votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
 
-                    transaction.update(candidateRef, {
+                    transaction.update(ref, {
                         voteCount: newTotal,
                         votesByRound: votesByRound
                     });
                 }
 
-                // 4. Update Voter (Skip for Admin to allow infinite voting)
+                // 5. Update Voter (Skip for Admin to allow infinite voting)
                 const isAdmin = voterData.name === ADMIN_VOTER_NAME;
                 if (!isAdmin) {
                     const newParticipated = { ...voterData.participated, ...participatedUpdates };
