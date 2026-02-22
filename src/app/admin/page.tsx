@@ -32,17 +32,6 @@ const generateAuthKey = () => Math.floor(1000000 + Math.random() * 9000000).toSt
 
 export default function AdminPage() {
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    useEffect(() => {
-        // const isAdmin = sessionStorage.getItem('isAdmin');
-        const auth = sessionStorage.getItem('admin_auth');
-        if (auth !== 'true') {
-            router.push('/admin/login');
-        } else {
-            setIsAuthenticated(true);
-        }
-    }, [router]);
 
     const { activeElectionId, electionList, createElection, switchElection } = useElection();
     const [newElectionId, setNewElectionId] = useState('');
@@ -107,7 +96,15 @@ export default function AdminPage() {
     }, [activeElectionId]);
 
     const handleCreateElection = async () => {
-        if (!newElectionId.trim()) return;
+        const trimmedId = newElectionId.trim();
+        if (!trimmedId) return;
+
+        // Validation for new election ID (Security/Injection prevention)
+        if (!/^[a-zA-Z0-9_-]+$/.test(trimmedId)) {
+            setMessage({ type: 'error', text: '선거 ID는 영문, 숫자, 하이픈(-), 언더스코어(_)만 사용할 수 있습니다.' });
+            return;
+        }
+
         setLoading(true);
         try {
             await createElection(newElectionId);
@@ -315,8 +312,27 @@ export default function AdminPage() {
 
     const handleAddSingleVoter = async () => {
         if (!activeElectionId) return;
-        if (!singleVoterName) {
+
+        const cleanName = singleVoterName.trim();
+        if (!cleanName) {
             setMessage({ type: 'error', text: 'Name is required' });
+            return;
+        }
+
+        if (cleanName.length > 20) {
+            setMessage({ type: 'error', text: '이름은 20자를 초과할 수 없습니다.' });
+            return;
+        }
+
+        const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
+        if (singleVoterPhone && !phoneRegex.test(singleVoterPhone)) {
+            setMessage({ type: 'error', text: '올바른 휴대전화 번호 형식이 아닙니다.' });
+            return;
+        }
+
+        const birthdateRegex = /^\d{6}$/;
+        if (singleVoterBirthdate && !birthdateRegex.test(singleVoterBirthdate)) {
+            setMessage({ type: 'error', text: '생년월일 6자리를 정확히 입력해주세요.' });
             return;
         }
 
@@ -392,14 +408,6 @@ export default function AdminPage() {
             setLoading(false);
         }
     };
-
-    if (!isAuthenticated) {
-        return (
-            <Container maxWidth="md" sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <CircularProgress />
-            </Container>
-        );
-    }
 
     return (
         <Container maxWidth="md" sx={{ py: 4 }}>

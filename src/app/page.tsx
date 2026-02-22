@@ -161,9 +161,27 @@ export default function LoginPage() {
     }
 
     // Basic Validation
-    if (!name || !phone || !birthdate) {
+    const cleanName = name.trim();
+    if (!cleanName || !phone || !birthdate) {
       console.log("Validation Failed:", { name, phone, birthdate });
       setError('모든 정보를 입력해주세요.');
+      return;
+    }
+
+    if (cleanName.length > 20) {
+      setError('이름은 20자를 초과할 수 없습니다.');
+      return;
+    }
+
+    const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('올바른 휴대전화 번호 형식이 아닙니다.');
+      return;
+    }
+
+    const birthdateRegex = /^\d{6}$/;
+    if (!birthdateRegex.test(birthdate)) {
+      setError('생년월일 6자리를 정확히 입력해주세요.');
       return;
     }
 

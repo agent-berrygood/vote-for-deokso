@@ -3,25 +3,37 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Button, Container, TextField, Typography, Paper } from '@mui/material';
+import { loginAdmin } from '@/app/actions/auth';
 
 export default function AdminLogin() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Simple hardcoded password for now, as per plan. 
-        // In production, this should be an env var or Firebase Auth.
-        const CORRECT_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'vote2026';
+        setLoading(true);
+        setError('');
 
-        if (password === CORRECT_PASSWORD) {
-            sessionStorage.setItem('admin_auth', 'true');
-            // Also set isAdmin for compatibility if needed, but my admin page uses admin_auth
-            sessionStorage.setItem('isAdmin', 'true');
-            router.push('/admin');
-        } else {
-            setError('Incorrect password');
+        try {
+            const res = await loginAdmin(password);
+
+            if (res.success) {
+                // Keep sessionStorage for backward compatibility with other parts if they exist
+                sessionStorage.setItem('admin_auth', 'true');
+                sessionStorage.setItem('isAdmin', 'true');
+
+                // Force a hard refresh to ensure middleware and server components see the cookie
+                window.location.href = '/admin';
+            } else {
+                setError(res.message || '로그인 실패');
+            }
+        } catch (err) {
+            console.error(err);
+            setError('서버 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -41,9 +53,10 @@ export default function AdminLogin() {
                             fullWidth
                             error={!!error}
                             helperText={error}
+                            disabled={loading}
                         />
-                        <Button type="submit" variant="contained" size="large" fullWidth>
-                            Login
+                        <Button type="submit" variant="contained" size="large" fullWidth disabled={loading}>
+                            {loading ? '로그인 중...' : 'Login'}
                         </Button>
                     </Box>
                 </form>
