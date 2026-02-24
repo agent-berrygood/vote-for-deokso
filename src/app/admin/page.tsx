@@ -910,6 +910,7 @@ function AdminLogsSection() {
     const { activeElectionId } = useElection();
     const [logs, setLogs] = useState<AdminLog[]>([]);
     const [loading, setLoading] = useState(false);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         if (!activeElectionId) {
@@ -940,24 +941,44 @@ function AdminLogsSection() {
         return () => unsubscribe();
     }, [activeElectionId]);
 
-    const handleDownloadLogs = () => {
-        const data = logs.map(l => ({
-            '일시': new Date(l.timestamp).toLocaleString(),
-            '작업 구분': l.actionType,
-            '상세 내용': l.description,
-            '관리자 ID': l.adminId || '시스템'
-        }));
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Admin Logs");
-        XLSX.writeFile(wb, `${activeElectionId}_admin_logs.xlsx`);
+    const handleDownloadLogs = async () => {
+        if (!activeElectionId) return;
+        setDownloading(true);
+        try {
+            const logsQuery = query(
+                collection(db, 'adminLogs'),
+                where('electionId', '==', activeElectionId),
+                orderBy('timestamp', 'desc')
+            );
+            const snapshot = await getDocs(logsQuery);
+            const allLogs: AdminLog[] = [];
+            snapshot.forEach(doc => allLogs.push({ id: doc.id, ...doc.data() } as AdminLog));
+
+            const data = allLogs.map(l => ({
+                '일시': new Date(l.timestamp).toLocaleString(),
+                '작업 구분': l.actionType,
+                '상세 내용': l.description,
+                '관리자 ID': l.adminId || '시스템'
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Admin Logs");
+            XLSX.writeFile(wb, `${activeElectionId}_admin_logs.xlsx`);
+        } catch (error) {
+            console.error("Error downloading logs:", error);
+            alert('로그 다운로드 중 오류가 발생했습니다.');
+        } finally {
+            setDownloading(false);
+        }
     };
 
     return (
         <Paper sx={{ p: 4, mb: 4, bgcolor: '#fffde7' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">🛡 관리자 활동 로그 (최근 100건)</Typography>
-                <Button variant="outlined" onClick={handleDownloadLogs} disabled={logs.length === 0}>로그 엑셀 다운로드</Button>
+                <Button variant="outlined" onClick={handleDownloadLogs} disabled={logs.length === 0 || downloading}>
+                    {downloading ? '진행 중...' : '전체 로그 엑셀 다운로드'}
+                </Button>
             </Box>
             {loading ? <CircularProgress size={24} /> : (
                 <Box sx={{ maxHeight: 300, overflow: 'auto', bgcolor: 'white', border: '1px solid #ddd', borderRadius: 1 }}>
