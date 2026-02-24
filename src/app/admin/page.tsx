@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { collection, writeBatch, doc, getDoc, setDoc, getDocs, query, where, DocumentData } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDoc, setDoc, getDocs, query, where, DocumentData, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Candidate, Voter } from '@/types';
+import { Candidate, Voter, AdminLog } from '@/types';
 import { getDriveImageUrl } from '@/utils/driveLinkParser';
+import { logAdminAction } from '@/lib/adminLogger';
 import {
     Box,
     Button,
@@ -108,6 +109,7 @@ export default function AdminPage() {
         setLoading(true);
         try {
             await createElection(newElectionId);
+            await logAdminAction({ electionId: newElectionId, actionType: 'CREATE_ELECTION', description: `선거 '${newElectionId}' 생성` });
             setNewElectionId('');
             setMessage({ type: 'success', text: `선거 '${newElectionId}'가 생성되었습니다!` });
         } catch (err: unknown) {
@@ -129,6 +131,7 @@ export default function AdminPage() {
                 startDate,
                 endDate
             });
+            await logAdminAction({ electionId: activeElectionId, actionType: 'UPDATE_SETTINGS', description: '시스템 설정 업데이트 및 저장' });
             setMessage({ type: 'success', text: '시스템 설정이 성공적으로 저장되었습니다!' });
         } catch (err) {
             console.error(err);
@@ -155,6 +158,10 @@ export default function AdminPage() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Template");
         XLSX.writeFile(wb, filename);
+
+        if (activeElectionId) {
+            logAdminAction({ electionId: activeElectionId, actionType: 'DOWNLOAD_TEMPLATE', description: `${type} 템플릿 파일 다운로드` });
+        }
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -245,6 +252,7 @@ export default function AdminPage() {
                 });
 
                 await batch.commit();
+                await logAdminAction({ electionId: activeElectionId, actionType: 'UPLOAD_CANDIDATES', description: `${uploadRound}차 ${position} 후보 ${candidates.length}명 데이터 업로드` });
                 setMessage({ type: 'success', text: `성공적으로 ${candidates.length}명의 ${position} 후보를 업로드했습니다!` });
             } catch (error) {
                 console.error(error);
@@ -299,6 +307,7 @@ export default function AdminPage() {
                 });
 
                 await batch.commit();
+                await logAdminAction({ electionId: activeElectionId, actionType: 'UPLOAD_VOTERS', description: `선거인 ${voters.length}명 명부 업로드 및 초기화` });
                 setMessage({ type: 'success', text: `성공적으로 ${voters.length}명의 선거인을 업로드했습니다!` });
             } catch (error) {
                 console.error(error);
@@ -308,6 +317,40 @@ export default function AdminPage() {
                 (event.target as HTMLInputElement).value = '';
             }
         });
+    };
+
+    const handleDownloadVotersList = async () => {
+        if (!activeElectionId) return;
+        setLoading(true);
+        try {
+            const q = query(collection(db, `elections/${activeElectionId}/voters`));
+            const snap = await getDocs(q);
+            const data: any[] = [];
+
+            snap.forEach(doc => {
+                const v = doc.data() as Voter;
+                const record = {
+                    '이름': v.name,
+                    '전화번호': v.phone || '',
+                    '생년월일': v.birthdate || '',
+                    '참여여부': (v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? 'O' : 'X',
+                    '상세참여여부': v.participated ? Object.keys(v.participated).filter(k => v.participated![k]).join(', ') : ''
+                };
+                data.push(record);
+            });
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Voters List");
+            XLSX.writeFile(wb, `${activeElectionId}_voters_list.xlsx`);
+
+            await logAdminAction({ electionId: activeElectionId, actionType: 'DOWNLOAD_VOTERS', description: '선거인 명단 및 투표참여여부 엑셀 다운로드' });
+            setMessage({ type: 'success', text: '선거인 명단 다운로드를 완료했습니다.' });
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: 'error', text: '선거인 명단 다운로드 중 오류가 발생했습니다.' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleAddSingleVoter = async () => {
@@ -353,6 +396,7 @@ export default function AdminPage() {
             };
 
             await setDoc(newDocRef, voterData);
+            await logAdminAction({ electionId: activeElectionId, actionType: 'ADD_SINGLE_VOTER', description: `단일 선거인 추가: '${singleVoterName}'` });
             setMessage({ type: 'success', text: `Voter '${singleVoterName}' added with Key: ${authKey}` });
 
             // Clear inputs
@@ -397,6 +441,7 @@ export default function AdminPage() {
             // 2. Delete Voters
             const count2 = await deleteCollectionInBatches(`elections/${activeElectionId}/voters`);
 
+            await logAdminAction({ electionId: activeElectionId, actionType: 'RESET_DATA', description: `선거 데이터 초기화됨 (삭제된 데이터: 후보 ${count1}명, 선거인 ${count2}명)` });
             setMessage({ type: 'success', text: `Reset complete. Deleted ${count1} candidates and ${count2} voters.` });
             setResetDialogOpen(false);
 
@@ -590,7 +635,7 @@ export default function AdminPage() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     CSV/Excel Format: Name, Phone, Birthdate (Optional: AuthKey)
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Button
                         component="label"
                         variant="contained"
@@ -603,6 +648,9 @@ export default function AdminPage() {
                     </Button>
                     <Button variant="outlined" onClick={() => handleDownloadTemplate('voter')}>
                         양식 다운로드
+                    </Button>
+                    <Button variant="outlined" color="success" onClick={handleDownloadVotersList} disabled={loading || !activeElectionId}>
+                        전체 선거인 참여 명단 다운로드
                     </Button>
                 </Box>
             </Paper>
@@ -667,6 +715,7 @@ export default function AdminPage() {
             />
 
             <VotingResultsSection />
+            <AdminLogsSection />
         </Container>
     );
 }
@@ -850,6 +899,89 @@ function VotingResultsSection() {
                         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 2 }}>
                             ... 외 {candidates.length - maxVoteLimit}명 생략됨 ...
                         </Typography>
+                    )}
+                </Box>
+            )}
+        </Paper>
+    );
+}
+
+function AdminLogsSection() {
+    const { activeElectionId } = useElection();
+    const [logs, setLogs] = useState<AdminLog[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!activeElectionId) {
+            setLogs([]);
+            return;
+        }
+
+        const logsQuery = query(
+            collection(db, 'adminLogs'),
+            where('electionId', '==', activeElectionId),
+            orderBy('timestamp', 'desc'),
+            limit(100)
+        );
+
+        setLoading(true);
+        const unsubscribe = onSnapshot(logsQuery, (snapshot) => {
+            const loadedLogs: AdminLog[] = [];
+            snapshot.forEach(doc => {
+                loadedLogs.push({ id: doc.id, ...doc.data() } as AdminLog);
+            });
+            setLogs(loadedLogs);
+            setLoading(false);
+        }, (err) => {
+            console.error("Log fetch error:", err);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [activeElectionId]);
+
+    const handleDownloadLogs = () => {
+        const data = logs.map(l => ({
+            '일시': new Date(l.timestamp).toLocaleString(),
+            '작업 구분': l.actionType,
+            '상세 내용': l.description,
+            '관리자 ID': l.adminId || '시스템'
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Admin Logs");
+        XLSX.writeFile(wb, `${activeElectionId}_admin_logs.xlsx`);
+    };
+
+    return (
+        <Paper sx={{ p: 4, mb: 4, bgcolor: '#fffde7' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight="bold">🛡 관리자 활동 로그 (최근 100건)</Typography>
+                <Button variant="outlined" onClick={handleDownloadLogs} disabled={logs.length === 0}>로그 엑셀 다운로드</Button>
+            </Box>
+            {loading ? <CircularProgress size={24} /> : (
+                <Box sx={{ maxHeight: 300, overflow: 'auto', bgcolor: 'white', border: '1px solid #ddd', borderRadius: 1 }}>
+                    {logs.length === 0 ? (
+                        <Typography variant="body2" sx={{ p: 2, color: 'text.secondary' }}>기록된 활동 로그가 없습니다.</Typography>
+                    ) : (
+                        <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <Box component="thead" sx={{ bgcolor: '#f5f5f5' }}>
+                                <Box component="tr" sx={{ '& th': { p: 1, borderBottom: '1px solid #ddd' } }}>
+                                    <th>일시</th>
+                                    <th>작업 구분</th>
+                                    <th>상세 내용</th>
+                                </Box>
+                            </Box>
+                            <Box component="tbody">
+                                {logs.map(l => (
+                                    <Box component="tr" key={l.id} sx={{ '& td': { p: 1, borderBottom: '1px solid #eee', fontSize: '0.9rem' } }}>
+                                        <td>{new Date(l.timestamp).toLocaleString()}</td>
+                                        <td><Chip size="small" label={l.actionType} /></td>
+                                        <td>{l.description}</td>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
                     )}
                 </Box>
             )}

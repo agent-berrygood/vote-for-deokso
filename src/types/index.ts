@@ -39,3 +39,12 @@ export interface SystemSettings {
     startDate?: string; // ISO String
     endDate?: string;   // ISO String
 }
+
+export interface AdminLog {
+    id?: string;
+    electionId: string;
+    actionType: 'CREATE_ELECTION' | 'UPDATE_SETTINGS' | 'UPLOAD_CANDIDATES' | 'UPLOAD_VOTERS' | 'ADD_SINGLE_VOTER' | 'RESET_DATA' | 'DOWNLOAD_RESULTS' | 'DOWNLOAD_VOTERS' | 'DOWNLOAD_TEMPLATE' | 'OTHER';
+    description: string;
+    timestamp: number;
+    adminId?: string; // Optional if we don't have distinct admin accounts yet
+}
