@@ -13,13 +13,31 @@ export async function middleware(request: NextRequest) {
         if (adminAuthCookie?.value) {
             const payload = await verifyToken(adminAuthCookie.value);
             if (payload && payload.role === 'admin') {
-                isValidAdmin = true;
+                // Check explicit expiration: jose already rejects expired tokens,
+                // but double-check in case of clock skew
+                const exp = payload.exp as number | undefined;
+                if (exp && exp > Math.floor(Date.now() / 1000)) {
+                    isValidAdmin = true;
+                }
             }
         }
 
         if (!isValidAdmin) {
-            return NextResponse.redirect(new URL('/admin/login', request.url));
+            const loginUrl = new URL('/admin/login', request.url);
+            const response = NextResponse.redirect(loginUrl);
+
+            // Clear invalid/expired/tampered admin cookie on redirect
+            response.cookies.delete('admin_auth');
+
+            return response;
         }
+
+        // Prevent caching of authenticated admin pages (back-button bypass prevention)
+        const response = NextResponse.next();
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        return response;
     }
 
     // 2. Voter routes protection
@@ -30,13 +48,21 @@ export async function middleware(request: NextRequest) {
         if (voterTokenCookie?.value) {
             const payload = await verifyToken(voterTokenCookie.value);
             if (payload && payload.role === 'voter' && payload.voterId && payload.electionId) {
-                isValidVoter = true;
+                const exp = payload.exp as number | undefined;
+                if (exp && exp > Math.floor(Date.now() / 1000)) {
+                    isValidVoter = true;
+                }
             }
         }
 
         if (!isValidVoter) {
-            // Unauthenticated or manipulated token, back to SMS verification auth page
-            return NextResponse.redirect(new URL('/', request.url));
+            const homeUrl = new URL('/', request.url);
+            const response = NextResponse.redirect(homeUrl);
+
+            // Clear invalid/expired voter cookie on redirect
+            response.cookies.delete('voter_token');
+
+            return response;
         }
     }
 
@@ -46,4 +72,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
     matcher: ['/admin/:path*', '/vote/:path*'],
 };
-

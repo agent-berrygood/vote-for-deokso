@@ -92,6 +92,39 @@ export async function loginAdmin(password: string) {
     return { success: false, message: '비밀번호가 일치하지 않습니다.' };
 }
 
+/**
+ * 민감한 어드민 액션(데이터 초기화 등) 수행 전 비밀번호 재확인
+ * 기존 세션 유효성 + 비밀번호 일치 여부를 동시에 검증
+ */
+export async function reAuthenticateAdmin(password: string): Promise<{ success: boolean; message?: string }> {
+    try {
+        const cookieStore = await cookies();
+        const adminAuthCookie = cookieStore.get('admin_auth');
+
+        if (!adminAuthCookie?.value) {
+            return { success: false, message: '인증 세션이 만료되었습니다. 다시 로그인해주세요.' };
+        }
+
+        // 1. 기존 세션(JWT) 유효성 재확인
+        const { verifyToken } = await import('@/lib/auth');
+        const payload = await verifyToken(adminAuthCookie.value);
+        if (!payload || payload.role !== 'admin') {
+            return { success: false, message: '유효하지 않은 관리자 세션입니다. 다시 로그인해주세요.' };
+        }
+
+        // 2. 비밀번호 재확인
+        const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD || 'vote2026';
+        if (password !== CORRECT_PASSWORD) {
+            return { success: false, message: '비밀번호가 일치하지 않습니다.' };
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('reAuthenticateAdmin error:', error);
+        return { success: false, message: '재인증 처리 중 오류가 발생했습니다.' };
+    }
+}
+
 export async function logoutAdmin() {
     const cookieStore = await cookies();
     cookieStore.delete('admin_auth');

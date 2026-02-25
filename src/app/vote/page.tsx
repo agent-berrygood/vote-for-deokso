@@ -206,6 +206,8 @@ export default function VotePage() {
     };
 
     const handleSubmitAll = async () => {
+        if (submitting) return; // 다중 클릭 방지 guard
+
         if (!confirm("모든 투표를 완료하시겠습니까? 제출 후에는 수정할 수 없습니다.")) return;
 
         setSubmitting(true);
@@ -223,10 +225,9 @@ export default function VotePage() {
 
         } catch (err: unknown) {
             console.error(err);
-            if (err !== "취소됨") {
-                const errorMessage = err instanceof Error ? err.message : String(err);
-                alert(errorMessage || '투표 제출 실패');
-            }
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            setError(errorMessage || '투표 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
+            window.scrollTo(0, 0);
         } finally {
             setSubmitting(false);
         }

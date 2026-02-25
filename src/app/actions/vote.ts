@@ -114,7 +114,19 @@ export async function submitVote(votes: Record<string, string[]>) {
         return { success: true };
     } catch (err: unknown) {
         console.error("Transact Submit Error:", err);
-        const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
+
+        // Firestore 트랜잭션 실패 시 자동 롤백됨 — 사용자에게 구체적인 메시지 제공
+        let errorMessage = '알 수 없는 오류가 발생했습니다.';
+        if (err instanceof Error) {
+            // Firestore 트랜잭션 경합(contention) 또는 네트워크 에러 분류
+            if (err.message.includes('contention') || err.message.includes('too much contention')) {
+                errorMessage = '동시 요청이 많아 처리에 실패했습니다. 잠시 후 다시 시도해주세요.';
+            } else if (err.message.includes('network') || err.message.includes('unavailable') || err.message.includes('UNAVAILABLE')) {
+                errorMessage = '네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인 후 다시 시도해주세요.';
+            } else {
+                errorMessage = err.message;
+            }
+        }
         return { success: false, message: errorMessage };
     }
 }

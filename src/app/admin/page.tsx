@@ -709,9 +709,10 @@ export default function AdminPage() {
             <ConfirmDialog
                 open={resetDialogOpen}
                 title="Reset Election Data?"
-                description={`Are you sure you want to RESET data for '${activeElectionId}'? This cannot be undone.`}
+                description={`Are you sure you want to RESET data for '${activeElectionId}'? This cannot be undone. 계속하려면 관리자 비밀번호를 입력하세요.`}
                 onConfirm={handleResetData}
                 onCancel={() => setResetDialogOpen(false)}
+                requireReAuth
             />
 
             <VotingResultsSection />

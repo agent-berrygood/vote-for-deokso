@@ -332,9 +332,10 @@ export default function CandidateManager() {
             <ConfirmDialog
                 open={!!deleteTarget}
                 title="후보자 삭제(사퇴) 확인"
-                description={`'${deleteTarget?.name}' 후보를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 득표 기록도 사라질 수 있습니다.`}
+                description={`'${deleteTarget?.name}' 후보를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 득표 기록도 사라질 수 있습니다. 계속하려면 관리자 비밀번호를 입력하세요.`}
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteTarget(null)}
+                requireReAuth
             />
         </Paper>
     );
