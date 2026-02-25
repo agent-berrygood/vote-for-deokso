@@ -319,6 +319,36 @@ export default function AdminPage() {
         });
     };
 
+    const calcAgeFromBirthdate = (birthdate: string): { age: number; ageGroup: string } | null => {
+        if (!birthdate || birthdate.length !== 6) return null;
+        const yy = parseInt(birthdate.substring(0, 2), 10);
+        const mm = parseInt(birthdate.substring(2, 4), 10);
+        const dd = parseInt(birthdate.substring(4, 6), 10);
+        if (isNaN(yy) || isNaN(mm) || isNaN(dd)) return null;
+
+        const fullYear = yy >= 0 && yy <= 25 ? 2000 + yy : 1900 + yy;
+        const birthDate = new Date(fullYear, mm - 1, dd);
+        const today = new Date();
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        const decade = Math.floor(age / 10) * 10;
+        const ageGroup = decade >= 100 ? '100세 이상' : `${decade}대`;
+
+        return { age, ageGroup };
+    };
+
+    const formatVotedAt = (votedAt: number | null | undefined): string => {
+        if (!votedAt) return '';
+        const d = new Date(votedAt);
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+
     const handleDownloadVotersList = async () => {
         if (!activeElectionId) return;
         setLoading(true);
@@ -329,12 +359,16 @@ export default function AdminPage() {
 
             snap.forEach(doc => {
                 const v = doc.data() as Voter;
+                const ageInfo = calcAgeFromBirthdate(v.birthdate || '');
                 const record = {
                     '이름': v.name,
                     '전화번호': v.phone || '',
                     '생년월일': v.birthdate || '',
+                    '만 나이': ageInfo ? ageInfo.age : '',
+                    '연령대': ageInfo ? ageInfo.ageGroup : '',
                     '참여여부': (v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? 'O' : 'X',
-                    '상세참여여부': v.participated ? Object.keys(v.participated).filter(k => v.participated![k]).join(', ') : ''
+                    '상세참여여부': v.participated ? Object.keys(v.participated).filter(k => v.participated![k]).join(', ') : '',
+                    '투표완료시간': formatVotedAt(v.votedAt)
                 };
                 data.push(record);
             });
