@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
+import { createVoterSession } from '@/app/actions/auth';
 
 declare global {
   interface Window {
@@ -286,10 +287,19 @@ export default function LoginPage() {
       const tempVoterId = sessionStorage.getItem('tempVoterId');
       const tempVoterName = sessionStorage.getItem('tempVoterName');
 
-      if (tempVoterId && tempVoterName) {
+      if (tempVoterId && tempVoterName && activeElectionId) {
+        // [NEW] Call Server Action to set secure HTTP-only Cookie JWT
+        const sessionResult = await createVoterSession(tempVoterId, activeElectionId, tempVoterName);
+
+        if (!sessionResult.success) {
+          throw new Error(sessionResult.message || "Failed to create secure session");
+        }
+
+        // Keep existing sessionStorage for backward compatibility inside Votepage during migration
         sessionStorage.setItem('voterId', tempVoterId);
         sessionStorage.setItem('voterName', tempVoterName);
-        sessionStorage.setItem('electionId', activeElectionId || '');
+        sessionStorage.setItem('electionId', activeElectionId);
+
         router.push('/vote');
       } else {
         setError("로그인 정보가 유실되었습니다. 처음부터 다시 시도해주세요.");

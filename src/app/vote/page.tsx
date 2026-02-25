@@ -6,12 +6,13 @@ import {
     collection,
     getDocs,
     doc,
-    runTransaction,
     getDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
+import { submitVote } from '@/app/actions/vote';
+
 import {
     Box,
     Container,
@@ -208,93 +209,14 @@ export default function VotePage() {
         if (!confirm("모든 투표를 완료하시겠습니까? 제출 후에는 수정할 수 없습니다.")) return;
 
         setSubmitting(true);
-        const voterId = sessionStorage.getItem('voterId');
-
-        if (!voterId || !activeElectionId) {
-            setError("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
-            return;
-        }
+        setError('');
 
         try {
-            await runTransaction(db, async (transaction) => {
-                // 1. Read Voter
-                const voterRef = doc(db, `elections/${activeElectionId}/voters`, voterId);
-                const voterSnap = await transaction.get(voterRef);
+            const res = await submitVote(votes);
 
-                if (!voterSnap.exists()) throw "선거인 정보를 찾을 수 없습니다.";
-                const voterData = voterSnap.data();
-
-                // 2. Process ALL votes
-                const allSelectedIds: string[] = [];
-                const participatedUpdates: Record<string, boolean> = {};
-
-                for (const pos of POSITION_ORDER) {
-                    const selectedForPos = votes[pos] || [];
-                    if (selectedForPos.length === 0) continue; // Skip empty votes? Or mark as participated with 0?
-
-                    // Logic: If user selected 0, we assume they skipped or didn't vote for that position.
-                    // But if they clicked submit, we process what they have.
-                    // IMPORTANT: Should we mark them as participated even if 0 votes? 
-                    // Let's assume yes, to prevent re-voting.
-
-                    const round = rounds[pos] || 1;
-                    const groupKey = `${pos}_${round}`;
-
-                    const isAdmin = voterData.name === ADMIN_VOTER_NAME;
-
-                    if (!isAdmin && voterData.participated?.[groupKey]) {
-                        throw `이미 '${pos}' 투표에 참여하셨습니다.`;
-                    }
-
-                    participatedUpdates[groupKey] = true;
-                    allSelectedIds.push(...selectedForPos);
-                }
-
-                if (allSelectedIds.length === 0 && Object.keys(participatedUpdates).length === 0) {
-                    // If absolutely nothing selected
-                    if (!confirm("선택된 후보가 없습니다. 정말로 아무도 선택하지 않고 종료하시겠습니까?")) {
-                        throw "취소됨";
-                    }
-                }
-
-                // 3. Read Candidates (Batch - ALl reads must happen before writes)
-                const candidateUpdates = [];
-                for (const candidateId of allSelectedIds) {
-                    const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
-                    const candidateSnap = await transaction.get(candidateRef);
-
-                    if (!candidateSnap.exists()) throw "후보자 정보가 변경되었습니다.";
-
-                    candidateUpdates.push({
-                        ref: candidateRef,
-                        data: candidateSnap.data() as Candidate
-                    });
-                }
-
-                // 4. Write Candidates
-                for (const { ref, data } of candidateUpdates) {
-                    const newTotal = (data.voteCount || 0) + 1;
-                    const cRound = data.round || 1;
-                    const votesByRound = data.votesByRound || {};
-                    votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
-
-                    transaction.update(ref, {
-                        voteCount: newTotal,
-                        votesByRound: votesByRound
-                    });
-                }
-
-                // 5. Update Voter (Skip for Admin to allow infinite voting)
-                const isAdmin = voterData.name === ADMIN_VOTER_NAME;
-                if (!isAdmin) {
-                    const newParticipated = { ...voterData.participated, ...participatedUpdates };
-                    transaction.update(voterRef, {
-                        participated: newParticipated,
-                        votedAt: Date.now(),
-                        hasVoted: true // Legacy support
-                    });
-                }
-            });
+            if (!res.success) {
+                throw new Error(res.message);
+            }
 
             setSuccess(true);
             window.scrollTo(0, 0);
