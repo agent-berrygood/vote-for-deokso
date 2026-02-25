@@ -21,6 +21,7 @@ import { createVoterSession } from '@/app/actions/auth';
 declare global {
   interface Window {
     recaptchaVerifier: RecaptchaVerifier | undefined;
+    grecaptcha: any;
   }
 }
 
@@ -254,13 +255,13 @@ export default function LoginPage() {
       // Reset Recaptcha on error if needed
       if (window.recaptchaVerifier) {
         try {
-          // RecaptchaVerifier might not have render method exposed easily on window object typed as 'any' previously
-          // But we can try to re-render or just let it be.
-          // window.recaptchaVerifier.render().then((widgetId: any) => { });
-          // Simply logging for now as reset is complex without widget ID stored
-          console.log("Recaptcha might need reset");
+          window.recaptchaVerifier.render().then((widgetId) => {
+            if (window.grecaptcha) {
+              window.grecaptcha.reset(widgetId);
+            }
+          });
         } catch (e) {
-          console.error(e);
+          console.error('Recaptcha reset failed', e);
         }
       }
 
@@ -271,7 +272,7 @@ export default function LoginPage() {
 
   const handleConfirmCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!confirmationResult && !inputAuthKey) return; // Should have result and input
+    if (!confirmationResult && !inputAuthKey) return;
 
     if (!inputAuthKey) {
       setError('인증번호를 입력해주세요.');
@@ -288,11 +289,13 @@ export default function LoginPage() {
       const tempVoterName = sessionStorage.getItem('tempVoterName');
 
       if (tempVoterId && tempVoterName && activeElectionId) {
-        // [NEW] Call Server Action to set secure HTTP-only Cookie JWT
+        // [NEW] Call Server Action to set secure HTTP-only Cookie JWT (JWE Encrypted)
         const sessionResult = await createVoterSession(tempVoterId, activeElectionId, tempVoterName);
 
         if (!sessionResult.success) {
-          throw new Error(sessionResult.message || "Failed to create secure session");
+          console.error('[Cookie Error]', sessionResult.message);
+          setError(`보안 세션 생성 실패: ${sessionResult.message}`);
+          return;
         }
 
         // Keep existing sessionStorage for backward compatibility inside Votepage during migration
@@ -321,7 +324,7 @@ export default function LoginPage() {
         setError(`인증 실패 (${errorCode}). 다시 시도해주세요.`);
       }
     } finally {
-      setLoading(false);
+      if (!error) setLoading(false);
     }
   };
 
