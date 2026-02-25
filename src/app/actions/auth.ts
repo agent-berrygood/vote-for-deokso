@@ -126,7 +126,8 @@ export async function createVoterSession(voterId: string, electionId: string, vo
         return { success: true };
     } catch (error) {
         console.error('Failed to create voter session:', error);
-        return { success: false, message: 'Failed to create secure session' };
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        return { success: false, message: `Failed to create secure session: ${errorMsg}` };
     }
 }
 

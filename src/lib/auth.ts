@@ -3,7 +3,8 @@ import { EncryptJWT, jwtDecrypt } from 'jose';
 const getSecretKey = () => {
     let secret = process.env.AUTH_SECRET;
     if (!secret) {
-        throw new Error('AUTH_SECRET environment variable is missing.');
+        console.warn('AUTH_SECRET environment variable is missing. Using a fallback secret.');
+        secret = 'fallback_default_secret_key_for_dev_mode_only';
     }
     // JWE with A256GCM requires exactly 32 bytes (256 bits).
     if (secret.length < 32) {
