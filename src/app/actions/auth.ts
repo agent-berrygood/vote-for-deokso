@@ -2,6 +2,73 @@
 
 import { cookies } from 'next/headers';
 import { signToken } from '@/lib/auth';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+
+const POSITION_ORDER = ['장로', '안수집사', '권사'];
+
+export async function verifyVoterInfo(
+    name: string,
+    phone: string,
+    birthdate: string,
+    electionId: string
+): Promise<{
+    success: boolean;
+    message?: string;
+    voterId?: string;
+    allVotesCompleted?: boolean;
+    participated?: Record<string, boolean>;
+}> {
+    try {
+        const cleanName = name.trim();
+        const cleanPhone = phone.trim();
+        const cleanBirthdate = birthdate.trim();
+
+        if (!cleanName || !cleanPhone || !cleanBirthdate || !electionId) {
+            return { success: false, message: '모든 정보를 입력해주세요.' };
+        }
+
+        // 1. Firestore 선거인 명부 대조
+        const votersRef = collection(db, `elections/${electionId}/voters`);
+        const q = query(
+            votersRef,
+            where('name', '==', cleanName),
+            where('phone', '==', cleanPhone),
+            where('birthdate', '==', cleanBirthdate)
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            return { success: false, message: '등록된 선거인 정보가 없습니다. (이름, 전화번호, 생년월일 확인)' };
+        }
+
+        const voterDoc = snapshot.docs[0];
+        const voterData = voterDoc.data();
+        const participated = voterData.participated || {};
+
+        // 2. 현재 선거 설정(라운드 정보) 조회
+        const settingsSnap = await getDoc(doc(db, `elections/${electionId}/settings`, 'config'));
+        const settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
+        const rounds: Record<string, number> = settingsData.rounds || { '장로': 1, '권사': 1, '안수집사': 1 };
+
+        // 3. 모든 직분의 현재 라운드 투표 완료 여부 확인
+        const allVotesCompleted = POSITION_ORDER.every((pos) => {
+            const round = rounds[pos] || 1;
+            const groupKey = `${pos}_${round}`;
+            return participated[groupKey] === true;
+        });
+
+        return {
+            success: true,
+            voterId: voterDoc.id,
+            allVotesCompleted,
+            participated,
+        };
+    } catch (error) {
+        console.error('verifyVoterInfo error:', error);
+        return { success: false, message: '선거인 확인 중 오류가 발생했습니다.' };
+    }
+}
 
 export async function loginAdmin(password: string) {
     const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD || 'vote2026';

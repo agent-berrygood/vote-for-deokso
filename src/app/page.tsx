@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import {
   Box,
@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
-import { createVoterSession } from '@/app/actions/auth';
+import { createVoterSession, verifyVoterInfo } from '@/app/actions/auth';
 
 declare global {
   interface Window {
@@ -194,25 +194,23 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // 1. Check if user exists in Firestore
-      const votersRef = collection(db, `elections/${activeElectionId}/voters`);
-      const q = query(
-        votersRef,
-        where('name', '==', name.trim()),
-        where('phone', '==', phone.trim()),
-        where('birthdate', '==', birthdate.trim())
-      );
-      const snapshot = await getDocs(q);
+      // 1. 서버 액션으로 선거인 명부 확인
+      const verifyResult = await verifyVoterInfo(cleanName, phone.trim(), birthdate.trim(), activeElectionId);
 
-      if (snapshot.empty) {
-        setError('등록된 선거인 정보가 없습니다. (이름, 전화번호, 생년월일 확인)');
+      if (!verifyResult.success) {
+        setError(verifyResult.message || '선거인 확인에 실패했습니다.');
         setLoading(false);
         return;
       }
 
-      const voterDoc = snapshot.docs[0];
+      // 2. 모든 투표 완료 여부 확인 — 완료 시 인증문자 전송 중단
+      if (verifyResult.allVotesCompleted) {
+        setError('이미 모든 투표를 완료하셨습니다.');
+        setLoading(false);
+        return;
+      }
 
-      // 2. Send SMS via Firebase
+      // 3. Send SMS via Firebase (미완료 투표가 있는 경우에만 실행)
       const { signInWithPhoneNumber } = await import('firebase/auth');
 
       // Ensure verifier exists (should be done in useEffect, but safe check)
@@ -229,8 +227,8 @@ export default function LoginPage() {
       setStep(2);
 
       // Save voter ID for later use
-      sessionStorage.setItem('tempVoterId', voterDoc.id);
-      sessionStorage.setItem('tempVoterName', name);
+      sessionStorage.setItem('tempVoterId', verifyResult.voterId!);
+      sessionStorage.setItem('tempVoterName', cleanName);
 
     } catch (err: unknown) {
       console.error("Auth Error Object:", err);
