@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { signToken } from '@/lib/auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const POSITION_ORDER = ['장로', '안수집사', '권사'];
 
@@ -177,9 +177,25 @@ export async function loginWithMasterPasskey(
     electionId: string,
     passkey: string
 ) {
-    const MASTER_PASSKEY = process.env.MASTER_PASSKEY;
+    const MASTER_PASSKEYS = process.env.MASTER_PASSKEYS;
 
-    if (!MASTER_PASSKEY || passkey !== MASTER_PASSKEY) {
+    if (!MASTER_PASSKEYS) {
+        return { success: false, message: '서버 환경 변수가 설정되지 않았습니다.' };
+    }
+
+    // Parse PASSKEYS string: "위원A:pass123,위원B:pass456"
+    const passkeyPairs = MASTER_PASSKEYS.split(',').map(pair => pair.trim());
+    let approvedBy = '';
+
+    for (const pair of passkeyPairs) {
+        const [validatorName, validatorKey] = pair.split(':');
+        if (validatorKey === passkey) {
+            approvedBy = validatorName;
+            break;
+        }
+    }
+
+    if (!approvedBy) {
         return { success: false, message: '마스터 패스키가 일치하지 않습니다.' };
     }
 
@@ -199,6 +215,20 @@ export async function loginWithMasterPasskey(
 
     if (!sessionResult.success) {
         return sessionResult;
+    }
+
+    try {
+        const auditLogRef = collection(db, `elections/${electionId}/audit_logs`);
+        await addDoc(auditLogRef, {
+            action: 'PASSKEY_BYPASS',
+            voterId: verifyResult.voterId,
+            voterName: name,
+            approvedBy: approvedBy,
+            timestamp: serverTimestamp(),
+            ipAddress: 'server_action',
+        });
+    } catch (auditError) {
+        console.error("Failed to write audit log:", auditError);
     }
 
     return {
