@@ -189,6 +189,7 @@ export default function AdminPage() {
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
+                transformHeader: (header) => header.trim().replace(/^\\uFEFF/, ''),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 complete: (results) => parseLogic(results.data as any[]),
                 error: (error) => {
