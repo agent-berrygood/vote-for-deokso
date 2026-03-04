@@ -169,3 +169,40 @@ export async function clearVoterSession() {
     cookieStore.delete('voter_token');
     return { success: true };
 }
+
+export async function loginWithMasterPasskey(
+    name: string,
+    phone: string,
+    birthdate: string,
+    electionId: string,
+    passkey: string
+) {
+    const MASTER_PASSKEY = process.env.MASTER_PASSKEY || 'vote2026admin';
+
+    if (passkey !== MASTER_PASSKEY) {
+        return { success: false, message: '마스터 패스키가 일치하지 않습니다.' };
+    }
+
+    // 1. Verify Voter Info exactly like verifyVoterInfo
+    const verifyResult = await verifyVoterInfo(name, phone, birthdate, electionId);
+
+    if (!verifyResult.success) {
+        return verifyResult;
+    }
+
+    if (verifyResult.allVotesCompleted) {
+        return { success: false, message: '이미 모든 투표를 완료하셨습니다.' };
+    }
+
+    // 2. Create Voter Session bypassing SMS
+    const sessionResult = await createVoterSession(verifyResult.voterId!, electionId, name);
+
+    if (!sessionResult.success) {
+        return sessionResult;
+    }
+
+    return {
+        success: true,
+        voterId: verifyResult.voterId!
+    };
+}

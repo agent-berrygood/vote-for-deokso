@@ -29,7 +29,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { activeElectionId, loading: electionLoading } = useElection();
 
-  const [step, setStep] = useState<1 | 2>(1); // 1: Info Input, 2: Auth Verification
+  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Info Input, 2: Auth Verification, 3: Master Password Bypass
 
   // Step 1 Inputs
   const [name, setName] = useState('');
@@ -38,6 +38,9 @@ export default function LoginPage() {
 
   // Step 2 Input
   const [inputAuthKey, setInputAuthKey] = useState('');
+
+  // Step 3 Input
+  const [passkey, setPasskey] = useState('');
 
   // Internal State
   const [error, setError] = useState('');
@@ -137,7 +140,7 @@ export default function LoginPage() {
   }, [activeElectionId]);
 
   // Clear error on input change
-  useEffect(() => { setError(''); }, [name, phone, birthdate, inputAuthKey]);
+  useEffect(() => { setError(''); }, [name, phone, birthdate, inputAuthKey, passkey]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/[^0-9]/g, '');
@@ -268,6 +271,43 @@ export default function LoginPage() {
     }
   };
 
+  const handleMasterPasskeyLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeElectionId) {
+      setError('현재 진행 중인 선거가 없거나 설정을 불러오지 못했습니다.');
+      return;
+    }
+
+    const cleanName = name.trim();
+    if (!cleanName || !phone || !birthdate || !passkey) {
+      setError('모든 정보와 패스키를 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const { loginWithMasterPasskey } = await import('@/app/actions/auth');
+      const formattedPhone = phone.replace(/-/g, '').replace(/^0/, '+82');
+      const res = await loginWithMasterPasskey(cleanName, formattedPhone, birthdate, activeElectionId, passkey);
+
+      if (res.success && 'voterId' in res && res.voterId) {
+        sessionStorage.setItem('voterId', res.voterId as string);
+        sessionStorage.setItem('voterName', cleanName);
+        sessionStorage.setItem('electionId', activeElectionId);
+        router.push('/vote');
+      } else {
+        setError(res.message || '패스키 로그인에 실패했습니다.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('에러가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleConfirmCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!confirmationResult && !inputAuthKey) return;
@@ -389,15 +429,27 @@ export default function LoginPage() {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2, bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
+                  sx={{ mt: 3, mb: 1, bgcolor: '#333', '&:hover': { bgcolor: '#555' } }}
                   onClick={handleRequestAuth}
                   disabled={loading}
                 >
                   {loading ? <CircularProgress size={24} color="inherit" /> : '인증 확인'}
                 </Button>
+
+                <Box sx={{ mt: 1, mb: 1, textAlign: 'center' }}>
+                  <Button
+                    variant="text"
+                    size="small"
+                    color="inherit"
+                    onClick={() => setStep(3)}
+                    sx={{ textDecoration: 'underline' }}
+                  >
+                    문자 수신 불가 시 패스키로 입장
+                  </Button>
+                </Box>
               </fieldset>
             </form>
-          ) : (
+          ) : step === 2 ? (
             <form onSubmit={handleConfirmCode}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="primary">
                 인증번호 확인
@@ -427,6 +479,42 @@ export default function LoginPage() {
                 fullWidth
                 variant="text"
                 onClick={() => { setStep(1); setError(''); }}
+              >
+                뒤로 가기
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleMasterPasskeyLogin}>
+              <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="error">
+                선관위 전용 패스키 입장
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                문자 발송 실패 시, 선관위 위원이 직접 확인 후 입력하는 패스키입니다.
+              </Typography>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                label="마스터 패스키"
+                type="password"
+                autoFocus
+                value={passkey}
+                onChange={(e) => setPasskey(e.target.value)}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                color="error"
+                sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
+                disabled={loading || !passkey}
+              >
+                패스키로 즉시 입장
+              </Button>
+              <Button
+                fullWidth
+                variant="text"
+                onClick={() => { setStep(1); setError(''); setPasskey(''); }}
               >
                 뒤로 가기
               </Button>

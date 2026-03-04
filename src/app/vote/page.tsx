@@ -288,7 +288,11 @@ export default function VotePage() {
                             {voterName}님의 투표
                         </Typography>
                         <Box>
-                            {/* Mini stats if needed */}
+                            {!isReviewTab && (
+                                <Typography variant="body2" fontWeight="bold" color="primary" sx={{ bgcolor: '#e3f2fd', px: 1.5, py: 0.5, borderRadius: 2 }}>
+                                    {votes[currentPosition]?.length || 0} / {maxVotesMap[currentPosition]}명 선택
+                                </Typography>
+                            )}
                         </Box>
                     </Box>
                     <Tabs
