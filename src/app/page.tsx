@@ -289,8 +289,7 @@ export default function LoginPage() {
 
     try {
       const { loginWithMasterPasskey } = await import('@/app/actions/auth');
-      const formattedPhone = phone.replace(/-/g, '').replace(/^0/, '+82');
-      const res = await loginWithMasterPasskey(cleanName, formattedPhone, birthdate, activeElectionId, passkey);
+      const res = await loginWithMasterPasskey(cleanName, phone.trim(), birthdate, activeElectionId, passkey);
 
       if (res.success && 'voterId' in res && res.voterId) {
         sessionStorage.setItem('voterId', res.voterId as string);
