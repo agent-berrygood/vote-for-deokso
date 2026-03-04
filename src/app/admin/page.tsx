@@ -146,8 +146,8 @@ export default function AdminPage() {
         let filename = '';
 
         if (type === 'candidate') {
-            // New Format: Name, Birthdate, District, Position, PhotoLink, ProfileDesc
-            headers = ['Name', 'Birthdate', 'District', 'Position', 'PhotoLink', 'ProfileDesc'];
+            // New Format: Name, Birthdate, District, Position, PhotoLink, ProfileDesc, VolunteerInfo
+            headers = ['Name', 'Birthdate', 'District', 'Position', 'PhotoLink', 'ProfileDesc', 'VolunteerInfo'];
             filename = 'candidate_upload_template.xlsx';
         } else {
             headers = ['Name', 'Phone', 'Birthdate', 'AuthKey'];
@@ -246,7 +246,8 @@ export default function AdminPage() {
                         voteCount: 0,
                         votesByRound: { [uploadRound]: 0 },
                         round: uploadRound,
-                        profileDesc: row.ProfileDesc ? String(row.ProfileDesc).trim() : ''
+                        profileDesc: row.ProfileDesc ? String(row.ProfileDesc).trim() : '',
+                        volunteerInfo: row.VolunteerInfo ? String(row.VolunteerInfo).trim() : ''
                     };
                     batch.set(newDocRef, candidateData);
                 });
