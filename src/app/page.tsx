@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
-import { createVoterSession, verifyVoterInfo } from '@/app/actions/auth';
+import { createVoterSession, verifyVoterInfo, loginWithMasterPasskey } from '@/app/actions/auth';
 
 declare global {
   interface Window {
@@ -288,7 +288,6 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const { loginWithMasterPasskey } = await import('@/app/actions/auth');
       const res = await loginWithMasterPasskey(cleanName, phone.trim(), birthdate, activeElectionId, passkey);
 
       if (res.success && 'voterId' in res && res.voterId) {
@@ -301,7 +300,7 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error(err);
-      setError('에러가 발생했습니다.');
+      setError(`에러가 발생했습니다: ${err.message || String(err)}`);
     } finally {
       setLoading(false);
     }
