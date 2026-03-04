@@ -429,9 +429,11 @@ export default function VotePage() {
                                             </Box>
 
                                             <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
-                                                    {candidate.profileDesc?.replace(/\\n/g, '\n') || "이력이 없습니다."}
-                                                </Typography>
+                                                {candidate.profileDesc && (
+                                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
+                                                        {candidate.profileDesc.replace(/\\n/g, '\n')}
+                                                    </Typography>
+                                                )}
                                                 {candidate.volunteerInfo && (
                                                     <Typography variant="body2" color="primary" sx={{ mt: 1, whiteSpace: 'pre-line', fontSize: '0.8rem', fontWeight: 500 }}>
                                                         {candidate.volunteerInfo.replace(/\\n/g, '\n')}
