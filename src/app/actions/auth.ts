@@ -177,9 +177,9 @@ export async function loginWithMasterPasskey(
     electionId: string,
     passkey: string
 ) {
-    const MASTER_PASSKEY = process.env.MASTER_PASSKEY || 'vote2026admin';
+    const MASTER_PASSKEY = process.env.MASTER_PASSKEY;
 
-    if (passkey !== MASTER_PASSKEY) {
+    if (!MASTER_PASSKEY || passkey !== MASTER_PASSKEY) {
         return { success: false, message: '마스터 패스키가 일치하지 않습니다.' };
     }
 
