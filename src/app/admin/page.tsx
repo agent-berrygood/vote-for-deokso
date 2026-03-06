@@ -847,7 +847,7 @@ function VotingResultsSection() {
             // candidate 모델에 동적으로 붙이거나 어드민 화면상에서만 사용
             loaded.forEach(c => {
                 if (!c.votesByRound) c.votesByRound = {};
-                c.votesByRound[viewRound] = voteCounts[c.id] || 0;
+                c.votesByRound[viewRound] = c.id ? (voteCounts[c.id] || 0) : 0;
             });
 
             loaded.sort((a, b) => (b.votesByRound?.[viewRound] || 0) - (a.votesByRound?.[viewRound] || 0));
