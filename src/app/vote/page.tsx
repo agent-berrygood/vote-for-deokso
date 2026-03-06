@@ -45,7 +45,6 @@ import { getHangulInitial, ALPHABET_TABS } from '@/utils/hangul';
 // Constants
 const POSITION_ORDER = ['장로', '안수집사', '권사'];
 const TABS = [...POSITION_ORDER, '최종 확인'];
-const ADMIN_VOTER_NAME = '관리자';
 
 // Separate component to handle image error state independently
 const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string }) => {

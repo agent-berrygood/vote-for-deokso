@@ -6,7 +6,6 @@ import { collection, doc, runTransaction, getDoc, getDocs } from 'firebase/fires
 import { verifyToken } from '@/lib/auth';
 import { Candidate } from '@/types';
 
-const ADMIN_VOTER_NAME = '관리자';
 const POSITION_ORDER = ['장로', '안수집사', '권사'];
 
 export async function submitVote(votes: Record<string, string[]>) {
@@ -41,7 +40,6 @@ export async function submitVote(votes: Record<string, string[]>) {
             }
 
             const voterData = voterSnap.data();
-            const isAdmin = voterData.name === ADMIN_VOTER_NAME;
             const allSelectedIds: string[] = [];
             const participatedUpdates: Record<string, boolean> = {};
 
@@ -53,7 +51,7 @@ export async function submitVote(votes: Record<string, string[]>) {
                 const round = rounds[pos] || 1;
                 const groupKey = `${pos}_${round}`;
 
-                if (!isAdmin && voterData.participated?.[groupKey]) {
+                if (voterData.participated?.[groupKey]) {
                     throw new Error(`이미 '${pos}' 투표에 참여하셨습니다.`);
                 }
 
@@ -96,20 +94,16 @@ export async function submitVote(votes: Record<string, string[]>) {
             }
 
             // 선거인 Write
-            if (!isAdmin) {
-                const newParticipated = { ...voterData.participated, ...participatedUpdates };
-                transaction.update(voterRef, {
-                    participated: newParticipated,
-                    votedAt: Date.now(),
-                    hasVoted: true
-                });
-            }
+            const newParticipated = { ...voterData.participated, ...participatedUpdates };
+            transaction.update(voterRef, {
+                participated: newParticipated,
+                votedAt: Date.now(),
+                hasVoted: true
+            });
         });
 
-        // 2. 투표 완료 이후 쿠키 파기 처리 (재투표 방지, 단 관리자는 유지)
-        if (payload.voterName !== ADMIN_VOTER_NAME) {
-            cookieStore.delete('voter_token');
-        }
+        // 2. 투표 완료 이후 쿠키 파기 처리 (재투표 방지)
+        cookieStore.delete('voter_token');
 
         return { success: true };
     } catch (err: unknown) {
