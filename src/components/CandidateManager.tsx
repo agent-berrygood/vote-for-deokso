@@ -8,6 +8,7 @@ import imageCompression from 'browser-image-compression';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
 import { useElection } from '@/hooks/useElection';
+import { logAdminAction } from '@/lib/adminLogger';
 import {
     Box,
     Paper,
@@ -71,6 +72,14 @@ export default function CandidateManager() {
         try {
             // Delete from Firestore
             await deleteDoc(doc(db, `elections/${activeElectionId}/candidates`, deleteTarget.id));
+
+            // Log action
+            await logAdminAction({
+                adminId: 'system',
+                electionId: activeElectionId,
+                actionType: 'DELETE_CANDIDATE',
+                description: `'${deleteTarget.name}' 후보 삭제(사퇴) 처리`
+            });
 
             // Remove from local state
             setCandidates(prev => prev.filter(c => c.id !== deleteTarget.id));
