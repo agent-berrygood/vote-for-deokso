@@ -5,9 +5,11 @@ import { collection, doc, runTransaction, getDoc, increment, getDocs, query, whe
 // GET: 부하 테스트용 자동 ID 탐색 엔드포인트
 export async function GET() {
     try {
-        const electionsSnap = await getDocs(query(collection(db, 'elections'), where('settings.isActive', '==', true), limit(1)));
-        if (electionsSnap.empty) return NextResponse.json({ success: false, message: 'No active election found' }, { status: 404 });
-        const electionId = electionsSnap.docs[0].id;
+        const systemSettingsSnap = await getDoc(doc(db, 'settings/system'));
+        let electionId = 'default-2026'; // Default fallback
+        if (systemSettingsSnap.exists() && systemSettingsSnap.data().activeElectionId) {
+            electionId = systemSettingsSnap.data().activeElectionId;
+        }
 
         const votersSnap = await getDocs(query(collection(db, `elections/${electionId}/voters`), limit(1)));
         const voterId = votersSnap.docs[0]?.id;
