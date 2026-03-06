@@ -371,8 +371,8 @@ export default function LoginPage() {
   return (
     <Container component="main" maxWidth="xs">
       <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          높은뜻덕소교회 장로, 안수집사, 권사 선거
+        <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.4 }}>
+          높은뜻덕소교회 <br /> 장로, 안수집사, 권사 선거
         </Typography>
 
         <Box sx={{ mt: 1, width: '100%' }}>
@@ -453,7 +453,7 @@ export default function LoginPage() {
                 인증번호 확인
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                문자로 전송된 6자리 인증번호를 입력해주세요.
+                [국제발신]문자로 전송된 6자리 인증번호를 입력해주세요.
               </Typography>
               <TextField
                 margin="normal"
