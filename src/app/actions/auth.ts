@@ -71,7 +71,11 @@ export async function verifyVoterInfo(
 }
 
 export async function loginAdmin(password: string) {
-    const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD || 'vote2026';
+    const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD;
+
+    if (!CORRECT_PASSWORD) {
+        return { success: false, message: '서버 환경 변수(ADMIN_PASSWORD)가 설정되지 않았습니다.' };
+    }
 
     if (password === CORRECT_PASSWORD) {
         const cookieStore = await cookies();
@@ -113,7 +117,10 @@ export async function reAuthenticateAdmin(password: string): Promise<{ success: 
         }
 
         // 2. 비밀번호 재확인
-        const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD || 'vote2026';
+        const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD;
+        if (!CORRECT_PASSWORD) {
+            return { success: false, message: '서버 에러: 관리자 비밀번호가 설정되지 않았습니다.' };
+        }
         if (password !== CORRECT_PASSWORD) {
             return { success: false, message: '비밀번호가 일치하지 않습니다.' };
         }
