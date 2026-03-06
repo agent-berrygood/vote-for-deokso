@@ -477,8 +477,11 @@ export default function AdminPage() {
             // 2. Delete Voters
             const count2 = await deleteCollectionInBatches(`elections/${activeElectionId}/voters`);
 
-            await logAdminAction({ electionId: activeElectionId, actionType: 'RESET_DATA', description: `선거 데이터 초기화됨 (삭제된 데이터: 후보 ${count1}명, 선거인 ${count2}명)` });
-            setMessage({ type: 'success', text: `Reset complete. Deleted ${count1} candidates and ${count2} voters.` });
+            // 3. Delete Votes (New Architecture)
+            const count3 = await deleteCollectionInBatches(`elections/${activeElectionId}/votes`);
+
+            await logAdminAction({ electionId: activeElectionId, actionType: 'RESET_DATA', description: `선거 데이터 초기화됨 (삭제된 데이터: 후보 ${count1}명, 선거인 ${count2}명, 투표지 ${count3}장)` });
+            setMessage({ type: 'success', text: `Reset complete. Deleted ${count1} candidates, ${count2} voters, and ${count3} votes.` });
             setResetDialogOpen(false);
 
             // Force refresh of stats if needed, or rely on activeElectionId hook updates
@@ -821,12 +824,30 @@ function VotingResultsSection() {
             const q = query(collection(db, `elections/${activeElectionId}/candidates`), where('round', '==', viewRound), where('position', '==', viewPosition));
             const querySnapshot = await getDocs(q);
             const loaded: Candidate[] = [];
-            // let totalCandidateVotes = 0;
             querySnapshot.forEach((doc: DocumentData) => {
                 const data = doc.data() as Candidate;
                 loaded.push(data);
-                // const roundVotes = data.votesByRound?.[viewRound] || 0;
-                // totalCandidateVotes += roundVotes;
+            });
+
+            // 4. Get Votes (New Append-Only architecture)
+            const votesQuery = query(collection(db, `elections/${activeElectionId}/votes`), where('round', '==', viewRound), where('position', '==', viewPosition));
+            const votesSnap = await getDocs(votesQuery);
+
+            // 집계 (Aggregation)
+            const voteCounts: Record<string, number> = {};
+            votesSnap.forEach(doc => {
+                const voteData = doc.data();
+                if (voteData.candidateIds && Array.isArray(voteData.candidateIds)) {
+                    voteData.candidateIds.forEach((cid: string) => {
+                        voteCounts[cid] = (voteCounts[cid] || 0) + 1;
+                    });
+                }
+            });
+
+            // candidate 모델에 동적으로 붙이거나 어드민 화면상에서만 사용
+            loaded.forEach(c => {
+                if (!c.votesByRound) c.votesByRound = {};
+                c.votesByRound[viewRound] = voteCounts[c.id] || 0;
             });
 
             loaded.sort((a, b) => (b.votesByRound?.[viewRound] || 0) - (a.votesByRound?.[viewRound] || 0));

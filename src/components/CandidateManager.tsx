@@ -300,19 +300,18 @@ export default function CandidateManager() {
                                         primary={`${candidate.name} (${candidate.position})`}
                                         secondary={
                                             <>
-                                                <Typography component="span" variant="body2" color="text.primary">
-                                                    {calculateAge(candidate.birthdate, candidate.age)}세 | 현재 득표: {Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}
-                                                </Typography>
-                                                <br />
-                                                <Typography component="span" variant="caption" color="text.secondary">
-                                                    교구: {candidate.district?.replace(/\//g, '') || "미입력"} | {candidate.profileDesc?.replace(/\\n/g, '\n') || "이력 없음"}
-                                                </Typography>
-                                                {candidate.volunteerInfo && (
-                                                    <Typography component="span" variant="caption" color="primary" sx={{ display: 'block', mt: 0.5, whiteSpace: 'pre-line' }}>
-                                                        {candidate.volunteerInfo.replace(/\\n/g, '\n')}
-                                                    </Typography>
-                                                )}
-                                            </>
+                                                {calculateAge(candidate.birthdate, candidate.age)}세
+                                            </Typography>
+                                        <br />
+                                        <Typography component="span" variant="caption" color="text.secondary">
+                                            교구: {candidate.district?.replace(/\//g, '') || "미입력"} | {candidate.profileDesc?.replace(/\\n/g, '\n') || "이력 없음"}
+                                        </Typography>
+                                        {candidate.volunteerInfo && (
+                                            <Typography component="span" variant="caption" color="primary" sx={{ display: 'block', mt: 0.5, whiteSpace: 'pre-line' }}>
+                                                {candidate.volunteerInfo.replace(/\\n/g, '\n')}
+                                            </Typography>
+                                        )}
+                                    </>
                                         }
                                     />
                                     <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

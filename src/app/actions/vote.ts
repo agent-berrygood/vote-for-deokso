@@ -64,40 +64,34 @@ export async function submitVote(votes: Record<string, string[]>) {
                 throw new Error("선택된 후보가 없습니다.");
             }
 
-            // 후보자 Read 
-            const candidateUpdates = [];
-            for (const candidateId of allSelectedIds) {
-                const candidateRef = doc(db, `elections/${electionId}/candidates`, candidateId);
-                const candidateSnap = await transaction.get(candidateRef);
+            // 후보자 유효성 검증(Read) 생략 (충돌 방지 최적화, UI에서 선택된 ID를 단순 기록)
+            // 대신 Append-Only 방식으로 votes 컬렉션에 새 문서(투표지) 추가
+            // [익명성 보장 패치]: 시간 유추를 막기 위해 초/밀리초 단위를 제거한 '분' 단위 저장
+            const exactTime = new Date();
+            const anonymousTimestamp = new Date(exactTime.getFullYear(), exactTime.getMonth(), exactTime.getDate(), exactTime.getHours(), exactTime.getMinutes()).getTime();
 
-                if (!candidateSnap.exists()) {
-                    throw new Error("후보자 정보가 변경되었습니다. 새로고침 후 다시 시도해주세요.");
-                }
+            // 각 직분/차수 별로 별도의 표로 저장 (나중에 필터링 및 집계 용이)
+            for (const pos of POSITION_ORDER) {
+                const selectedForPos = votes[pos] || [];
+                if (selectedForPos.length === 0) continue;
 
-                candidateUpdates.push({
-                    ref: candidateRef,
-                    data: candidateSnap.data() as Candidate
+                const round = rounds[pos] || 1;
+                const voteDocRef = doc(collection(db, `elections/${electionId}/votes`));
+
+                transaction.set(voteDocRef, {
+                    // voterId: voterId, // <- 완벽한 익명성 보장을 위해 기록하지 않음 
+                    position: pos,
+                    round: round,
+                    candidateIds: selectedForPos,
+                    timestamp: anonymousTimestamp
                 });
             }
 
-            // 후보자 Write
-            for (const { ref, data } of candidateUpdates) {
-                const newTotal = (data.voteCount || 0) + 1;
-                const cRound = data.round || 1;
-                const votesByRound = data.votesByRound || {};
-                votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
-
-                transaction.update(ref, {
-                    voteCount: newTotal,
-                    votesByRound: votesByRound
-                });
-            }
-
-            // 선거인 Write
+            // 선거인 Write (참여 완료 표시)
             const newParticipated = { ...voterData.participated, ...participatedUpdates };
             transaction.update(voterRef, {
                 participated: newParticipated,
-                votedAt: Date.now(),
+                votedAt: exactTime.getTime(), // 선거인 명부에는 정확한 참여 시점 기록
                 hasVoted: true
             });
         });
