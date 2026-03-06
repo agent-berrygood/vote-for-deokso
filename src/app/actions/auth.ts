@@ -74,7 +74,8 @@ export async function loginAdmin(password: string) {
     const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD;
 
     if (!CORRECT_PASSWORD) {
-        return { success: false, message: '서버 환경 변수(ADMIN_PASSWORD)가 설정되지 않았습니다.' };
+        const envKeys = Object.keys(process.env).filter(k => k.includes('ADMIN_') || k.includes('PASS')).join(', ');
+        return { success: false, message: `서버 환경 변수(ADMIN_PASSWORD)가 설정되지 않았습니다. (현재 인식된 관련 키: ${envKeys || '없음'})` };
     }
 
     if (password === CORRECT_PASSWORD) {
