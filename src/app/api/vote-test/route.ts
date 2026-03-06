@@ -11,18 +11,18 @@ export async function GET() {
             electionId = systemSettingsSnap.data().activeElectionId;
         }
 
-        const votersSnap = await getDocs(query(collection(db, `elections/${electionId}/voters`), limit(1)));
-        const voterId = votersSnap.docs[0]?.id;
+        const votersSnap = await getDocs(query(collection(db, `elections/${electionId}/voters`), limit(100)));
+        const voterIds = votersSnap.docs.map(d => d.id);
 
         const candidatesSnap = await getDocs(query(collection(db, `elections/${electionId}/candidates`), limit(1)));
         const candidateId = candidatesSnap.docs[0]?.id;
         const position = candidatesSnap.docs[0]?.data().position || "장로";
 
-        if (!voterId || !candidateId) {
+        if (voterIds.length === 0 || !candidateId) {
             return NextResponse.json({ success: false, message: 'Voter or Candidate data missing inside the election' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, electionId, voterId, candidateId, position });
+        return NextResponse.json({ success: true, electionId, voterIds, candidateId, position });
     } catch (err: any) {
         return NextResponse.json({ success: false, message: err.message }, { status: 500 });
     }
