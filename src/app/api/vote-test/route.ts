@@ -1,6 +1,30 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, doc, runTransaction, getDoc, increment } from 'firebase/firestore';
+import { collection, doc, runTransaction, getDoc, increment, getDocs, query, where, limit } from 'firebase/firestore';
+
+// GET: 부하 테스트용 자동 ID 탐색 엔드포인트
+export async function GET() {
+    try {
+        const electionsSnap = await getDocs(query(collection(db, 'elections'), where('settings.isActive', '==', true), limit(1)));
+        if (electionsSnap.empty) return NextResponse.json({ success: false, message: 'No active election found' }, { status: 404 });
+        const electionId = electionsSnap.docs[0].id;
+
+        const votersSnap = await getDocs(query(collection(db, `elections/${electionId}/voters`), limit(1)));
+        const voterId = votersSnap.docs[0]?.id;
+
+        const candidatesSnap = await getDocs(query(collection(db, `elections/${electionId}/candidates`), limit(1)));
+        const candidateId = candidatesSnap.docs[0]?.id;
+        const position = candidatesSnap.docs[0]?.data().position || "장로";
+
+        if (!voterId || !candidateId) {
+            return NextResponse.json({ success: false, message: 'Voter or Candidate data missing inside the election' }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true, electionId, voterId, candidateId, position });
+    } catch (err: any) {
+        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    }
+}
 
 // 더미 투표를 위한 가짜 API
 // 실제 /actions/vote.ts의 트랜잭션 로직과 동일한 부하를 주되, 
