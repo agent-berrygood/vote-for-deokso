@@ -101,7 +101,7 @@ export default function AdminPage() {
         if (!trimmedId) return;
 
         // Validation for new election ID (Security/Injection prevention)
-        if (!/^[a-zA-Z0-9_-\uac00-\ud7a3\u3131-\u318e\s]+$/.test(trimmedId)) {
+        if (!/^[a-zA-Z0-9_\-\s가-힣ㄱ-ㅎㅏ-ㅣ]+$/.test(trimmedId)) {
             setMessage({ type: 'error', text: '선거 이름에는 영문, 숫자, 한글, 공백, 하이픈(-), 언더스코어(_)만 사용할 수 있습니다. 특수문자는 제외해주세요.' });
             return;
         }
