@@ -19,12 +19,7 @@ export function useElection() {
                 setElectionList(data.electionList || [DEFAULT_ELECTION_ID]);
                 setError(null);
             } else {
-                // Initialize if not exists
-                const initData = {
-                    activeElectionId: DEFAULT_ELECTION_ID,
-                    electionList: [DEFAULT_ELECTION_ID]
-                };
-                setDoc(doc(db, SYSTEM_SETTINGS_DOC), initData);
+                // Initialize state if not exists, but DO NOT overwrite DB automatically
                 setActiveElectionId(DEFAULT_ELECTION_ID);
                 setElectionList([DEFAULT_ELECTION_ID]);
             }
