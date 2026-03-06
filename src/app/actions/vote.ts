@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { db } from '@/lib/firebase'; // Ensure you have firebase-admin or can use client SDK in edge/node carefully
-import { collection, doc, runTransaction, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, runTransaction, getDoc, getDocs, increment } from 'firebase/firestore';
 import { verifyToken } from '@/lib/auth';
 import { Candidate } from '@/types';
 
@@ -40,7 +40,7 @@ export async function submitVote(votes: Record<string, string[]>) {
             }
 
             const voterData = voterSnap.data();
-            const allSelectedIds: string[] = [];
+            const selectedCandidatesInfo: { id: string, round: number }[] = [];
             const participatedUpdates: Record<string, boolean> = {};
 
             // 권한 및 중복참여 검사
@@ -56,40 +56,24 @@ export async function submitVote(votes: Record<string, string[]>) {
                 }
 
                 participatedUpdates[groupKey] = true;
-                allSelectedIds.push(...selectedForPos);
+                for (const cId of selectedForPos) {
+                    selectedCandidatesInfo.push({ id: cId, round });
+                }
             }
 
-            if (allSelectedIds.length === 0 && Object.keys(participatedUpdates).length === 0) {
+            if (selectedCandidatesInfo.length === 0 && Object.keys(participatedUpdates).length === 0) {
                 // 사실상 빈 투표 (UI에서 처리되지만 서버에서도 막음)
                 throw new Error("선택된 후보가 없습니다.");
             }
 
-            // 후보자 Read 
-            const candidateUpdates = [];
-            for (const candidateId of allSelectedIds) {
-                const candidateRef = doc(db, `elections/${electionId}/candidates`, candidateId);
-                const candidateSnap = await transaction.get(candidateRef);
-
-                if (!candidateSnap.exists()) {
-                    throw new Error("후보자 정보가 변경되었습니다. 새로고침 후 다시 시도해주세요.");
-                }
-
-                candidateUpdates.push({
-                    ref: candidateRef,
-                    data: candidateSnap.data() as Candidate
-                });
-            }
-
-            // 후보자 Write
-            for (const { ref, data } of candidateUpdates) {
-                const newTotal = (data.voteCount || 0) + 1;
-                const cRound = data.round || 1;
-                const votesByRound = data.votesByRound || {};
-                votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
-
-                transaction.update(ref, {
-                    voteCount: newTotal,
-                    votesByRound: votesByRound
+            // 후보자 Write (Atomic Increment 적용)
+            // 기존에는 후보자 문서를 get()으로 모두 읽어온 뒤 +1을 해서 다시 썼지만, 
+            // 다수의 사람이 동시에 투표할 때 발생하는 Contention(경합)을 줄이기 위해 원자적 증가(increment) 사용
+            for (const { id, round } of selectedCandidatesInfo) {
+                const candidateRef = doc(db, `elections/${electionId}/candidates`, id);
+                transaction.update(candidateRef, {
+                    voteCount: increment(1),
+                    [`votesByRound.${round}`]: increment(1)
                 });
             }
 

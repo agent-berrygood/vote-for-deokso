@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, doc, runTransaction, getDoc } from 'firebase/firestore';
+import { collection, doc, runTransaction, getDoc, increment } from 'firebase/firestore';
 
 // 더미 투표를 위한 가짜 API
 // 실제 /actions/vote.ts의 트랜잭션 로직과 동일한 부하를 주되, 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
             }
 
             const voterData = voterSnap.data();
-            
+
             // 테스트용이므로 중복참여 검사는 건너뜁니다 (계속 같은 ID로 쏴야하므로)
             // 대신 트랜잭션의 읽기/쓰기 "비용(수고)"은 그대로 발생시킵니다.
             const round = rounds[position as string] || 1;
@@ -39,32 +39,12 @@ export async function POST(request: Request) {
             const participatedUpdates: Record<string, boolean> = { [groupKey]: true };
             const allSelectedIds: string[] = candidateIds;
 
-            // 후보자 Read 
-            const candidateUpdates = [];
-            for (const candidateId of allSelectedIds) {
-                const candidateRef = doc(db, `elections/${electionId}/candidates`, candidateId);
-                const candidateSnap = await transaction.get(candidateRef);
-
-                if (!candidateSnap.exists()) {
-                    throw new Error("후보자 정보가 변경되었습니다.");
-                }
-
-                candidateUpdates.push({
-                    ref: candidateRef,
-                    data: candidateSnap.data()
-                });
-            }
-
-            // 후보자 Write
-            for (const { ref, data } of candidateUpdates) {
-                const newTotal = (data.voteCount || 0) + 1;
-                const cRound = data.round || 1;
-                const votesByRound = data.votesByRound || {};
-                votesByRound[cRound] = (votesByRound[cRound] || 0) + 1;
-
-                transaction.update(ref, {
-                    voteCount: newTotal,
-                    votesByRound: votesByRound
+            // 후보자 Write (Atomic Increment)
+            for (const id of allSelectedIds) {
+                const candidateRef = doc(db, `elections/${electionId}/candidates`, id);
+                transaction.update(candidateRef, {
+                    voteCount: increment(1),
+                    [`votesByRound.${round}`]: increment(1)
                 });
             }
 
