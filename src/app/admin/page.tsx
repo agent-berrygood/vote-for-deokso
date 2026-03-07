@@ -24,6 +24,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SaveIcon from '@mui/icons-material/Save';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import CandidateManager from '@/components/CandidateManager';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
@@ -567,6 +568,24 @@ export default function AdminPage() {
                     </Typography>
                 </Box>
                 <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ p: 3, mb: 2, border: '1px solid #4caf50', borderRadius: 1, bgcolor: '#e8f5e9' }}>
+                    <Typography variant="subtitle1" color="success.main" fontWeight="bold" gutterBottom>
+                        📊 실시간 전체 개표 종합 현황
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        장로, 권사, 안수집사 모든 직분의 개표 현황을 한눈에 확인하고 피택 가능 인원을 실시간으로 모니터링합니다.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<AssessmentIcon />}
+                        onClick={() => router.push('/admin/live-results')}
+                        disabled={!activeElectionId}
+                    >
+                        실시간 종합 개표현황 보러가기
+                    </Button>
+                </Box>
 
                 <Box sx={{ p: 3, mb: 2, border: '1px solid #ce93d8', borderRadius: 1, bgcolor: '#f3e5f5' }}>
                     <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
