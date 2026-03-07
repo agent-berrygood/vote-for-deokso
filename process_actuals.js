@@ -5,6 +5,7 @@ const XLSX = require('xlsx');
 const html = fs.readFileSync('j:/내 드라이브/선거 테스트/당회보고용/봉사정보/봉사정보.xls', 'utf-8');
 const rows = html.split('<tr');
 const volunteerData = {};
+const uniqueYearsData = {};
 
 let count = 0;
 for (let i = 1; i < rows.length; i++) {
@@ -41,10 +42,14 @@ for (let i = 1; i < rows.length; i++) {
     }
 
     if (years.length > 0) {
+        if (!uniqueYearsData[name]) uniqueYearsData[name] = new Set();
         if (!volunteerData[name]) volunteerData[name] = {};
         if (!volunteerData[name][dept]) volunteerData[name][dept] = new Set();
         years.forEach(y => {
-            if (!isNaN(y)) volunteerData[name][dept].add(y);
+            if (!isNaN(y)) {
+                volunteerData[name][dept].add(y);
+                uniqueYearsData[name].add(y);
+            }
         });
     }
 }
@@ -125,6 +130,12 @@ targetFiles.forEach(fileMeta => {
         if (!row || row.length === 0 || !row[0]) continue; // Skip empty rows
 
         const name = String(row[0]).trim();
+
+        // 후보자 자격 검증 (총 봉사 연수 3년 이상)
+        const totalVolYears = uniqueYearsData[name] ? uniqueYearsData[name].size : 0;
+        if (totalVolYears < 3) {
+            continue; // 3년 미만시 최종 명단에서 제외
+        }
         const birthdate = row[1] ? String(row[1]).trim() : '';
         const district = row[2] ? String(row[2]).trim() : '';
         const churchTitle = row[3] ? String(row[3]).trim() : ''; // Using their "Position" from excel as their churchTitle
