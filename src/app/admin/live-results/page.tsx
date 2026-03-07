@@ -121,6 +121,7 @@ export default function LiveResultsPage() {
     }, [cooldown]);
 
     const getThreshold = (pos: string, ballots: number) => {
+        if (ballots <= 0) return 999999; // 투표가 없으면 달성 불가능한 점수 반환
         if (pos === '장로') return Math.ceil(ballots * (2 / 3));
         return Math.floor(ballots / 2) + 1;
     };
@@ -219,7 +220,10 @@ export default function LiveResultsPage() {
                                         </Typography>
                                     </Box>
                                     <Chip
-                                        label={`${data.candidates.filter(c => (c.votesByRound?.[data.round] || 0) >= threshold).length}명 피택 가능`}
+                                        label={`${data.candidates.filter(c => {
+                                            const v = (c.votesByRound?.[data.round] || 0);
+                                            return data.ballots > 0 && v >= threshold && v > 0;
+                                        }).length}명 피택 가능`}
                                         color="success"
                                         variant="outlined"
                                         sx={{ fontWeight: 'bold' }}
