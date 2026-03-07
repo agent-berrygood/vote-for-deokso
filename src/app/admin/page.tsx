@@ -222,40 +222,60 @@ export default function AdminPage() {
 
         proceedWithUpload(file, collectionRef, async (candidates) => {
             try {
-                const batch = writeBatch(db);
-                if (!existingDocs.empty) {
-                    existingDocs.forEach(doc => batch.delete(doc.ref));
+                if (!candidates || candidates.length === 0) {
+                    setMessage({ type: 'error', text: '업로드할 데이터가 없습니다.' });
+                    setLoading(false);
+                    return;
                 }
 
-                candidates.forEach((row) => {
-                    if (!row.Name) return;
+                // Chunking for Firestore batch limit (500)
+                const BATCH_SIZE = 450;
+                let processedCount = 0;
 
-                    const rowPositionClean = row.Position ? String(row.Position).trim() : '';
-                    if (rowPositionClean && rowPositionClean !== position) {
-                        // Optional: Warning logic here
+                for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+                    const batch = writeBatch(db);
+                    const chunk = candidates.slice(i, i + BATCH_SIZE);
+
+                    // If it's the first batch and we need to delete existing
+                    if (i === 0 && !existingDocs.empty) {
+                        existingDocs.forEach(doc => batch.delete(doc.ref));
                     }
 
-                    const newDocRef = doc(collectionRef);
-                    const candidateData: Candidate = {
-                        id: newDocRef.id,
-                        name: row.Name,
-                        position: position, // Enforce the button's context for safety
-                        district: row.District ? String(row.District).replace(/\//g, '').trim() : '',
-                        birthdate: row.Birthdate ? String(row.Birthdate).trim() : '',
-                        age: 0, // Deprecated, will calc on fly
-                        photoUrl: getDriveImageUrl(row.PhotoLink || ''),
-                        voteCount: 0,
-                        votesByRound: { [uploadRound]: 0 },
-                        round: uploadRound,
-                        profileDesc: row.ProfileDesc ? String(row.ProfileDesc).trim() : '',
-                        volunteerInfo: row.VolunteerInfo ? String(row.VolunteerInfo).trim() : ''
-                    };
-                    batch.set(newDocRef, candidateData);
-                });
+                    chunk.forEach((row) => {
+                        const name = row.Name || row['이름'];
+                        if (!name) return;
 
-                await batch.commit();
-                await logAdminAction({ electionId: activeElectionId, actionType: 'UPLOAD_CANDIDATES', description: `${uploadRound}차 ${position} 후보 ${candidates.length}명 데이터 업로드` });
-                setMessage({ type: 'success', text: `성공적으로 ${candidates.length}명의 ${position} 후보를 업로드했습니다!` });
+                        const district = row.District || row['교구'] || row['지역'];
+                        const rowPosition = row.Position || row['직분'] || row['직책'];
+                        const photoLink = row.PhotoLink || row['사진링크'] || row['사진'];
+                        const profileDesc = row.ProfileDesc || row['봉사이력'] || row['약력'];
+                        const volunteerInfo = row.VolunteerInfo || row['추가정보'] || row['비고'];
+                        const birthdate = row.Birthdate || row['생년월일'];
+
+                        const newDocRef = doc(collectionRef);
+                        const candidateData: Candidate = {
+                            id: newDocRef.id,
+                            name: String(name).trim(),
+                            position: position, // Enforce the button's context for safety
+                            district: district ? String(district).replace(/\//g, '').trim() : '',
+                            birthdate: birthdate ? String(birthdate).trim() : '',
+                            age: 0,
+                            photoUrl: getDriveImageUrl(photoLink || ''),
+                            voteCount: 0,
+                            votesByRound: { [uploadRound]: 0 },
+                            round: uploadRound,
+                            profileDesc: profileDesc ? String(profileDesc).trim() : '',
+                            volunteerInfo: volunteerInfo ? String(volunteerInfo).trim() : ''
+                        };
+                        batch.set(newDocRef, candidateData);
+                        processedCount++;
+                    });
+
+                    await batch.commit();
+                }
+
+                await logAdminAction({ electionId: activeElectionId, actionType: 'UPLOAD_CANDIDATES', description: `${uploadRound}차 ${position} 후보 ${processedCount}명 데이터 업로드` });
+                setMessage({ type: 'success', text: `성공적으로 ${processedCount}명의 ${position} 후보를 업로드했습니다!` });
             } catch (error) {
                 console.error(error);
                 setMessage({ type: 'error', text: '후보자 업로드 중 오류가 발생했습니다.' });
@@ -286,31 +306,50 @@ export default function AdminPage() {
 
         proceedWithUpload(file, collectionRef, async (voters) => {
             try {
-                const batch = writeBatch(db);
-                if (!existingDocs.empty) {
-                    existingDocs.forEach(doc => batch.delete(doc.ref));
+                if (!voters || voters.length === 0) {
+                    setMessage({ type: 'error', text: '업로드할 데이터가 없습니다.' });
+                    setLoading(false);
+                    return;
                 }
 
-                voters.forEach((row) => {
-                    if (!row.Name) return; // Allow missing AuthKey, will generate
-                    const newDocRef = doc(collectionRef);
-                    const authKey = row.AuthKey ? String(row.AuthKey).trim() : generateAuthKey();
+                const BATCH_SIZE = 450;
+                let processedCount = 0;
 
-                    const voterData: Voter = {
-                        id: newDocRef.id,
-                        name: row.Name,
-                        authKey: authKey, // Still used as fallback or internal ID
-                        hasVoted: false,
-                        votedAt: null,
-                        phone: row.Phone ? String(row.Phone).trim() : '',
-                        birthdate: row.Birthdate ? String(row.Birthdate).trim() : ''
-                    };
-                    batch.set(newDocRef, voterData);
-                });
+                for (let i = 0; i < voters.length; i += BATCH_SIZE) {
+                    const batch = writeBatch(db);
+                    const chunk = voters.slice(i, i + BATCH_SIZE);
 
-                await batch.commit();
-                await logAdminAction({ electionId: activeElectionId, actionType: 'UPLOAD_VOTERS', description: `선거인 ${voters.length}명 명부 업로드 및 초기화` });
-                setMessage({ type: 'success', text: `성공적으로 ${voters.length}명의 선거인을 업로드했습니다!` });
+                    if (i === 0 && !existingDocs.empty) {
+                        existingDocs.forEach(doc => batch.delete(doc.ref));
+                    }
+
+                    chunk.forEach((row) => {
+                        const name = row.Name || row['이름'];
+                        if (!name) return;
+
+                        const phone = row.Phone || row['휴대폰'] || row['전화번호'];
+                        const birthdate = row.Birthdate || row['생년월일'];
+                        const authKey = row.AuthKey || row['인증키'] || row['일련번호'];
+
+                        const newDocRef = doc(collectionRef);
+                        const voterData: Voter = {
+                            id: newDocRef.id,
+                            name: String(name).trim(),
+                            authKey: authKey ? String(authKey).trim() : generateAuthKey(),
+                            hasVoted: false,
+                            votedAt: null,
+                            phone: phone ? String(phone).trim() : '',
+                            birthdate: birthdate ? String(birthdate).trim() : ''
+                        };
+                        batch.set(newDocRef, voterData);
+                        processedCount++;
+                    });
+
+                    await batch.commit();
+                }
+
+                await logAdminAction({ electionId: activeElectionId, actionType: 'UPLOAD_VOTERS', description: `선거인 ${processedCount}명 명부 업로드 및 초기화` });
+                setMessage({ type: 'success', text: `성공적으로 ${processedCount}명의 선거인을 업로드했습니다!` });
             } catch (error) {
                 console.error(error);
                 setMessage({ type: 'error', text: '선거인 업로드 중 오류가 발생했습니다.' });
