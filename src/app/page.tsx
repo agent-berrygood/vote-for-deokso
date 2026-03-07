@@ -296,7 +296,7 @@ export default function LoginPage() {
         sessionStorage.setItem('electionId', activeElectionId);
         router.push('/vote');
       } else {
-        setError(res.message || '패스키 로그인에 실패했습니다.');
+        setError(res.message || '현장 투표용 패스키 로그인에 실패했습니다.');
       }
     } catch (err: any) {
       console.error(err);
@@ -442,7 +442,7 @@ export default function LoginPage() {
                     onClick={() => setStep(3)}
                     sx={{ textDecoration: 'underline' }}
                   >
-                    문자 수신 불가 시 패스키로 입장
+                    인증 실패시 현장 투표 입장
                   </Button>
                 </Box>
               </fieldset>
@@ -484,7 +484,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleMasterPasskeyLogin}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="error">
-                선관위 전용 패스키 입장
+                선관위 전용 현장 투표 입장
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
                 문자 발송 실패 시, 선관위 위원이 직접 확인 후 입력하는 패스키입니다.
@@ -507,14 +507,14 @@ export default function LoginPage() {
                 sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
                 disabled={loading || !passkey}
               >
-                패스키로 즉시 입장
+                현장 투표로 즉시 입장
               </Button>
               <Button
                 fullWidth
                 variant="text"
                 onClick={() => { setStep(1); setError(''); setPasskey(''); }}
               >
-                뒤로 가기
+                처음으로 돌아가기
               </Button>
             </form>
           )}

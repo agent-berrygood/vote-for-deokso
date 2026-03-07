@@ -570,10 +570,10 @@ export default function AdminPage() {
 
                 <Box sx={{ p: 3, mb: 2, border: '1px solid #ce93d8', borderRadius: 1, bgcolor: '#f3e5f5' }}>
                     <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
-                        🕵️ 선관위 패스키 승인 내역 (Audit Logs)
+                        🕵️ 선관위 현장 투표 승인 내역 (Audit Logs)
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 2 }}>
-                        선관위 권한으로 문자 인증을 우회하고 통과시킨 내역을 조회합니다. 패스키(마스터 암호)가 오남용되었는지 기록을 투명하게 확인하세요.
+                        선관위 권한으로 문자 인증을 우회하고 통과시킨 내역을 조회합니다. 현장 투표(마스터 암호)가 오남용되었는지 기록을 투명하게 확인하세요.
                     </Typography>
                     <Button
                         variant="contained"

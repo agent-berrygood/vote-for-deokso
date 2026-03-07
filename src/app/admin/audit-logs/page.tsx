@@ -113,7 +113,7 @@ export default function AuditLogsPage() {
                     뒤로가기
                 </Button>
                 <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
-                    선관위 패스키 승인 내역 (Audit Logs)
+                    선관위 현장 투표 승인 내역 (Audit Logs)
                 </Typography>
             </Box>
 
@@ -149,7 +149,7 @@ export default function AuditLogsPage() {
                         </Box>
                     ) : filteredLogs.length === 0 ? (
                         <Box sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>
-                            기록된 패스키 승인 내역이 없습니다.
+                            기록된 현장 투표 승인 내역이 없습니다.
                         </Box>
                     ) : (
                         <TableContainer>
