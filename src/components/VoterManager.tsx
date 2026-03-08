@@ -26,7 +26,11 @@ import {
     InputAdornment,
     Pagination,
     Chip,
-    Tooltip
+    Tooltip,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -45,9 +49,9 @@ export default function VoterManager() {
     const [deleteTarget, setDeleteTarget] = useState<Voter | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    // Pagination (Simple client-side for now, but structured for query if needed)
+    // Pagination
     const [page, setPage] = useState(1);
-    const rowsPerPage = 10;
+    const [rowsPerPage, setRowsPerPage] = useState(20); // Default to 20
 
     // Form State for New Voter
     const [newName, setNewName] = useState('');
@@ -159,7 +163,9 @@ export default function VoterManager() {
         v.authKey?.includes(searchTerm)
     );
 
-    const paginatedVoters = filteredVoters.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+    const paginatedVoters = rowsPerPage === -1
+        ? filteredVoters
+        : filteredVoters.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
     return (
         <Box>
@@ -289,14 +295,34 @@ export default function VoterManager() {
                             </Table>
                         </TableContainer>
 
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                            <Pagination
-                                count={Math.ceil(filteredVoters.length / rowsPerPage)}
-                                page={page}
-                                onChange={(e, p) => setPage(p)}
-                                color="primary"
-                                size="small"
-                            />
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3, gap: 3, flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="caption" color="text.secondary">표시 인원:</Typography>
+                                <Select
+                                    value={rowsPerPage}
+                                    onChange={(e) => {
+                                        setRowsPerPage(Number(e.target.value));
+                                        setPage(1);
+                                    }}
+                                    size="small"
+                                    sx={{ height: 32, minWidth: 80, fontSize: '0.75rem' }}
+                                >
+                                    <MenuItem value={20}>20명</MenuItem>
+                                    <MenuItem value={50}>50명</MenuItem>
+                                    <MenuItem value={100}>100명</MenuItem>
+                                    <MenuItem value={-1}>전체</MenuItem>
+                                </Select>
+                            </Box>
+
+                            {rowsPerPage !== -1 && (
+                                <Pagination
+                                    count={Math.ceil(filteredVoters.length / rowsPerPage)}
+                                    page={page}
+                                    onChange={(e, p) => setPage(p)}
+                                    color="primary"
+                                    size="small"
+                                />
+                            )}
                         </Box>
                     </Paper>
                 </Grid>
