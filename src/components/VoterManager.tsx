@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, setDoc, orderBy, limit, startAfter, where, query as firestoreQuery, QueryConstraint } from 'firebase/firestore';
+import { collection, query, getDocs, doc, deleteDoc, setDoc, updateDoc, orderBy, limit, startAfter, where, query as firestoreQuery, QueryConstraint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Voter } from '@/types';
 import { useElection } from '@/hooks/useElection';
@@ -30,10 +30,15 @@ import {
     Select,
     MenuItem,
     FormControl,
-    InputLabel
+    InputLabel,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -52,6 +57,13 @@ export default function VoterManager() {
     // Pagination
     const [page, setPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(20); // Default to 20
+
+    // State for Editing
+    const [editTarget, setEditTarget] = useState<Voter | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editPhone, setEditPhone] = useState('');
+    const [editBirthdate, setEditBirthdate] = useState('');
+    const [updating, setUpdating] = useState(false);
 
     // Form State for New Voter
     const [newName, setNewName] = useState('');
@@ -126,6 +138,47 @@ export default function VoterManager() {
             setMessage({ type: 'error', text: '선거인 추가 중 오류가 발생했습니다.' });
         } finally {
             setAdding(false);
+        }
+    };
+
+    const handleEditOpen = (voter: Voter) => {
+        setEditTarget(voter);
+        setEditName(voter.name);
+        setEditPhone(voter.phone || '');
+        setEditBirthdate(voter.birthdate || '');
+    };
+
+    const handleUpdateVoter = async () => {
+        if (!activeElectionId || !editTarget || !editTarget.id) return;
+        if (!editName.trim()) {
+            setMessage({ type: 'error', text: '이름을 입력해주세요.' });
+            return;
+        }
+
+        setUpdating(true);
+        try {
+            const voterRef = doc(db, `elections/${activeElectionId}/voters`, editTarget.id);
+            const updatedData = {
+                name: editName.trim(),
+                phone: editPhone.trim(),
+                birthdate: editBirthdate.trim()
+            };
+
+            await updateDoc(voterRef, updatedData);
+            await logAdminAction({
+                electionId: activeElectionId,
+                actionType: 'OTHER',
+                description: `선거인 정보 수정: '${editTarget.name}' -> '${editName}'`
+            });
+
+            setVoters(prev => prev.map(v => v.id === editTarget.id ? { ...v, ...updatedData } : v));
+            setMessage({ type: 'success', text: `'${editName}' 선거인 정보가 수정되었습니다.` });
+            setEditTarget(null);
+        } catch (err) {
+            console.error("Error updating voter:", err);
+            setMessage({ type: 'error', text: '선거인 정보 수정 중 오류가 발생했습니다.' });
+        } finally {
+            setUpdating(false);
         }
     };
 
@@ -282,11 +335,18 @@ export default function VoterManager() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    <Tooltip title="선거인 삭제">
-                                                        <IconButton color="error" size="small" onClick={() => setDeleteTarget(v)}>
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                                                        <Tooltip title="정보 수정">
+                                                            <IconButton color="primary" size="small" onClick={() => handleEditOpen(v)}>
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="선거인 삭제">
+                                                            <IconButton color="error" size="small" onClick={() => setDeleteTarget(v)}>
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Box>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -336,6 +396,59 @@ export default function VoterManager() {
                 onCancel={() => setDeleteTarget(null)}
                 requireReAuth
             />
+
+            {/* Edit Dialog */}
+            <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} fullWidth maxWidth="xs">
+                <DialogTitle fontWeight="bold">선거인 정보 수정</DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                        <TextField
+                            label="이름"
+                            value={editName}
+                            onChange={e => setEditName(e.target.value)}
+                            size="small"
+                            fullWidth
+                            required
+                        />
+                        <TextField
+                            label="휴대폰 번호"
+                            value={editPhone}
+                            onChange={e => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                let formatted = val;
+                                if (val.length > 3 && val.length <= 7) {
+                                    formatted = `${val.slice(0, 3)}-${val.slice(3)}`;
+                                } else if (val.length > 7) {
+                                    formatted = `${val.slice(0, 3)}-${val.slice(3, 7)}-${val.slice(7, 11)}`;
+                                }
+                                setEditPhone(formatted);
+                            }}
+                            size="small"
+                            fullWidth
+                            placeholder="010-0000-0000"
+                        />
+                        <TextField
+                            label="생년월일 (6자리)"
+                            value={editBirthdate}
+                            onChange={e => setEditBirthdate(e.target.value)}
+                            size="small"
+                            fullWidth
+                            placeholder="700101"
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setEditTarget(null)} color="inherit">취소</Button>
+                    <Button
+                        onClick={handleUpdateVoter}
+                        variant="contained"
+                        color="primary"
+                        disabled={updating}
+                    >
+                        {updating ? <CircularProgress size={24} /> : '수정 완료'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
