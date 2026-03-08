@@ -371,6 +371,15 @@ export default function LoginPage() {
   return (
     <Container component="main" maxWidth="xs">
       <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* 사과문 공지 이미지 */}
+        <Box sx={{ width: '100%', mb: 4, borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
+          <img
+            src="/images/notice/apology.jpg"
+            alt="사과문"
+            style={{ width: '100%', height: 'auto', display: 'block' }}
+          />
+        </Box>
+
         <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.4 }}>
           높은뜻덕소교회 <br /> 장로, 안수집사, 권사 선거
         </Typography>
