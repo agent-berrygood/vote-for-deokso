@@ -623,6 +623,39 @@ export default function AdminPage() {
                     </Button>
                 </Box>
                 <Divider sx={{ my: 2 }} />
+                <Box sx={{ p: 3, mb: 2, border: '1px solid #0288d1', borderRadius: 1, bgcolor: '#e1f5fe' }}>
+                    <Typography variant="subtitle1" color="info.main" fontWeight="bold" gutterBottom>
+                        👤 직분별 후보자 정밀 관리
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        각 직분별(장로, 안수집사, 권사) 후보자를 개별적으로 추가하거나 삭제하고 목록을 정밀하게 관리합니다.
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                            variant="outlined"
+                            onClick={() => router.push('/admin/candidates/장로')}
+                            disabled={!activeElectionId}
+                        >
+                            장로 관리
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => router.push('/admin/candidates/안수집사')}
+                            disabled={!activeElectionId}
+                        >
+                            안수집사 관리
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => router.push('/admin/candidates/권사')}
+                            disabled={!activeElectionId}
+                        >
+                            권사 관리
+                        </Button>
+                    </Box>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
                 <Box sx={{ p: 2, border: '1px solid #f44336', borderRadius: 1, bgcolor: '#fff5f5' }}>
                     <Typography variant="subtitle2" color="error" fontWeight="bold" gutterBottom>
                         ⚠ Danger Zone
