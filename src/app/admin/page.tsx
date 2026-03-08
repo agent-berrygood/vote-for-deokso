@@ -656,6 +656,24 @@ export default function AdminPage() {
                 </Box>
 
                 <Divider sx={{ my: 2 }} />
+                <Box sx={{ p: 3, mb: 2, border: '1px solid #7b1fa2', borderRadius: 1, bgcolor: '#f3e5f5' }}>
+                    <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
+                        📋 선거인 명부 정밀 관리
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        선거인 명단을 개별적으로 추가, 삭제하거나 인증키를 확인하고 상태를 검색합니다.
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => router.push('/admin/voters')}
+                        disabled={!activeElectionId}
+                    >
+                        선거인 명부 관리하러 가기
+                    </Button>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
                 <Box sx={{ p: 2, border: '1px solid #f44336', borderRadius: 1, bgcolor: '#fff5f5' }}>
                     <Typography variant="subtitle2" color="error" fontWeight="bold" gutterBottom>
                         ⚠ Danger Zone
