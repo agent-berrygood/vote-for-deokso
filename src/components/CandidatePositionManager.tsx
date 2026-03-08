@@ -28,7 +28,9 @@ import {
     Grid,
     Card,
     CardContent,
-    Chip
+    Chip,
+    Tabs,
+    Tab
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -48,6 +50,7 @@ export default function CandidatePositionManager({ position }: Props) {
     const [deleteTarget, setDeleteTarget] = useState<Candidate | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
     const [uploadingId, setUploadingId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState(0); // 0: 1차, 1: 2차 ...
 
     // Form State for New Candidate
     const [newName, setNewName] = useState('');
@@ -57,6 +60,11 @@ export default function CandidatePositionManager({ position }: Props) {
     const [newVolunteer, setNewVolunteer] = useState('');
     const [newRound, setNewRound] = useState(1);
     const [adding, setAdding] = useState(false);
+
+    // Sync newRound with activeTab
+    useEffect(() => {
+        setNewRound(activeTab + 1);
+    }, [activeTab]);
 
     const fetchCandidates = async () => {
         if (!activeElectionId) return;
@@ -194,9 +202,16 @@ export default function CandidatePositionManager({ position }: Props) {
         }
     };
 
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setActiveTab(newValue);
+    };
+
     const filteredCandidates = candidates.filter(c =>
-        c.name.includes(searchTerm) || c.district?.includes(searchTerm)
+        (c.round === (activeTab + 1)) &&
+        (c.name.includes(searchTerm) || c.district?.includes(searchTerm))
     );
+
+    const getRoundCount = (r: number) => candidates.filter(c => c.round === r).length;
 
     return (
         <Box sx={{ p: 0 }}>
@@ -234,10 +249,30 @@ export default function CandidatePositionManager({ position }: Props) {
 
                 {/* 2. Candidate List */}
                 <Grid size={{ xs: 12, md: 8 }}>
+                    <Paper sx={{ mb: 2 }}>
+                        <Tabs
+                            value={activeTab}
+                            onChange={handleTabChange}
+                            variant="fullWidth"
+                            indicatorColor="primary"
+                            textColor="primary"
+                        >
+                            {[1, 2, 3, 4, 5].map(r => (
+                                <Tab
+                                    key={r}
+                                    label={`${r}차`}
+                                    icon={<Chip label={getRoundCount(r)} size="small" variant="outlined" sx={{ pointerEvents: 'none' }} />}
+                                    iconPosition="end"
+                                    sx={{ minHeight: 64 }}
+                                />
+                            ))}
+                        </Tabs>
+                    </Paper>
+
                     <Paper sx={{ p: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6" fontWeight="bold">
-                                {position} 후보자 목록 ({filteredCandidates.length}명)
+                                {position} {activeTab + 1}차 후보자 목록 ({filteredCandidates.length}명)
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 1 }}>
                                 <TextField
