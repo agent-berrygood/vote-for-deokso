@@ -42,6 +42,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import * as XLSX from 'xlsx';
 import ConfirmDialog from './ConfirmDialog';
 
 const generateAuthKey = () => Math.floor(1000000 + Math.random() * 9000000).toString();
@@ -203,6 +205,59 @@ export default function VoterManager() {
         }
     };
 
+    const handleDownloadExcel = async () => {
+        if (!activeElectionId) return;
+        setLoading(true);
+        try {
+            // Prepare data
+            const data = voters.map(v => ({
+                '이름': v.name,
+                '생년월일': v.birthdate || '',
+                '전화번호': v.phone || '',
+                '인증키': v.authKey || '',
+                '참여여부': (v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? '참여' : '미참여'
+            }));
+
+            // Create worksheet
+            const ws = XLSX.utils.json_to_sheet(data);
+
+            // Force "생년월일" column (index 1) to be text to prevent scientific notation or numeric formatting
+            // In XLSX, 'z' is the format code. '@' means text.
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+            for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                const cellRef = XLSX.utils.encode_cell({ r: R, c: 1 }); // Column B
+                if (ws[cellRef]) {
+                    ws[cellRef].t = 's'; // Set type to string
+                    ws[cellRef].z = '@'; // Set format to text
+                }
+            }
+
+            // Create workbook and append sheet
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "선거인명부");
+
+            // Generate filename with date
+            const dateStr = new Date().toISOString().split('T')[0];
+            const filename = `선거인명부_${dateStr}.xlsx`;
+
+            // Write and download
+            XLSX.writeFile(wb, filename);
+
+            await logAdminAction({
+                electionId: activeElectionId,
+                actionType: 'DOWNLOAD_VOTERS',
+                description: `선거인명부 엑셀 다운로드 (${voters.length}명)`
+            });
+
+            setMessage({ type: 'success', text: '선거인명부 엑셀 파일이 생성되었습니다.' });
+        } catch (err) {
+            console.error("Error exporting excel:", err);
+            setMessage({ type: 'error', text: '엑셀 다운로드 중 오류가 발생했습니다.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         alert('인증키가 복사되었습니다: ' + text);
@@ -290,6 +345,16 @@ export default function VoterManager() {
                                         ),
                                     }}
                                 />
+                                <Button
+                                    variant="outlined"
+                                    color="success"
+                                    startIcon={<FileDownloadIcon />}
+                                    onClick={handleDownloadExcel}
+                                    disabled={loading || voters.length === 0}
+                                    size="small"
+                                >
+                                    엑셀 다운로드
+                                </Button>
                                 <IconButton onClick={fetchVoters} disabled={loading}>
                                     <RefreshIcon />
                                 </IconButton>
