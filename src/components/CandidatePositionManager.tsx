@@ -34,8 +34,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import * as XLSX from 'xlsx';
 import ConfirmDialog from './ConfirmDialog';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 interface Props {
     position: string; // '장로', '안수집사', '권사'
@@ -58,6 +61,16 @@ export default function CandidatePositionManager({ position }: Props) {
     const [newVolunteer, setNewVolunteer] = useState('');
     const [newRound, setNewRound] = useState(1);
     const [adding, setAdding] = useState(false);
+
+    // Edit State
+    const [editTarget, setEditTarget] = useState<Candidate | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editBirthdate, setEditBirthdate] = useState('');
+    const [editDistrict, setEditDistrict] = useState('');
+    const [editProfile, setEditProfile] = useState('');
+    const [editVolunteer, setEditVolunteer] = useState('');
+    const [editRound, setEditRound] = useState(1);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Sync newRound with activeTab
     useEffect(() => {
@@ -167,6 +180,53 @@ export default function CandidatePositionManager({ position }: Props) {
             setMessage({ type: 'error', text: '후보자 삭제 중 오류가 발생했습니다.' });
         } finally {
             setDeleteTarget(null);
+        }
+    };
+
+    const handleEditClick = (candidate: Candidate) => {
+        setEditTarget(candidate);
+        setEditName(candidate.name);
+        setEditBirthdate(candidate.birthdate || '');
+        setEditDistrict(candidate.district || '');
+        setEditProfile(candidate.profileDesc || '');
+        setEditVolunteer(candidate.volunteerInfo || '');
+        setEditRound(candidate.round || activeTab + 1);
+    };
+
+    const handleEditSave = async () => {
+        if (!activeElectionId || !editTarget || !editTarget.id) return;
+        if (!editName.trim()) {
+            setMessage({ type: 'error', text: '이름을 입력해주세요.' });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, editTarget.id);
+            const updatedData = {
+                name: editName.trim(),
+                birthdate: editBirthdate.trim(),
+                district: editDistrict.trim(),
+                profileDesc: editProfile.trim(),
+                volunteerInfo: editVolunteer.trim(),
+                round: editRound,
+            };
+
+            await updateDoc(candidateRef, updatedData);
+            await logAdminAction({
+                electionId: activeElectionId,
+                actionType: 'OTHER',
+                description: `'${editName}' (${position}) 후보 정보 수정`
+            });
+
+            setMessage({ type: 'success', text: `'${editName}' 후보 정보가 수정되었습니다.` });
+            setEditTarget(null);
+            fetchCandidates();
+        } catch (err) {
+            console.error("Error updating candidate:", err);
+            setMessage({ type: 'error', text: '후보자 수정 중 오류가 발생했습니다.' });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -365,6 +425,9 @@ export default function CandidatePositionManager({ position }: Props) {
                                                     }
                                                 />
                                                 <ListItemSecondaryAction>
+                                                    <IconButton edge="end" color="primary" onClick={() => handleEditClick(c)} sx={{ mr: 1 }}>
+                                                        <EditIcon />
+                                                    </IconButton>
                                                     <IconButton edge="end" color="error" onClick={() => setDeleteTarget(c)}>
                                                         <DeleteIcon />
                                                     </IconButton>
@@ -388,6 +451,27 @@ export default function CandidatePositionManager({ position }: Props) {
                 onCancel={() => setDeleteTarget(null)}
                 requireReAuth
             />
+
+            {/* 개별 수정 다이얼로그 */}
+            <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} fullWidth maxWidth="sm">
+                <DialogTitle>후보자 정보 수정 ({editTarget?.position})</DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                        <TextField label="이름" value={editName} onChange={e => setEditName(e.target.value)} size="small" fullWidth required />
+                        <TextField label="생년월일 (6자리)" value={editBirthdate} onChange={e => setEditBirthdate(e.target.value)} size="small" fullWidth />
+                        <TextField label="교구/구역" value={editDistrict} onChange={e => setEditDistrict(e.target.value)} size="small" fullWidth />
+                        <TextField label="투표 차수" type="number" value={editRound} onChange={e => setEditRound(Number(e.target.value))} size="small" fullWidth />
+                        <TextField label="봉사 이력" value={editProfile} onChange={e => setEditProfile(e.target.value)} size="small" fullWidth multiline rows={3} />
+                        <TextField label="추가 정보" value={editVolunteer} onChange={e => setEditVolunteer(e.target.value)} size="small" fullWidth multiline rows={2} />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditTarget(null)} color="inherit">취소</Button>
+                    <Button onClick={handleEditSave} variant="contained" color="primary" startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />} disabled={isSaving}>
+                        저장
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
