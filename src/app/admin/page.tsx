@@ -969,18 +969,20 @@ function AdminLogsSection() {
 
         const logsQuery = query(
             collection(db, 'adminLogs'),
-            where('electionId', '==', activeElectionId),
             orderBy('timestamp', 'desc'),
-            limit(100)
+            limit(200)
         );
 
         setLoading(true);
         const unsubscribe = onSnapshot(logsQuery, (snapshot) => {
             const loadedLogs: AdminLog[] = [];
             snapshot.forEach(doc => {
-                loadedLogs.push({ id: doc.id, ...doc.data() } as AdminLog);
+                const data = doc.data() as AdminLog;
+                if (data.electionId === activeElectionId) {
+                    loadedLogs.push({ id: doc.id, ...data });
+                }
             });
-            setLogs(loadedLogs);
+            setLogs(loadedLogs.slice(0, 100)); // Limit after filter
             setLoading(false);
         }, (err) => {
             console.error("Log fetch error:", err);
@@ -996,12 +998,16 @@ function AdminLogsSection() {
         try {
             const logsQuery = query(
                 collection(db, 'adminLogs'),
-                where('electionId', '==', activeElectionId),
                 orderBy('timestamp', 'desc')
             );
             const snapshot = await getDocs(logsQuery);
             const allLogs: AdminLog[] = [];
-            snapshot.forEach(doc => allLogs.push({ id: doc.id, ...doc.data() } as AdminLog));
+            snapshot.forEach(doc => {
+                const data = doc.data() as AdminLog;
+                if (data.electionId === activeElectionId) {
+                    allLogs.push({ id: doc.id, ...data });
+                }
+            });
 
             const data = allLogs.map(l => ({
                 '일시': new Date(l.timestamp).toLocaleString(),
