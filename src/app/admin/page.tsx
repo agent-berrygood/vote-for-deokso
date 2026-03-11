@@ -23,9 +23,7 @@ import {
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SaveIcon from '@mui/icons-material/Save';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import CandidateManager from '@/components/CandidateManager';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 import { useElection } from '@/hooks/useElection';
@@ -60,11 +58,6 @@ export default function AdminPage() {
 
     // Reset Dialog
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
-
-    // Single Voter Add State
-    const [singleVoterName, setSingleVoterName] = useState('');
-    const [singleVoterPhone, setSingleVoterPhone] = useState('');
-    const [singleVoterBirthdate, setSingleVoterBirthdate] = useState('');
 
     useEffect(() => {
         if (!activeElectionId) return;
@@ -429,64 +422,6 @@ export default function AdminPage() {
         }
     };
 
-    const handleAddSingleVoter = async () => {
-        if (!activeElectionId) return;
-
-        const cleanName = singleVoterName.trim();
-        if (!cleanName) {
-            setMessage({ type: 'error', text: 'Name is required' });
-            return;
-        }
-
-        if (cleanName.length > 20) {
-            setMessage({ type: 'error', text: '이름은 20자를 초과할 수 없습니다.' });
-            return;
-        }
-
-        const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
-        if (singleVoterPhone && !phoneRegex.test(singleVoterPhone)) {
-            setMessage({ type: 'error', text: '올바른 휴대전화 번호 형식이 아닙니다.' });
-            return;
-        }
-
-        const birthdateRegex = /^\d{6}$/;
-        if (singleVoterBirthdate && !birthdateRegex.test(singleVoterBirthdate)) {
-            setMessage({ type: 'error', text: '생년월일 6자리를 정확히 입력해주세요.' });
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const collectionRef = collection(db, `elections/${activeElectionId}/voters`);
-            const newDocRef = doc(collectionRef);
-            const authKey = generateAuthKey();
-
-            const voterData: Voter = {
-                id: newDocRef.id,
-                name: singleVoterName,
-                authKey: authKey,
-                hasVoted: false,
-                votedAt: null,
-                phone: singleVoterPhone,
-                birthdate: singleVoterBirthdate
-            };
-
-            await setDoc(newDocRef, voterData);
-            await logAdminAction({ electionId: activeElectionId, actionType: 'ADD_SINGLE_VOTER', description: `단일 선거인 추가: '${singleVoterName}'` });
-            setMessage({ type: 'success', text: `Voter '${singleVoterName}' added with Key: ${authKey}` });
-
-            // Clear inputs
-            setSingleVoterName('');
-            setSingleVoterPhone('');
-            setSingleVoterBirthdate('');
-        } catch (err) {
-            console.error(err);
-            setMessage({ type: 'error', text: 'Error adding voter' });
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleResetData = async () => {
         if (!activeElectionId) return;
         setLoading(true);
@@ -818,57 +753,6 @@ export default function AdminPage() {
                     </Button>
                 </Box>
             </Paper>
-
-            {/* Single Voter Addition */}
-            <Paper sx={{ p: 4, mb: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                    Add Single Voter
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <TextField
-                        label="Name"
-                        value={singleVoterName}
-                        onChange={(e) => setSingleVoterName(e.target.value)}
-                        size="small"
-                        sx={{ width: 150 }}
-                    />
-                    <TextField
-                        label="Phone"
-                        value={singleVoterPhone}
-                        onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, '');
-                            let formatted = val;
-                            if (val.length > 3 && val.length <= 7) {
-                                formatted = `${val.slice(0, 3)}-${val.slice(3)}`;
-                            } else if (val.length > 7) {
-                                formatted = `${val.slice(0, 3)}-${val.slice(3, 7)}-${val.slice(7, 11)}`;
-                            }
-                            setSingleVoterPhone(formatted);
-                        }}
-                        size="small"
-                        sx={{ width: 150 }}
-                        placeholder="010-0000-0000"
-                    />
-                    <TextField
-                        label="Birthdate"
-                        value={singleVoterBirthdate}
-                        onChange={(e) => setSingleVoterBirthdate(e.target.value)}
-                        size="small"
-                        sx={{ width: 150 }}
-                        placeholder="YYMMDD"
-                    />
-                    <Button
-                        variant="contained"
-                        onClick={handleAddSingleVoter}
-                        disabled={loading || !singleVoterName}
-                        startIcon={<PersonAddIcon />}
-                    >
-                        Add Voter
-                    </Button>
-                </Box>
-            </Paper>
-
-            <CandidateManager />
 
             <ConfirmDialog
                 open={resetDialogOpen}

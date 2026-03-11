@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs, doc, deleteDoc, updateDoc, setDoc, where } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
-import imageCompression from 'browser-image-compression';
+import { db } from '@/lib/firebase';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
 import { useElection } from '@/hooks/useElection';
@@ -32,7 +30,6 @@ import {
     Tabs,
     Tab
 } from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -51,7 +48,6 @@ export default function CandidatePositionManager({ position }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [deleteTarget, setDeleteTarget] = useState<Candidate | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
-    const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState(0); // 0: 1차, 1: 2차 ...
 
     // Form State for New Candidate
@@ -227,36 +223,6 @@ export default function CandidatePositionManager({ position }: Props) {
         }
     };
 
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, candidateId: string) => {
-        const file = event.target.files?.[0];
-        if (!file || !activeElectionId) return;
-
-        setUploadingId(candidateId);
-        try {
-            const options = { maxSizeMB: 0.05, maxWidthOrHeight: 300, useWebWorker: true };
-            const compressedFile = await imageCompression(file, options);
-
-            const storageRef = ref(storage, `elections/${activeElectionId}/candidates/${candidateId}/profile.jpg`);
-            await uploadBytes(storageRef, compressedFile);
-            const downloadURL = await getDownloadURL(storageRef);
-
-            const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
-            await updateDoc(candidateRef, { photoUrl: downloadURL });
-
-            setCandidates(prev => prev.map(c =>
-                c.id === candidateId ? { ...c, photoUrl: downloadURL } : c
-            ));
-
-            setMessage({ type: 'success', text: '사진이 성공적으로 업로드되었습니다.' });
-        } catch (error) {
-            console.error("Error uploading image:", error);
-            setMessage({ type: 'error', text: '사진 업로드 중 오류가 발생했습니다.' });
-        } finally {
-            setUploadingId(null);
-            event.target.value = '';
-        }
-    };
-
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
@@ -374,21 +340,6 @@ export default function CandidatePositionManager({ position }: Props) {
                                                         >
                                                             {c.name[0]}
                                                         </Avatar>
-                                                        <IconButton
-                                                            component="label"
-                                                            size="small"
-                                                            sx={{
-                                                                position: 'absolute',
-                                                                bottom: -5,
-                                                                right: -5,
-                                                                bgcolor: 'white',
-                                                                boxShadow: 1,
-                                                                '&:hover': { bgcolor: '#f5f5f5' }
-                                                            }}
-                                                        >
-                                                            {uploadingId === c.id ? <CircularProgress size={16} /> : <CloudUploadIcon sx={{ fontSize: 16 }} />}
-                                                            <input type="file" hidden accept="image/*" onChange={e => handleImageUpload(e, c.id!)} />
-                                                        </IconButton>
                                                     </Box>
                                                 </ListItemAvatar>
                                                 <ListItemText
