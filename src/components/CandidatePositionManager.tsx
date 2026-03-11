@@ -36,6 +36,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import * as XLSX from 'xlsx';
 import ConfirmDialog from './ConfirmDialog';
 
 interface Props {
@@ -172,6 +174,59 @@ export default function CandidatePositionManager({ position }: Props) {
         }
     };
 
+    const handleDownloadExcel = async () => {
+        if (!activeElectionId) return;
+        setLoading(true);
+        try {
+            // Prepare data - all candidates for this position
+            const data = candidates.map(c => ({
+                '이름': c.name,
+                '생년월일': c.birthdate || '',
+                '교구/구역': c.district || '',
+                '투표차수': `${c.round}차`,
+                '봉사이력': c.profileDesc || '',
+                '추가정보': c.volunteerInfo || ''
+            }));
+
+            // Create worksheet
+            const ws = XLSX.utils.json_to_sheet(data);
+
+            // Force "생년월일" column (index 1) to be text
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+            for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                const cellRef = XLSX.utils.encode_cell({ r: R, c: 1 }); // Column B
+                if (ws[cellRef]) {
+                    ws[cellRef].t = 's';
+                    ws[cellRef].z = '@';
+                }
+            }
+
+            // Create workbook and append sheet
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "후보자명부");
+
+            // Generate filename
+            const dateStr = new Date().toISOString().split('T')[0];
+            const filename = `${position}_후보자명부_${dateStr}.xlsx`;
+
+            // Write and download
+            XLSX.writeFile(wb, filename);
+
+            await logAdminAction({
+                electionId: activeElectionId,
+                actionType: 'OTHER',
+                description: `'${position}' 후보자명부 엑셀 다운로드 (${candidates.length}명)`
+            });
+
+            setMessage({ type: 'success', text: `${position} 후보자명부 엑셀 파일이 생성되었습니다.` });
+        } catch (err) {
+            console.error("Error exporting excel:", err);
+            setMessage({ type: 'error', text: '엑셀 다운로드 중 오류가 발생했습니다.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, candidateId: string) => {
         const file = event.target.files?.[0];
         if (!file || !activeElectionId) return;
@@ -282,6 +337,16 @@ export default function CandidatePositionManager({ position }: Props) {
                                     size="small"
                                     sx={{ width: 200 }}
                                 />
+                                <Button
+                                    variant="outlined"
+                                    color="success"
+                                    startIcon={<FileDownloadIcon />}
+                                    onClick={handleDownloadExcel}
+                                    disabled={loading || candidates.length === 0}
+                                    size="small"
+                                >
+                                    엑셀 다운로드
+                                </Button>
                                 <IconButton onClick={fetchCandidates} disabled={loading}>
                                     <RefreshIcon />
                                 </IconButton>
