@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, setDoc, updateDoc, orderBy, limit, startAfter, where, query as firestoreQuery, QueryConstraint } from 'firebase/firestore';
+import { collection, query, getDocs, doc, deleteDoc, setDoc, updateDoc, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Voter } from '@/types';
 import { useElection } from '@/hooks/useElection';
@@ -43,6 +43,9 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import * as XLSX from 'xlsx';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -72,6 +75,9 @@ export default function VoterManager() {
     const [newPhone, setNewPhone] = useState('');
     const [newBirthdate, setNewBirthdate] = useState('');
     const [adding, setAdding] = useState(false);
+
+    // Round Detail State
+    const [detailTarget, setDetailTarget] = useState<Voter | null>(null);
 
     const fetchVoters = useCallback(async () => {
         if (!activeElectionId) return;
@@ -210,13 +216,25 @@ export default function VoterManager() {
         setLoading(true);
         try {
             // Prepare data
-            const data = voters.map(v => ({
-                '이름': v.name,
-                '생년월일': v.birthdate || '',
-                '전화번호': v.phone || '',
-                '인증키': v.authKey || '',
-                '참여여부': (v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? '참여' : '미참여'
-            }));
+            const data = voters.map(v => {
+                const baseInfo = {
+                    '이름': v.name,
+                    '생년월일': v.birthdate || '',
+                    '전화번호': v.phone || '',
+                    '인증키': v.authKey || '',
+                };
+
+                // Add Participation by Position and Round (Max 5 rounds as per logic)
+                const participationInfo: { [key: string]: string } = {};
+                const positions = ['장로', '권사', '안수집사'];
+                for (const pos of positions) {
+                    for (let r = 1; r <= 5; r++) {
+                        participationInfo[`${pos}_${r}차`] = v.participated?.[`${pos}_${r}`] ? '참여' : '미참여';
+                    }
+                }
+
+                return { ...baseInfo, ...participationInfo };
+            });
 
             // Create worksheet
             const ws = XLSX.utils.json_to_sheet(data);
@@ -393,11 +411,18 @@ export default function VoterManager() {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    {(v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? (
-                                                        <Chip label="참여" color="success" size="small" variant="outlined" />
-                                                    ) : (
-                                                        <Chip label="미참여" color="default" size="small" variant="outlined" />
-                                                    )}
+                                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                                                        {(v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? (
+                                                            <Chip label="참여" color="success" size="small" variant="outlined" />
+                                                        ) : (
+                                                            <Chip label="미참여" color="default" size="small" variant="outlined" />
+                                                        )}
+                                                        <Tooltip title="차수별 참여 상세">
+                                                            <IconButton size="small" onClick={() => setDetailTarget(v)}>
+                                                                <VisibilityIcon fontSize="inherit" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Box>
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
@@ -512,6 +537,53 @@ export default function VoterManager() {
                     >
                         {updating ? <CircularProgress size={24} /> : '수정 완료'}
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Voter Participation Detail Dialog */}
+            <Dialog open={!!detailTarget} onClose={() => setDetailTarget(null)} fullWidth maxWidth="sm">
+                <DialogTitle fontWeight="bold">
+                    [상세 참여 현황] {detailTarget?.name} 선거인
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Box sx={{ pt: 1 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                            각 직분 및 차수별 투표 참여 여부를 확인할 수 있습니다.
+                        </Typography>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>구분</TableCell>
+                                    {[1, 2, 3, 4, 5].map(r => (
+                                        <TableCell key={r} align="center" sx={{ fontWeight: 'bold' }}>{r}차</TableCell>
+                                    ))}
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {['장로', '권사', '안수집사'].map(pos => (
+                                    <TableRow key={pos}>
+                                        <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9f9f9' }}>{pos}</TableCell>
+                                        {[1, 2, 3, 4, 5].map(r => {
+                                            const key = `${pos}_${r}`;
+                                            const participated = detailTarget?.participated?.[key];
+                                            return (
+                                                <TableCell key={r} align="center">
+                                                    {participated ? (
+                                                        <CheckCircleIcon color="success" sx={{ fontSize: 20 }} />
+                                                    ) : (
+                                                        <HelpOutlineIcon color="disabled" sx={{ fontSize: 18 }} />
+                                                    )}
+                                                </TableCell>
+                                            );
+                                        })}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDetailTarget(null)} color="primary">닫기</Button>
                 </DialogActions>
             </Dialog>
         </Box>
