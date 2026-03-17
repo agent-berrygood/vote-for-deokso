@@ -24,8 +24,6 @@ import {
     Divider,
     Alert,
     Grid,
-    Card,
-    CardContent,
     Chip,
     Tabs,
     Tab
@@ -173,9 +171,12 @@ export default function CandidatePositionManager({ position }: Props) {
             const maxVotesMap = configData.maxVotes || { '장로': 5, '권사': 5, '안수집사': 5 };
             const maxVotes = typeof maxVotesMap === 'number' ? maxVotesMap : (maxVotesMap[position] || 5);
 
-            // 2. Get 1st Round Ballots for this position
+            // 2. Get Source Round (Previous Round) Data
+            const sourceRound = activeTab; // e.g. if we are on tab 2 (3rd round), source is 2nd round
+            const targetRound = activeTab + 1;
+
             const votersRef = collection(db, `elections/${activeElectionId}/voters`);
-            const ballotQuery = query(votersRef, where(`participated.${position}_1`, '==', true));
+            const ballotQuery = query(votersRef, where(`participated.${position}_${sourceRound}`, '==', true));
             const ballotSnap = await getDocs(ballotQuery);
             const ballots = ballotSnap.size;
 
@@ -189,11 +190,11 @@ export default function CandidatePositionManager({ position }: Props) {
                 }
             }
 
-            // 4. Fetch 1st Round Candidates
+            // 4. Fetch Source Round Candidates
             const q = query(
                 collection(db, `elections/${activeElectionId}/candidates`),
                 where('position', '==', position),
-                where('round', '==', 1)
+                where('round', '==', sourceRound)
             );
             const querySnapshot = await getDocs(q);
             const prevCandidates: Candidate[] = [];
@@ -203,24 +204,23 @@ export default function CandidatePositionManager({ position }: Props) {
 
             // 5. Filter out elected (피택자 제외) and Sort
             const notElected = prevCandidates.filter(c => {
-                const votes = c.votesByRound?.[1] || 0;
+                const votes = c.votesByRound?.[sourceRound] || 0;
                 return !(votes >= threshold && votes > 0);
             });
 
-            notElected.sort((a, b) => (b.votesByRound?.[1] || 0) - (a.votesByRound?.[1] || 0));
+            notElected.sort((a, b) => (b.votesByRound?.[sourceRound] || 0) - (a.votesByRound?.[sourceRound] || 0));
 
             // 6. Select Top 1.5x (소수점 올림)
             const targetCount = Math.ceil(maxVotes * 1.5);
             const selectedCandidates = notElected.slice(0, targetCount);
 
             if (selectedCandidates.length === 0) {
-                setMessage({ type: 'warning', text: '불러올 1차 통과(비피택) 후보가 없거나 투표 기록이 부족합니다.' });
+                setMessage({ type: 'warning', text: `불러올 ${sourceRound}차 통과(비피택) 후보가 없거나 투표 기록이 부족합니다.` });
                 setAutoImportOpen(false);
                 return;
             }
 
-            // 7. Batch Write to 2nd Round (activeTab + 1)
-            const targetRound = activeTab + 1;
+            // 7. Batch Write to Target Round (activeTab + 1)
             const batch = writeBatch(db);
 
             selectedCandidates.forEach(c => {
@@ -246,10 +246,10 @@ export default function CandidatePositionManager({ position }: Props) {
             await logAdminAction({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
-                description: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명 자동 생성 (1차 기록 기반)`
+                description: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명 자동 생성 (${sourceRound}차 기록 기반)`
             });
 
-            setMessage({ type: 'success', text: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명이 자동으로 추가되었습니다.` });
+            setMessage({ type: 'success', text: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명이 ${sourceRound}차 결과를 토대로 성공적으로 자동 생성되었습니다.` });
             fetchCandidates();
         } catch (err) {
             console.error("Error auto-importing candidates:", err);
@@ -470,7 +470,7 @@ export default function CandidatePositionManager({ position }: Props) {
                                         disabled={loading}
                                         size="small"
                                     >
-                                        1차 결과 기준 자동 생성
+                                        {activeTab}차 결과 기준 자동 생성
                                     </Button>
                                 )}
                                 <Button
@@ -565,7 +565,7 @@ export default function CandidatePositionManager({ position }: Props) {
             <ConfirmDialog
                 open={autoImportOpen}
                 title={`${position} ${activeTab + 1}차 후보 자동 생성`}
-                description={`1차 투표 결과 기록을 기반으로 피택자를 제외한 미피택자 중 득표수 상위 1.5배수(소수점 올림) 인원을 다음 차수 후보로 자동 복사합니다. 진행하시겠습니까?`}
+                description={`${activeTab}차 투표 결과 기록을 기반으로 피택자를 제외한 미피택자 중 득표수 상위 1.5배수(소수점 올림) 인원을 다음 차수 후보로 자동 복사합니다. 진행하시겠습니까?`}
                 onConfirm={handleAutoImportFromPrevRound}
                 onCancel={() => setAutoImportOpen(false)}
             />
