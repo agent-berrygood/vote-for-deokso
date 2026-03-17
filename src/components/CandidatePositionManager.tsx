@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, updateDoc, setDoc, where } from 'firebase/firestore';
+import { collection, query, getDocs, doc, deleteDoc, updateDoc, setDoc, where, writeBatch, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
@@ -52,6 +52,8 @@ export default function CandidatePositionManager({ position }: Props) {
     const [deleteTarget, setDeleteTarget] = useState<Candidate | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
     const [activeTab, setActiveTab] = useState(0); // 0: 1차, 1: 2차 ...
+
+    const [autoImportOpen, setAutoImportOpen] = useState(false);
 
     // Form State for New Candidate
     const [newName, setNewName] = useState('');
@@ -158,6 +160,102 @@ export default function CandidatePositionManager({ position }: Props) {
         } finally {
             setAdding(true); // Temporary to show loading on button if needed, but we refresh anyway
             setAdding(false);
+        }
+    };
+
+    const handleAutoImportFromPrevRound = async () => {
+        if (!activeElectionId) return;
+        try {
+            // 1. Get Election Config
+            const configRef = doc(db, `elections/${activeElectionId}/settings`, 'config');
+            const configSnap = await getDoc(configRef);
+            const configData = configSnap.exists() ? configSnap.data() : {};
+            const maxVotesMap = configData.maxVotes || { '장로': 5, '권사': 5, '안수집사': 5 };
+            const maxVotes = typeof maxVotesMap === 'number' ? maxVotesMap : (maxVotesMap[position] || 5);
+
+            // 2. Get 1st Round Ballots for this position
+            const votersRef = collection(db, `elections/${activeElectionId}/voters`);
+            const ballotQuery = query(votersRef, where(`participated.${position}_1`, '==', true));
+            const ballotSnap = await getDocs(ballotQuery);
+            const ballots = ballotSnap.size;
+
+            // 3. Calculate Threshold
+            let threshold = 999999;
+            if (ballots > 0) {
+                if (position === '장로') {
+                    threshold = Math.ceil(ballots * (2 / 3));
+                } else {
+                    threshold = Math.floor(ballots / 2) + 1;
+                }
+            }
+
+            // 4. Fetch 1st Round Candidates
+            const q = query(
+                collection(db, `elections/${activeElectionId}/candidates`),
+                where('position', '==', position),
+                where('round', '==', 1)
+            );
+            const querySnapshot = await getDocs(q);
+            const prevCandidates: Candidate[] = [];
+            querySnapshot.forEach((docSnap) => {
+                prevCandidates.push({ id: docSnap.id, ...docSnap.data() } as Candidate);
+            });
+
+            // 5. Filter out elected (피택자 제외) and Sort
+            const notElected = prevCandidates.filter(c => {
+                const votes = c.votesByRound?.[1] || 0;
+                return !(votes >= threshold && votes > 0);
+            });
+
+            notElected.sort((a, b) => (b.votesByRound?.[1] || 0) - (a.votesByRound?.[1] || 0));
+
+            // 6. Select Top 1.5x (소수점 올림)
+            const targetCount = Math.ceil(maxVotes * 1.5);
+            const selectedCandidates = notElected.slice(0, targetCount);
+
+            if (selectedCandidates.length === 0) {
+                setMessage({ type: 'warning', text: '불러올 1차 통과(비피택) 후보가 없거나 투표 기록이 부족합니다.' });
+                setAutoImportOpen(false);
+                return;
+            }
+
+            // 7. Batch Write to 2nd Round (activeTab + 1)
+            const targetRound = activeTab + 1;
+            const batch = writeBatch(db);
+
+            selectedCandidates.forEach(c => {
+                const newRef = doc(collection(db, `elections/${activeElectionId}/candidates`));
+                const newCandidate: Candidate = {
+                    id: newRef.id,
+                    name: c.name,
+                    position: c.position,
+                    birthdate: c.birthdate || '',
+                    district: c.district || '',
+                    profileDesc: c.profileDesc || '',
+                    volunteerInfo: c.volunteerInfo || '',
+                    round: targetRound,
+                    voteCount: 0,
+                    votesByRound: { [targetRound]: 0 },
+                    photoUrl: c.photoUrl || ''
+                };
+                batch.set(newRef, newCandidate);
+            });
+
+            await batch.commit();
+
+            await logAdminAction({
+                electionId: activeElectionId,
+                actionType: 'OTHER',
+                description: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명 자동 생성 (1차 기록 기반)`
+            });
+
+            setMessage({ type: 'success', text: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명이 자동으로 추가되었습니다.` });
+            fetchCandidates();
+        } catch (err) {
+            console.error("Error auto-importing candidates:", err);
+            setMessage({ type: 'error', text: '후보자 자동 생성 중 오류가 발생했습니다.' });
+        } finally {
+            setAutoImportOpen(false);
         }
     };
 
@@ -363,6 +461,18 @@ export default function CandidatePositionManager({ position }: Props) {
                                     size="small"
                                     sx={{ width: 200 }}
                                 />
+                                {activeTab > 0 && filteredCandidates.length === 0 && (
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        startIcon={<PersonAddIcon />}
+                                        onClick={() => setAutoImportOpen(true)}
+                                        disabled={loading}
+                                        size="small"
+                                    >
+                                        1차 결과 기준 자동 생성
+                                    </Button>
+                                )}
                                 <Button
                                     variant="outlined"
                                     color="success"
@@ -450,6 +560,14 @@ export default function CandidatePositionManager({ position }: Props) {
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteTarget(null)}
                 requireReAuth
+            />
+
+            <ConfirmDialog
+                open={autoImportOpen}
+                title={`${position} ${activeTab + 1}차 후보 자동 생성`}
+                description={`1차 투표 결과 기록을 기반으로 피택자를 제외한 미피택자 중 득표수 상위 1.5배수(소수점 올림) 인원을 다음 차수 후보로 자동 복사합니다. 진행하시겠습니까?`}
+                onConfirm={handleAutoImportFromPrevRound}
+                onCancel={() => setAutoImportOpen(false)}
             />
 
             {/* 개별 수정 다이얼로그 */}
