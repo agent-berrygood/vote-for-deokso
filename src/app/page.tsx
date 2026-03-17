@@ -21,6 +21,7 @@ import { createVoterSession, verifyVoterInfo, loginWithMasterPasskey } from '@/a
 declare global {
   interface Window {
     recaptchaVerifier: RecaptchaVerifier | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     grecaptcha: any;
   }
 }
@@ -298,9 +299,10 @@ export default function LoginPage() {
       } else {
         setError(res.message || '현장 투표용 패스키 로그인에 실패했습니다.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(`에러가 발생했습니다: ${err.message || String(err)}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`에러가 발생했습니다: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

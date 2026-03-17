@@ -15,7 +15,7 @@ const getSecretKey = () => {
     return new TextEncoder().encode(secret);
 };
 
-export async function signToken(payload: any, expiresIn: string = '1d') {
+export async function signToken(payload: Record<string, unknown>, expiresIn: string = '1d') {
     try {
         const secretKey = getSecretKey();
         const token = await new EncryptJWT(payload)

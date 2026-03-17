@@ -158,8 +158,7 @@ export default function AdminPage() {
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const proceedWithUpload = async (file: File, collectionRef: any, parseLogic: (data: any[]) => void) => {
+    const proceedWithUpload = async (file: File, collectionRef: unknown, parseLogic: (data: Record<string, any>[]) => void) => {
         setLoading(true);
         setMessage(null);
 
@@ -173,7 +172,7 @@ export default function AdminPage() {
                 const worksheet = workbook.Sheets[worksheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                parseLogic(jsonData as any[]);
+                parseLogic(jsonData as Record<string, any>[]);
             } catch (err) {
                 console.error("Excel parse error:", err);
                 setMessage({ type: 'error', text: '엑셀 파일 처리 중 오류가 발생했습니다.' });
@@ -185,7 +184,7 @@ export default function AdminPage() {
                 skipEmptyLines: true,
                 transformHeader: (header) => header.trim().replace(/^\\uFEFF/, ''),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                complete: (results) => parseLogic(results.data as any[]),
+                complete: (results) => parseLogic(results.data as Record<string, any>[]),
                 error: (error) => {
                     console.error(error);
                     setMessage({ type: 'error', text: 'CSV 파싱 오류' });
@@ -240,7 +239,6 @@ export default function AdminPage() {
                         if (!name) return;
 
                         const district = row.District || row['교구'] || row['지역'];
-                        const rowPosition = row.Position || row['직분'] || row['직책'];
                         const photoLink = row.PhotoLink || row['사진링크'] || row['사진'];
                         const profileDesc = row.ProfileDesc || row['봉사이력'] || row['약력'];
                         const volunteerInfo = row.VolunteerInfo || row['추가정보'] || row['비고'];
@@ -390,7 +388,7 @@ export default function AdminPage() {
         try {
             const q = query(collection(db, `elections/${activeElectionId}/voters`));
             const snap = await getDocs(q);
-            const data: any[] = [];
+            const data: Record<string, string | number | boolean>[] = [];
 
             snap.forEach(doc => {
                 const v = doc.data() as Voter;
@@ -709,8 +707,7 @@ export default function AdminPage() {
                 </TextField>
                 <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     {[{ pos: '장로', color: 'primary' }, { pos: '안수집사', color: 'success' }, { pos: '권사', color: 'warning' }].map(({ pos, color }) => (
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        <Paper key={pos} sx={{ p: 3, flex: 1, borderTop: `4px solid ${(theme: any) => theme.palette[color as 'primary' | 'success' | 'warning'].main}`, minWidth: 220 }}>
+                        <Paper key={pos} sx={{ p: 3, flex: 1, borderTop: (theme: any) => `4px solid ${theme.palette[color as 'primary' | 'success' | 'warning'].main}`, minWidth: 220 }}>
                             <Typography variant="h6" gutterBottom color={color as 'primary' | 'success' | 'warning'}> {pos} 후보 업로드 </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}> {uploadRound}차 투표 대상 </Typography>
                             <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>

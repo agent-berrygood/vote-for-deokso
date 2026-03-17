@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, setDoc, updateDoc, orderBy, where } from 'firebase/firestore';
+import { collection, query, getDocs, doc, deleteDoc, setDoc, updateDoc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Voter } from '@/types';
 import { useElection } from '@/hooks/useElection';
@@ -29,8 +29,6 @@ import {
     Tooltip,
     Select,
     MenuItem,
-    FormControl,
-    InputLabel,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -75,6 +73,10 @@ export default function VoterManager() {
     const [newPhone, setNewPhone] = useState('');
     const [newBirthdate, setNewBirthdate] = useState('');
     const [adding, setAdding] = useState(false);
+
+    // Round Selection State
+    const [selectedRound, setSelectedRound] = useState<number>(1);
+    const [selectedPosition, setSelectedPosition] = useState<string>('장로');
 
     // Round Detail State
     const [detailTarget, setDetailTarget] = useState<Voter | null>(null);
@@ -344,6 +346,38 @@ export default function VoterManager() {
                 {/* 2. Voter List Table */}
                 <Grid size={{ xs: 12, md: 8 }}>
                     <Paper sx={{ p: 3 }}>
+                        {/* Round & Position Selection Buttons */}
+                        <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Typography variant="subtitle2" sx={{ mr: 1, fontWeight: 'bold' }}>차수 선택:</Typography>
+                                {[1, 2, 3].map((r) => (
+                                    <Button
+                                        key={r}
+                                        variant={selectedRound === r ? "contained" : "outlined"}
+                                        size="small"
+                                        onClick={() => setSelectedRound(r)}
+                                        sx={{ minWidth: 60 }}
+                                    >
+                                        {r}차
+                                    </Button>
+                                ))}
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Typography variant="subtitle2" sx={{ mr: 1, fontWeight: 'bold' }}>직분 선택:</Typography>
+                                {['장로', '권사', '안수집사'].map((pos) => (
+                                    <Button
+                                        key={pos}
+                                        variant={selectedPosition === pos ? "contained" : "outlined"}
+                                        size="small"
+                                        color="secondary"
+                                        onClick={() => setSelectedPosition(pos)}
+                                    >
+                                        {pos}
+                                    </Button>
+                                ))}
+                            </Box>
+                        </Box>
+
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
                             <Typography variant="h6" fontWeight="bold">
                                 선거인 명부 ({filteredVoters.length}명)
@@ -387,7 +421,7 @@ export default function VoterManager() {
                                         <TableCell>생년월일</TableCell>
                                         <TableCell>전화번호</TableCell>
                                         <TableCell>인증키</TableCell>
-                                        <TableCell align="center">참여여부</TableCell>
+                                        <TableCell align="center">{selectedPosition} {selectedRound}차</TableCell>
                                         <TableCell align="center">관리</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -412,12 +446,12 @@ export default function VoterManager() {
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
-                                                        {(v.participated && Object.keys(v.participated).length > 0) || v.hasVoted ? (
-                                                            <Chip label="참여" color="success" size="small" variant="outlined" />
+                                                        {v.participated?.[`${selectedPosition}_${selectedRound}`] ? (
+                                                            <Chip label="참여" color="success" size="small" variant="filled" />
                                                         ) : (
-                                                            <Chip label="미참여" color="default" size="small" variant="outlined" />
+                                                            <Chip label="미참여" color="default" size="small" variant="outlined" sx={{ opacity: 0.6 }} />
                                                         )}
-                                                        <Tooltip title="차수별 참여 상세">
+                                                        <Tooltip title="전체 참여 상세">
                                                             <IconButton size="small" onClick={() => setDetailTarget(v)}>
                                                                 <VisibilityIcon fontSize="inherit" />
                                                             </IconButton>
