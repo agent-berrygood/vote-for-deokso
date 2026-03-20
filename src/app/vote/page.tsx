@@ -265,6 +265,8 @@ export default function VotePage() {
     const isReviewTab = currentTabName === '최종 확인';
     const currentPosition = isReviewTab ? 'REVIEW' : currentTabName;
 
+    const isRound2 = !isReviewTab && (rounds[currentPosition] ?? 1) >= 2;
+
     // Filter Candidates for Current Tab
     const filteredCandidates = candidates
         .filter(c => c.position === currentPosition)
@@ -273,6 +275,13 @@ export default function VotePage() {
             return getHangulInitial(c.name) === activeAlphabetTab;
         })
         .sort((a, b) => {
+            if (isRound2) {
+                const aVotes = a.votesByRound?.[1] ?? 0;
+                const bVotes = b.votesByRound?.[1] ?? 0;
+                if (aVotes !== bVotes) {
+                    return sortOrder === 'asc' ? bVotes - aVotes : aVotes - bVotes;
+                }
+            }
             const comparison = a.name.localeCompare(b.name, 'ko');
             return sortOrder === 'asc' ? comparison : -comparison;
         });
@@ -389,7 +398,10 @@ export default function VotePage() {
                                 onClick={toggleSortOrder}
                                 startIcon={sortOrder === 'asc' ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
                             >
-                                {sortOrder === 'asc' ? '가나다순' : '역순'}
+                                {isRound2
+                                    ? (sortOrder === 'asc' ? '득표 높은 순' : '득표 낮은 순')
+                                    : (sortOrder === 'asc' ? '가나다순' : '역순')
+                                }
                             </Button>
                         </Box>
 

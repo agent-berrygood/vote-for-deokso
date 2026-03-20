@@ -52,6 +52,7 @@ export default function CandidatePositionManager({ position }: Props) {
     const [activeTab, setActiveTab] = useState(0); // 0: 1차, 1: 2차 ...
 
     const [autoImportOpen, setAutoImportOpen] = useState(false);
+    const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
 
     // Form State for New Candidate
     const [newName, setNewName] = useState('');
@@ -281,6 +282,50 @@ export default function CandidatePositionManager({ position }: Props) {
         }
     };
 
+    const handleDeleteAllCandidates = async () => {
+        if (!activeElectionId) return;
+        setLoading(true);
+        try {
+            const targetRound = activeTab + 1;
+            const q = query(
+                collection(db, `elections/${activeElectionId}/candidates`),
+                where('position', '==', position),
+                where('round', '==', targetRound)
+            );
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                setMessage({ type: 'warning', text: '삭제할 후보가 없습니다.' });
+                setDeleteAllConfirmOpen(false);
+                return;
+            }
+
+            const batch = writeBatch(db);
+            snapshot.forEach(docSnap => {
+                batch.delete(docSnap.ref);
+            });
+
+            await batch.commit();
+
+            await logAdminAction({
+                adminId: 'system',
+                electionId: activeElectionId,
+                actionType: 'DELETE_CANDIDATE',
+                description: `'${position}' ${targetRound}차 후보자 전체 삭제 (${snapshot.size}명)`
+            });
+
+            setMessage({ type: 'success', text: `'${position}' ${targetRound}차 후보자 전체가 삭제되었습니다.` });
+            fetchCandidates();
+        } catch (err) {
+            console.error("Error deleting all candidates:", err);
+            setMessage({ type: 'error', text: '전체 삭제 중 오류가 발생했습니다.' });
+        } finally {
+            setLoading(false);
+            setDeleteAllConfirmOpen(false);
+        }
+    };
+
+
     const handleEditClick = (candidate: Candidate) => {
         setEditTarget(candidate);
         setEditName(candidate.name);
@@ -473,6 +518,18 @@ export default function CandidatePositionManager({ position }: Props) {
                                         {activeTab}차 결과 기준 자동 생성
                                     </Button>
                                 )}
+                                {activeTab > 0 && filteredCandidates.length > 0 && (
+                                    <Button
+                                        variant="contained"
+                                        color="error"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={() => setDeleteAllConfirmOpen(true)}
+                                        disabled={loading}
+                                        size="small"
+                                    >
+                                        현재 차수 후보 전체 삭제
+                                    </Button>
+                                )}
                                 <Button
                                     variant="outlined"
                                     color="success"
@@ -568,6 +625,15 @@ export default function CandidatePositionManager({ position }: Props) {
                 description={`${activeTab}차 투표 결과 기록을 기반으로 피택자를 제외한 미피택자 중 득표수 상위 1.5배수(소수점 올림) 인원을 다음 차수 후보로 자동 복사합니다. 진행하시겠습니까?`}
                 onConfirm={handleAutoImportFromPrevRound}
                 onCancel={() => setAutoImportOpen(false)}
+            />
+
+            <ConfirmDialog
+                open={deleteAllConfirmOpen}
+                title={`${position} ${activeTab + 1}차 후보 전체 삭제`}
+                description={`정말 '${position}'의 ${activeTab + 1}차 후보자를 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+                onConfirm={handleDeleteAllCandidates}
+                onCancel={() => setDeleteAllConfirmOpen(false)}
+                requireReAuth
             />
 
             {/* 개별 수정 다이얼로그 */}
