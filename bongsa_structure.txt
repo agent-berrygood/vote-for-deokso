@@ -1,0 +1,13 @@
+시트 수: 1
+시트 이름들: Sheet1
+
+=== 시트: Sheet1 ===
+행 수: 722
+처음 5행:
+  Row 0: []
+  Row 1: [null,"  <head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /></head>"]
+  Row 2: []
+  Row 3: [null,null,"<link href=\"/assets-5.1.4/plugins/datatables.net-bs5/css/dataTables.bootstrap5.min.css\" rel=\"stylesheet\" />"]
+  Row 4: []
+중간 샘플 (Row 10):
+  Row 10: []

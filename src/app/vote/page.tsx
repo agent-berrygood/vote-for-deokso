@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     collection,
@@ -96,6 +96,38 @@ export default function VotePage() {
     const [activePositionTab, setActivePositionTab] = useState(0); // Index of POSITION_ORDER or SPECIAL TABS
     const [activeAlphabetTab, setActiveAlphabetTab] = useState('ALL');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+    // Calculate candidate ranks (기호) for Round 2 and above
+    const candidateRanks = useMemo(() => {
+        const ranks: Record<string, number> = {};
+        
+        POSITION_ORDER.forEach(pos => {
+            const currentRound = rounds[pos] ?? 1;
+            if (currentRound >= 2) {
+                const prevRound = currentRound - 1;
+                const posCandidates = candidates.filter(c => c.position === pos);
+                
+                // Sort by prev round votes descending, then name ascending
+                posCandidates.sort((a, b) => {
+                    const aVotes = a.votesByRound?.[prevRound] ?? 0;
+                    const bVotes = b.votesByRound?.[prevRound] ?? 0;
+                    if (aVotes !== bVotes) {
+                        return bVotes - aVotes;
+                    }
+                    return a.name.localeCompare(b.name, 'ko');
+                });
+
+                // Assign rank
+                posCandidates.forEach((c, index) => {
+                    if (c.id) {
+                        ranks[c.id] = index + 1;
+                    }
+                });
+            }
+        });
+        
+        return ranks;
+    }, [candidates, rounds]);
 
     useEffect(() => {
         if (electionLoading) return;
@@ -369,17 +401,21 @@ export default function VotePage() {
                                         </Typography>
                                     ) : (
                                         <List dense>
-                                            {selectedCandidates.map(c => (
+                                            {selectedCandidates.map(c => {
+                                                const rank = c.id ? candidateRanks[c.id] : undefined;
+                                                const isR2 = (rounds[pos] ?? 1) >= 2;
+                                                return (
                                                 <ListItem key={c.id}>
                                                     <ListItemAvatar>
                                                         <Avatar src={c.photoUrl} alt={c.name}><PersonIcon /></Avatar>
                                                     </ListItemAvatar>
                                                     <ListItemText
-                                                        primary={`${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
+                                                        primary={isR2 && rank ? `[기호 ${rank}번] ${c.name} (${calculateAge(c.birthdate, c.age)}세)` : `${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
                                                         secondary={c.churchTitle || '교인'}
                                                     />
                                                 </ListItem>
-                                            ))}
+                                                );
+                                            })}
                                         </List>
                                     )}
                                 </Paper>
@@ -413,6 +449,8 @@ export default function VotePage() {
                                 </Box>
                             ) : filteredCandidates.map((candidate) => {
                                 const isSelected = (votes[currentPosition] || []).includes(candidate.id!);
+                                const rank = candidate.id ? candidateRanks[candidate.id] : undefined;
+                                
                                 return (
                                     <Grid size={{ xs: 12, sm: 6 }} key={candidate.id}>
                                         <Card
@@ -428,7 +466,25 @@ export default function VotePage() {
                                             }}
                                             onClick={() => handleToggleVote(candidate.id!, currentPosition)}
                                         >
-                                            <Box sx={{ width: '35%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
+                                            <Box sx={{ width: '35%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0', position: 'relative' }}>
+                                                {isRound2 && rank && (
+                                                    <Box sx={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        bgcolor: 'primary.main',
+                                                        color: 'white',
+                                                        px: 1,
+                                                        py: 0.5,
+                                                        borderBottomRightRadius: 8,
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.85rem',
+                                                        zIndex: 1,
+                                                        boxShadow: 1
+                                                    }}>
+                                                        기호 {rank}번
+                                                    </Box>
+                                                )}
                                                 <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl} />
                                                 <Box sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', bgcolor: isSelected ? '#e3f2fd' : 'transparent' }}>
                                                     <Typography variant="subtitle2" fontWeight="bold">

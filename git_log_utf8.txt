@@ -1,0 +1,164 @@
+﻿commit b480dcb831927b81a1ba0ae6fae6b75db7c59b15
+Merge: 976e50d 1bc2acb
+Author: xbffltm-Deokso <xbffltm@deokso.org>
+Date:   Fri Mar 6 11:14:53 2026 +0900
+
+    Merge branch 'master' of https://github.com/agent-berrygood/vote-for-deokso
+
+commit 976e50dfda04c182e53b6a3250de90f86a661385
+Author: xbffltm-Deokso <xbffltm@deokso.org>
+Date:   Fri Mar 6 11:14:02 2026 +0900
+
+    feat: ?ы몴 ?붾㈃ ??댄? 諛??몄쬆 ?덈궡 臾멸뎄 ?섏젙
+
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 71b3ab8..a2f4664 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -371,8 +371,8 @@ export default function LoginPage() {
+   return (
+     <Container component="main" maxWidth="xs">
+       <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+-        <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+-          ?믪??삳뜒?뚭탳???λ줈, ?덉닔吏묒궗, 沅뚯궗 ?좉굅
++        <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.4 }}>
++          ?믪??삳뜒?뚭탳??<br /> ?λ줈, ?덉닔吏묒궗, 沅뚯궗 ?좉굅
+         </Typography>
+ 
+         <Box sx={{ mt: 1, width: '100%' }}>
+@@ -453,7 +453,7 @@ export default function LoginPage() {
+                 ?몄쬆踰덊샇 ?뺤씤
+               </Typography>
+               <Typography variant="body2" sx={{ mb: 2 }}>
+-                臾몄옄濡??꾩넚??6?먮━ ?몄쬆踰덊샇瑜??낅젰?댁＜?몄슂.
++                [援?젣諛쒖떊]臾몄옄濡??꾩넚??6?먮━ ?몄쬆踰덊샇瑜??낅젰?댁＜?몄슂.
+               </Typography>
+               <TextField
+                 margin="normal"
+
+commit 1bc2acbeb27a75e90f3c50bb3f05da0700a430af
+Author: 踰좊━ <berryberry1120@gmail.com>
+Date:   Thu Mar 5 15:53:04 2026 +0900
+
+    feat: ?꾨낫 ?몃Ъ ?ъ쭊 異붽? (踰좊뱶濡? ?쇨퀬蹂? ?뷀븳)
+
+diff --git "a/public/images/candidates/\353\262\240\353\223\234\353\241\234.jpg" "b/public/images/candidates/\353\262\240\353\223\234\353\241\234.jpg"
+new file mode 100644
+index 0000000..7b7e447
+Binary files /dev/null and "b/public/images/candidates/\353\262\240\353\223\234\353\241\234.jpg" differ
+diff --git "a/public/images/candidates/\354\225\274\352\263\240\353\263\264.jpg" "b/public/images/candidates/\354\225\274\352\263\240\353\263\264.jpg"
+new file mode 100644
+index 0000000..659400c
+Binary files /dev/null and "b/public/images/candidates/\354\225\274\352\263\240\353\263\264.jpg" differ
+diff --git "a/public/images/candidates/\354\232\224\355\225\234.jpg" "b/public/images/candidates/\354\232\224\355\225\234.jpg"
+new file mode 100644
+index 0000000..adc9ca9
+Binary files /dev/null and "b/public/images/candidates/\354\232\224\355\225\234.jpg" differ
+
+commit 769a1d07cbe1bd26361b9f29e5c974b270f72e4a
+Author: 踰좊━ <berryberry1120@gmail.com>
+Date:   Thu Mar 5 00:04:06 2026 +0900
+
+    fix: remove '?대젰???놁뒿?덈떎' fallback when ProfileDesc is empty
+
+diff --git a/src/app/vote/page.tsx b/src/app/vote/page.tsx
+index 6867cb0..7517239 100644
+--- a/src/app/vote/page.tsx
++++ b/src/app/vote/page.tsx
+@@ -429,9 +429,11 @@ export default function VotePage() {
+                                             </Box>
+ 
+                                             <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+-                                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
+-                                                    {candidate.profileDesc?.replace(/\\n/g, '\n') || "?대젰???놁뒿?덈떎."}
+-                                                </Typography>
++                                                {candidate.profileDesc && (
++                                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
++                                                        {candidate.profileDesc.replace(/\\n/g, '\n')}
++                                                    </Typography>
++                                                )}
+                                                 {candidate.volunteerInfo && (
+                                                     <Typography variant="body2" color="primary" sx={{ mt: 1, whiteSpace: 'pre-line', fontSize: '0.8rem', fontWeight: 500 }}>
+                                                         {candidate.volunteerInfo.replace(/\\n/g, '\n')}
+
+commit d7dd91ae3c74c463f27d9ecb46257056c53bdece
+Author: xbffltm-Deokso <xbffltm@deokso.org>
+Date:   Wed Mar 4 17:04:59 2026 +0900
+
+    fix: render explicit \n strings as newlines in candidate profiles
+
+diff --git a/inspect_excel.js b/inspect_excel.js
+new file mode 100644
+index 0000000..acb6cb1
+--- /dev/null
++++ b/inspect_excel.js
+@@ -0,0 +1,25 @@
++const fs = require('fs');
++const XLSX = require('xlsx');
++
++const files = [
++    'j:/???쒕씪?대툕/?좉굅 ?뚯뒪???뱁쉶蹂닿퀬???덉닔吏묒궗 ?꾨낫 02.20.xlsx',
++    'j:/???쒕씪?대툕/?좉굅 ?뚯뒪???뱁쉶蹂닿퀬??沅뚯궗?꾨낫02.20.xlsx',
++    'j:/???쒕씪?대툕/?좉굅 ?뚯뒪???뱁쉶蹂닿퀬???λ줈?꾨낫02.20.xls.xlsx'
++];
++
++let out = '';
++files.forEach(file => {
++    try {
++        const workbook = XLSX.readFile(file);
++        const sheetName = workbook.SheetNames[0];
++        const sheet = workbook.Sheets[sheetName];
++        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
++        out += `--- ${file} ---\\n`;
++        out += 'Headers: ' + JSON.stringify(json[0]) + '\\n';
++        out += 'Row 1: ' + JSON.stringify(json[1]) + '\\n\\n';
++    } catch (e) {
++        out += `Error reading ${file}: ` + e.message + '\\n';
++    }
++});
++
++fs.writeFileSync('inspect_out.txt', out);
+diff --git a/inspect_out.txt b/inspect_out.txt
+new file mode 100644
+index 0000000..90e8afa
+--- /dev/null
++++ b/inspect_out.txt
+@@ -0,0 +1 @@
++--- j:/???쒕씪?대툕/?좉굅 ?뚯뒪???뱁쉶蹂닿퀬???덉닔吏묒궗 ?꾨낫 02.20.xlsx ---\nHeaders: ["Name","Birthdate","District","Position","PhotoLink","ProfileDesc"]\nRow 1: ["媛뺣룞??,19810511,"/2援먭뎄/","?쒕━吏묒궗"]\n\n--- j:/???쒕씪?대툕/?좉굅 ?뚯뒪???뱁쉶蹂닿퀬??沅뚯궗?꾨낫02.20.xlsx ---\nHeaders: ["Name","Birthdate","District","Position","PhotoLink","ProfileDesc"]\nRow 1: ["媛뺢꼍??,19801009,"/2援먭뎄/","?쒕━吏묒궗"]\n\n--- j:/???쒕씪?대툕/?좉굅 ?뚯뒪???뱁쉶蹂닿퀬???λ줈?꾨낫02.20.xls.xlsx ---\nHeaders: ["Name","Birthdate","District","Position","PhotoLink","ProfileDesc"]\nRow 1: ["媛뺥쁽二?,19700514,"/5援먭뎄/","?쒕Т沅뚯궗"]\n\n
+\ No newline at end of file
+diff --git a/src/app/vote/page.tsx b/src/app/vote/page.tsx
+index a8019ba..6867cb0 100644
+--- a/src/app/vote/page.tsx
++++ b/src/app/vote/page.tsx
+@@ -430,11 +430,11 @@ export default function VotePage() {
+ 
+                                             <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
+-                                                    {candidate.profileDesc || "?대젰???놁뒿?덈떎."}
++                                                    {candidate.profileDesc?.replace(/\\n/g, '\n') || "?대젰???놁뒿?덈떎."}
+                                                 </Typography>
+                                                 {candidate.volunteerInfo && (
+                                                     <Typography variant="body2" color="primary" sx={{ mt: 1, whiteSpace: 'pre-line', fontSize: '0.8rem', fontWeight: 500 }}>
+-                                                        {candidate.volunteerInfo}
++                                                        {candidate.volunteerInfo.replace(/\\n/g, '\n')}
+                                                     </Typography>
+                                                 )}
+                                             </Box>
+diff --git a/src/components/CandidateManager.tsx b/src/components/CandidateManager.tsx
+index cac4f29..b505963 100644
+--- a/src/components/CandidateManager.tsx
++++ b/src/components/CandidateManager.tsx
+@@ -296,11 +296,11 @@ export default function CandidateManager() {
+                                                 </Typography>
+                                                 <br />
+                                                 <Typography component="span" variant="caption" color="text.secondary">
+-                                                    援먭뎄: {candidate.district?.replace(/\//g, '') || "誘몄엯??} | {candidate.profileDesc || "?대젰 ?놁쓬"}
++                                                    援먭뎄: {candidate.district?.replace(/\//g, '') || "誘몄엯??} | {candidate.profileDesc?.replace(/\\n/g, '\n') || "?대젰 ?놁쓬"}
+                                                 </Typography>
+                                                 {candidate.volunteerInfo && (
+                                                     <Typography component="span" variant="caption" color="primary" sx={{ display: 'block', mt: 0.5, whiteSpace: 'pre-line' }}>
+-                                                        {candidate.volunteerInfo}
++                                                        {candidate.volunteerInfo.replace(/\\n/g, '\n')}
+                                                     </Typography>
+                                                 )}
+                                             </>

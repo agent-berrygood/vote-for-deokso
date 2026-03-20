@@ -1,0 +1,152 @@
+총 행 수: 722
+비어있지 않은 행 수: 525
+
+처음 30개 비어있지 않은 행:
+  Row 1: [null,"  <head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /></head>"]
+  Row 3: [null,null,"<link href=\"/assets-5.1.4/plugins/datatables.net-bs5/css/dataTables.bootstrap5.min.css\" rel=\"stylesheet\" />"]
+  Row 7: [null,null,"<link href=\"/assets-5.1.4/plugins/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.min.css\" rel=\"stylesheet\" />"]
+  Row 8: [null,null,"<link href=\"/assets-5.1.4/plugins/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css\" rel=\"stylesheet\" />"]
+  Row 11: [null,null,"<link href=\"/assets-5.1.4/plugins/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.min.css\" rel=\"stylesheet\" />"]
+  Row 14: [null,"<style>"]
+  Row 15: [null,"@media screen and (max-width: 767px) "]
+  Row 16: [null,"{"]
+  Row 17: [null,null,"div.dt-buttons "]
+  Row 18: [null,null,"{"]
+  Row 19: [null,null,null,"float: none;"]
+  Row 20: [null,null,null,"width: auto;"]
+  Row 21: [null,null,null,"text-align: center;"]
+  Row 22: [null,null,null,"margin-bottom: 0.5em;"]
+  Row 23: [null,null,"}"]
+  Row 25: [null,null,"div.dt-buttons a.btn {"]
+  Row 26: [null,null,null,"float: none;"]
+  Row 27: [null,null,"}"]
+  Row 28: [null,"}"]
+  Row 29: [null,"</style>"]
+  Row 32: ["<style>"]
+  Row 33: [null,"th.dtfc-fixed-left, td.dtfc-fixed-left {"]
+  Row 34: [null,null,"z-index:1"]
+  Row 35: [null,"}"]
+  Row 37: [null,"table.dataTable th {"]
+  Row 38: [null,null,"background-color: transparent !important;"]
+  Row 39: [null,"}"]
+  Row 40: [null,"div.dataTables_scrollBody {"]
+  Row 41: [null,null,"border-left: 0px !important;"]
+  Row 42: [null,"}"]
+
+중간 샘플 (50번째 비어있지 않은 행부터):
+  Row 70: [null,null,null,null,null,null,"<th width=\"70px\" class=\"scroll-bg\">ì ê¸</th>"]
+  Row 71: [null,null,null,null,null,null,"<th width=\"w-170px w-min-150px\" class=\"scroll-bg\">ë´ì¬ë¶ì</th>"]
+  Row 73: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" > 2025</th>"]
+  Row 75: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2009</th>"]
+  Row 77: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2017</th>"]
+  Row 79: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2018</th>"]
+  Row 81: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2019</th>"]
+  Row 83: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2020</th>"]
+  Row 85: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2021</th>"]
+  Row 87: [null,null,null,null,null,null,null,"<th width=\"w-50px w-min-50px\" >2022</th>"]
+
+
+=== Raw file content (first 3000 chars) ===
+
+	  <head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head>
+	
+		<link href="/assets-5.1.4/plugins/datatables.net-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+
+		
+
+		<link href="/assets-5.1.4/plugins/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.min.css" rel="stylesheet" />
+		<link href="/assets-5.1.4/plugins/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css" rel="stylesheet" />
+
+		
+		<link href="/assets-5.1.4/plugins/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.min.css" rel="stylesheet" />
+
+		
+	<style>
+	@media screen and (max-width: 767px) 
+	{
+		div.dt-buttons 
+		{
+			float: none;
+			width: auto;
+			text-align: center;
+			margin-bottom: 0.5em;
+		}
+
+		div.dt-buttons a.btn {
+			float: none;
+		}
+	}
+	</style>
+
+
+<style>
+	th.dtfc-fixed-left, td.dtfc-fixed-left {
+		z-index:1
+	}
+
+	table.dataTable th {
+		background-color: transparent !important;
+	}
+	div.dataTables_scrollBody {
+		border-left: 0px !important;
+	}
+	
+	div.dtfc-right-top-blocker{
+		background-color: transparent !important;
+	}
+
+	.dataTables_wrapper .dataTables_scroll thead tr th.scroll-bg {
+		box-shadow: inset 0 0 0 #000 !important;
+	}
+</style>
+<body>
+
+<div id="app" class="app-without-sidebar app-without-header" >
+	<div id="content" class="app-content">
+		
+			<h4>&nbsp;  봉사정보 : 1598 건</h4>
+		
+			<table id="data-table-combine" class="table bg-white table-hover table-bordered table-sm align-middle mt-2" style="min-width:100%;width:1550px;">
+				<thead>
+					<tr class="bg-gradient-silver  text-center" height="45">
+						<th width="3%" class="scroll-bg">번호</th>
+						<th width="6%" class="scroll-bg">이름</th>
+						
+							<th width="4%" class="scroll-bg">나이</th>
+						
+						<th class="w-90px w-min-90px" class="scroll-bg">휴대폰</th>
+						<th width="80px" class="scroll-bg">직분</th>
+						<th width="70px" class="scroll-bg">행정분류</th>
+						<th width="70px" class="scroll-bg">신급</th>
+						<th width="w-170px w-min-150px" class="scroll-bg">봉사부서</th>
+						
+							<th width="w-50px w-min-50px" > 2025</th>
+						
+							<th width="w-50px w-min-50px" >2009</th>
+						
+							<th width="w-50px w-min-50px" >2017</th>
+						
+							<th width="w-50px w-min-50px" >2018</th>
+						
+							<th width="w-50px w-min-50px" >2019</th>
+						
+							<th width="w-50px w-min-50px" >2020</th>
+						
+							<th width="w-50px w-min-50px" >2021</th>
+						
+							<th width="w-50px w-min-50px" >2022</th>
+						
+							<th width="w-50px w-min-50px" >2023</th>
+						
+							<th width="w-50px w-min-50px" >2024</th>
+						
+							<th width="w-50px w-min-50px" >2025</th>
+						
+							<th width="w-50px w-min-50px" >2026</th>
+						
+							<th width="w-50px w-min-50px" >2027</th>
+						
+						<th width="60px" >봉사년수</th>				
+					</tr>
+				</thead>
+				<tr style='border-top:solid 3px #aaa;' class='tr_cs' pid='1121110' SO='14813'><td>1</td><td class='pname'>강경인</td>

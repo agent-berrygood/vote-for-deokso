@@ -1,0 +1,63 @@
+﻿[dotenv@17.3.1] injecting env (9) from .env.local -- tip: ?썳截?auth for agents: https://vestauth.com
+[
+  {
+    "description": "?쒖뒪???ㅼ젙 ?낅뜲?댄듃 諛????,
+    "electionId": "0306test",
+    "actionType": "UPDATE_SETTINGS",
+    "timestamp": 1772760928213
+  },
+  {
+    "description": "?쒖뒪???ㅼ젙 ?낅뜲?댄듃 諛????,
+    "electionId": "0306test",
+    "actionType": "UPDATE_SETTINGS",
+    "timestamp": 1772760923523
+  },
+  {
+    "electionId": "0306test",
+    "timestamp": 1772760910512,
+    "actionType": "UPDATE_SETTINGS",
+    "description": "?쒖뒪???ㅼ젙 ?낅뜲?댄듃 諛????
+  },
+  {
+    "electionId": "0306test",
+    "timestamp": 1772760618087,
+    "actionType": "UPDATE_SETTINGS",
+    "description": "?쒖뒪???ㅼ젙 ?낅뜲?댄듃 諛????
+  },
+  {
+    "electionId": "0306test",
+    "actionType": "UPDATE_SETTINGS",
+    "timestamp": 1772760614901,
+    "description": "?쒖뒪???ㅼ젙 ?낅뜲?댄듃 諛????
+  },
+  {
+    "electionId": "0306test",
+    "timestamp": 1772759548340,
+    "actionType": "UPDATE_SETTINGS",
+    "description": "?쒖뒪???ㅼ젙 ?낅뜲?댄듃 諛????
+  },
+  {
+    "description": "?좉굅??14紐?紐낅? ?낅줈??諛?珥덇린??,
+    "electionId": "ad",
+    "timestamp": 1772693116533,
+    "actionType": "UPLOAD_VOTERS"
+  },
+  {
+    "description": "1李??λ줈 ?꾨낫 3紐??곗씠???낅줈??,
+    "electionId": "ad",
+    "timestamp": 1772692720464,
+    "actionType": "UPLOAD_CANDIDATES"
+  },
+  {
+    "description": "?좉굅 'ad' ?앹꽦",
+    "electionId": "ad",
+    "actionType": "CREATE_ELECTION",
+    "timestamp": 1772692102884
+  },
+  {
+    "electionId": "0306test",
+    "actionType": "UPLOAD_CANDIDATES",
+    "timestamp": 1772636826562,
+    "description": "1李?沅뚯궗 ?꾨낫 163紐??곗씠???낅줈??
+  }
+]

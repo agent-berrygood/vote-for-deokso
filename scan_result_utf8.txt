@@ -1,0 +1,6 @@
+﻿[dotenv@17.3.1] injecting env (9) from .env.local -- tip: ?썱截? run anywhere with `dotenvx run -- yourcommand`
+=== DB SCAN ===
+Found 0 documents in 'elections' collection:
+
+Found 1 documents in 'settings' collection:
+ - system { activeElectionId: 'default-2026', electionList: [ 'default-2026' ] }
