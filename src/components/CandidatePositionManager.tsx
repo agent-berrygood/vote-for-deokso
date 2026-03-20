@@ -236,7 +236,7 @@ export default function CandidatePositionManager({ position }: Props) {
                     volunteerInfo: c.volunteerInfo || '',
                     round: targetRound,
                     voteCount: 0,
-                    votesByRound: { [targetRound]: 0 },
+                    votesByRound: { ...(c.votesByRound || {}), [targetRound]: 0 },
                     photoUrl: c.photoUrl || ''
                 };
                 batch.set(newRef, newCandidate);
