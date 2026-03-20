@@ -276,8 +276,9 @@ export default function VotePage() {
         })
         .sort((a, b) => {
             if (isRound2) {
-                const aVotes = a.votesByRound?.[1] ?? 0;
-                const bVotes = b.votesByRound?.[1] ?? 0;
+                const prevRound = (rounds[currentPosition] ?? 1) - 1;
+                const aVotes = a.votesByRound?.[prevRound] ?? 0;
+                const bVotes = b.votesByRound?.[prevRound] ?? 0;
                 if (aVotes !== bVotes) {
                     return sortOrder === 'asc' ? bVotes - aVotes : aVotes - bVotes;
                 }

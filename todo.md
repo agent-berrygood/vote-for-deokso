@@ -5,10 +5,10 @@
 
 ## 상세 태스크
 - [x] 1. 문제 원인 파악: `CandidatePositionManager.tsx`의 `autoImport` 시 `votesByRound` 덮어쓰기 발견 [V]
-- [ ] 2. `autoImport` 로직 수정: 이전 차수의 `votesByRound` 기록을 복사하여 유지하도록 수정
-- [ ] 3. 수정 사항 Git Push 및 적용
-- [ ] 4. 사용자에게 '현재 2차 후보 지우고 다시 자동 생성' 안내
+- [x] 2. `autoImport` 로직 수정: 이전 차수의 `votesByRound` 기록을 복사하여 유지하도록 수정 [V]
+- [x] 3. 수정 사항 Git Push 및 적용 [V]
+- [x] 4. 사용자에게 '현재 2차 후보 지우고 다시 자동 생성' 안내 [V]
 
 ## 진행 상황
 - 시작일: 2026-03-20
-- 상태: 진행 중
+- 상태: 완료 (2026-03-20)
