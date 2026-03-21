@@ -1,7 +1,7 @@
-# 작업 목표: 기호 번호(candidateNumber) 우선 정렬 로직 업데이트
+# 작업 목표: 안보경.jpg 후보자 사진의 배경을 제거하고 흰색 배경으로 변환
 
-- [V] 1. `src/app/vote/page.tsx` 내부 `filteredCandidates` 의 정렬(`.sort`) 함수 구조 파악
-- [V] 2. 두 후보 모두 `candidateNumber`를 가지고 있을 때, `candidateNumber`의 오름차순으로 우선 정렬
-- [V] 3. 한 후보만 `candidateNumber`를 가지고 있을 때, 해당 후보를 무조건 우선순위로 위로 배치
-- [V] 4. 두 후보 모두 `candidateNumber`가 없을 때, 기존처럼 득표수 또는 가나다순서 등 정렬 버튼(`sortOrder`)의 조건에 따라 폴백(Fallback) 정렬이 되도록 유지
-- [V] 5. `npm run build`를 실행하여 린트/컴파일 오류가 없고 정상 빌드되는지 확인
+- [x] 1. 파이썬 스크립트 `remove_bg_and_white.py` 작성
+- [x] 2. 스크립트 내에서 `rembg` 라이브러리를 사용하여 주어진 이미지(`h:\내 드라이브\선거 테스트\최종후보\사진변경0312\안보경.jpg`)의 배경 제거
+- [x] 3. 배경이 제거된 투명(RGBA) 이미지를 흰색 배경(RGB) 이미지 위에 합성
+- [x] 4. 변환된 최종 이미지를 프로젝트의 `public\images\candidates\안보경.jpg` 경로에 저장 (기존 이미지 덮어쓰기)
+- [x] 5. 파이썬 명령어를 통해 생성한 스크립트를 실행하고 정상 처리 여부를 확인 (필요시 CLI에서 `rembg` 명령어 직접 사용 및 파일 덮어쓰기 로직 적용 가능)
