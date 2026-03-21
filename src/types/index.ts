@@ -12,6 +12,7 @@ export interface Candidate {
     volunteerInfo?: string; // Volunteer History
     churchTitle?: string; // e.g. '교인', '집사'
     district?: string; // e.g. '1교구'
+    candidateNumber?: number; // 기호 번호 (관리자 직접 설정)
 }
 
 export interface Voter {

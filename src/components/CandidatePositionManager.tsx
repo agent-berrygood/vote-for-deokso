@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, updateDoc, setDoc, where, writeBatch, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, deleteDoc, updateDoc, setDoc, where, writeBatch, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
@@ -61,6 +61,7 @@ export default function CandidatePositionManager({ position }: Props) {
     const [newProfile, setNewProfile] = useState('');
     const [newVolunteer, setNewVolunteer] = useState('');
     const [newRound, setNewRound] = useState(1);
+    const [newCandidateNumber, setNewCandidateNumber] = useState('');
     const [adding, setAdding] = useState(false);
 
     // Edit State
@@ -71,6 +72,7 @@ export default function CandidatePositionManager({ position }: Props) {
     const [editProfile, setEditProfile] = useState('');
     const [editVolunteer, setEditVolunteer] = useState('');
     const [editRound, setEditRound] = useState(1);
+    const [editCandidateNumber, setEditCandidateNumber] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     // Sync newRound with activeTab
@@ -121,6 +123,7 @@ export default function CandidatePositionManager({ position }: Props) {
         setAdding(true);
         try {
             const candidateRef = doc(collection(db, `elections/${activeElectionId}/candidates`));
+            const parsedCandNum = newCandidateNumber.trim() ? parseInt(newCandidateNumber.trim(), 10) : NaN;
             const newCandidate: Candidate = {
                 id: candidateRef.id,
                 name: newName.trim(),
@@ -132,7 +135,8 @@ export default function CandidatePositionManager({ position }: Props) {
                 round: newRound,
                 voteCount: 0,
                 votesByRound: { [newRound]: 0 },
-                photoUrl: ''
+                photoUrl: '',
+                ...(!isNaN(parsedCandNum) && parsedCandNum > 0 ? { candidateNumber: parsedCandNum } : {})
             };
 
             await setDoc(candidateRef, newCandidate);
@@ -150,6 +154,7 @@ export default function CandidatePositionManager({ position }: Props) {
             setNewDistrict('');
             setNewProfile('');
             setNewVolunteer('');
+            setNewCandidateNumber('');
 
             // Refresh List
             fetchCandidates();
@@ -334,6 +339,7 @@ export default function CandidatePositionManager({ position }: Props) {
         setEditProfile(candidate.profileDesc || '');
         setEditVolunteer(candidate.volunteerInfo || '');
         setEditRound(candidate.round || activeTab + 1);
+        setEditCandidateNumber(candidate.candidateNumber !== undefined ? String(candidate.candidateNumber) : '');
     };
 
     const handleEditSave = async () => {
@@ -346,13 +352,18 @@ export default function CandidatePositionManager({ position }: Props) {
         setIsSaving(true);
         try {
             const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, editTarget.id);
-            const updatedData = {
+            const parsedCandNum = editCandidateNumber.trim() ? parseInt(editCandidateNumber.trim(), 10) : NaN;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updatedData: Record<string, any> = {
                 name: editName.trim(),
                 birthdate: editBirthdate.trim(),
                 district: editDistrict.trim(),
                 profileDesc: editProfile.trim(),
                 volunteerInfo: editVolunteer.trim(),
                 round: editRound,
+                candidateNumber: (!isNaN(parsedCandNum) && parsedCandNum > 0)
+                    ? parsedCandNum
+                    : deleteField(),
             };
 
             await updateDoc(candidateRef, updatedData);
@@ -460,6 +471,7 @@ export default function CandidatePositionManager({ position }: Props) {
                                 <TextField label="생년월일 (6자리)" value={newBirthdate} onChange={e => setNewBirthdate(e.target.value)} size="small" fullWidth placeholder="700101" />
                                 <TextField label="교구/구역" value={newDistrict} onChange={e => setNewDistrict(e.target.value)} size="small" fullWidth placeholder="1구역" />
                                 <TextField label="투표 차수" type="number" value={newRound} onChange={e => setNewRound(Number(e.target.value))} size="small" fullWidth />
+                                <TextField label="기호 번호 (선택)" type="number" value={newCandidateNumber} onChange={e => setNewCandidateNumber(e.target.value)} size="small" fullWidth placeholder="예: 1" inputProps={{ min: 1 }} />
                                 <TextField label="봉사 이력" value={newProfile} onChange={e => setNewProfile(e.target.value)} size="small" fullWidth multiline rows={3} placeholder="교회 봉사 이력을 입력하세요." />
                                 <TextField label="추가 정보" value={newVolunteer} onChange={e => setNewVolunteer(e.target.value)} size="small" fullWidth multiline rows={2} placeholder="기타 참고 사항" />
 
@@ -575,6 +587,9 @@ export default function CandidatePositionManager({ position }: Props) {
                                                             <Typography fontWeight="bold">{c.name}</Typography>
                                                             <Typography variant="body2" color="text.secondary">({calculateAge(c.birthdate, c.age)}세)</Typography>
                                                             <Chip label={`${c.round}차`} size="small" variant="outlined" />
+                                                            {c.candidateNumber !== undefined && (
+                                                                <Chip label={`기호 ${c.candidateNumber}번`} size="small" color="primary" />
+                                                            )}
                                                             <Typography variant="caption" sx={{ bgcolor: '#f0f0f0', px: 1, borderRadius: 1 }}>{c.district}</Typography>
                                                         </Box>
                                                     }
@@ -645,6 +660,7 @@ export default function CandidatePositionManager({ position }: Props) {
                         <TextField label="생년월일 (6자리)" value={editBirthdate} onChange={e => setEditBirthdate(e.target.value)} size="small" fullWidth />
                         <TextField label="교구/구역" value={editDistrict} onChange={e => setEditDistrict(e.target.value)} size="small" fullWidth />
                         <TextField label="투표 차수" type="number" value={editRound} onChange={e => setEditRound(Number(e.target.value))} size="small" fullWidth />
+                        <TextField label="기호 번호 (선택, 비워두면 삭제)" type="number" value={editCandidateNumber} onChange={e => setEditCandidateNumber(e.target.value)} size="small" fullWidth placeholder="예: 1" inputProps={{ min: 1 }} />
                         <TextField label="봉사 이력" value={editProfile} onChange={e => setEditProfile(e.target.value)} size="small" fullWidth multiline rows={3} />
                         <TextField label="추가 정보" value={editVolunteer} onChange={e => setEditVolunteer(e.target.value)} size="small" fullWidth multiline rows={2} />
                     </Box>

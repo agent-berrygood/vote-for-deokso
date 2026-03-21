@@ -402,15 +402,16 @@ export default function VotePage() {
                                     ) : (
                                         <List dense>
                                             {selectedCandidates.map(c => {
-                                                const rank = c.id ? candidateRanks[c.id] : undefined;
                                                 const isR2 = (rounds[pos] ?? 1) >= 2;
+                                                // DB candidateNumber 우선, fallback으로 동적 rank
+                                                const rank = c.candidateNumber ?? (isR2 && c.id ? candidateRanks[c.id] : undefined);
                                                 return (
                                                 <ListItem key={c.id}>
                                                     <ListItemAvatar>
                                                         <Avatar src={c.photoUrl} alt={c.name}><PersonIcon /></Avatar>
                                                     </ListItemAvatar>
                                                     <ListItemText
-                                                        primary={isR2 && rank ? `[기호 ${rank}번] ${c.name} (${calculateAge(c.birthdate, c.age)}세)` : `${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
+                                                        primary={rank !== undefined ? `[기호 ${rank}번] ${c.name} (${calculateAge(c.birthdate, c.age)}세)` : `${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
                                                         secondary={c.churchTitle || '교인'}
                                                     />
                                                 </ListItem>
@@ -449,8 +450,9 @@ export default function VotePage() {
                                 </Box>
                             ) : filteredCandidates.map((candidate) => {
                                 const isSelected = (votes[currentPosition] || []).includes(candidate.id!);
-                                const rank = candidate.id ? candidateRanks[candidate.id] : undefined;
-                                
+                                // DB에 candidateNumber가 있으면 우선 사용, 없으면 동적 계산된 rank로 fallback
+                                const rank = candidate.candidateNumber ?? (isRound2 && candidate.id ? candidateRanks[candidate.id] : undefined);
+
                                 return (
                                     <Grid size={{ xs: 12, sm: 6 }} key={candidate.id}>
                                         <Card
@@ -479,7 +481,7 @@ export default function VotePage() {
                                             </Box>
 
                                             <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                                                {isRound2 && rank && (
+                                                {rank !== undefined && (
                                                     <Box sx={{
                                                         display: 'inline-block',
                                                         alignSelf: 'flex-start',
