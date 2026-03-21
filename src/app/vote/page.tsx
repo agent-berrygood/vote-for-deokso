@@ -100,13 +100,13 @@ export default function VotePage() {
     // Calculate candidate ranks (기호) for Round 2 and above
     const candidateRanks = useMemo(() => {
         const ranks: Record<string, number> = {};
-        
+
         POSITION_ORDER.forEach(pos => {
             const currentRound = rounds[pos] ?? 1;
             if (currentRound >= 2) {
                 const prevRound = currentRound - 1;
                 const posCandidates = candidates.filter(c => c.position === pos);
-                
+
                 // Sort by prev round votes descending, then name ascending
                 posCandidates.sort((a, b) => {
                     const aVotes = a.votesByRound?.[prevRound] ?? 0;
@@ -125,7 +125,7 @@ export default function VotePage() {
                 });
             }
         });
-        
+
         return ranks;
     }, [candidates, rounds]);
 
@@ -307,6 +307,18 @@ export default function VotePage() {
             return getHangulInitial(c.name) === activeAlphabetTab;
         })
         .sort((a, b) => {
+            const aNum = a.candidateNumber;
+            const bNum = b.candidateNumber;
+
+            // 둘 다 candidateNumber 있으면 오름차순 우선 정렬
+            if (aNum !== undefined && bNum !== undefined) {
+                return aNum - bNum;
+            }
+            // 한쪽만 있으면 해당 후보 우선
+            if (aNum !== undefined) return -1;
+            if (bNum !== undefined) return 1;
+
+            // 둘 다 없으면 기존 정렬 로직으로 폴백
             if (isRound2) {
                 const prevRound = (rounds[currentPosition] ?? 1) - 1;
                 const aVotes = a.votesByRound?.[prevRound] ?? 0;
@@ -406,15 +418,15 @@ export default function VotePage() {
                                                 // DB candidateNumber 우선, fallback으로 동적 rank
                                                 const rank = c.candidateNumber ?? (isR2 && c.id ? candidateRanks[c.id] : undefined);
                                                 return (
-                                                <ListItem key={c.id}>
-                                                    <ListItemAvatar>
-                                                        <Avatar src={c.photoUrl} alt={c.name}><PersonIcon /></Avatar>
-                                                    </ListItemAvatar>
-                                                    <ListItemText
-                                                        primary={rank !== undefined ? `[기호 ${rank}번] ${c.name} (${calculateAge(c.birthdate, c.age)}세)` : `${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
-                                                        secondary={c.churchTitle || '교인'}
-                                                    />
-                                                </ListItem>
+                                                    <ListItem key={c.id}>
+                                                        <ListItemAvatar>
+                                                            <Avatar src={c.photoUrl} alt={c.name}><PersonIcon /></Avatar>
+                                                        </ListItemAvatar>
+                                                        <ListItemText
+                                                            primary={rank !== undefined ? `[기호 ${rank}번] ${c.name} (${calculateAge(c.birthdate, c.age)}세)` : `${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
+                                                            secondary={c.churchTitle || '교인'}
+                                                        />
+                                                    </ListItem>
                                                 );
                                             })}
                                         </List>
@@ -495,6 +507,23 @@ export default function VotePage() {
                                                         mb: 1,
                                                     }}>
                                                         기호 {rank}번
+                                                    </Box>
+                                                )}
+                                                {candidate.district && (
+                                                    <Box sx={{
+                                                        display: 'inline-block',
+                                                        alignSelf: 'flex-start',
+                                                        bgcolor: '#f5f5f5',
+                                                        color: '#666',
+                                                        px: 1,
+                                                        py: 0.25,
+                                                        borderRadius: 1,
+                                                        fontWeight: '500',
+                                                        fontSize: '0.75rem',
+                                                        mb: 1,
+                                                        border: '1px solid #e0e0e0',
+                                                    }}>
+                                                        {candidate.district}
                                                     </Box>
                                                 )}
                                                 {candidate.profileDesc && (

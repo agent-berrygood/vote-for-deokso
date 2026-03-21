@@ -1,8 +1,7 @@
-# 작업 목표: 어드민 페이지에서 후보자 기호 번호 수정 기능 구현
+# 작업 목표: 기호 번호(candidateNumber) 우선 정렬 로직 업데이트
 
-- [V] 1. 후보자 데이터 모델(`types` 등) 및 Firestore 스키마에 기호 번호(`symbolNumber` 또는 `candidateNumber`) 필드 추가.
-- [V] 2. `src/app/admin/page.tsx` 또는 관련 관리자 컴포넌트(후보자 목록 관리) 내에 후보자별 기호 번호를 수정할 수 있는 UI (입력 칸) 구현.
-- [V] 3. 관리자 페이지에서 변경한 기호 번호를 DB(Firebase)에 저장 및 업데이트하는 로직 연동.
-- [V] 4. 투표 화면(`src/app/vote/page.tsx`, `CandidatePositionManager.tsx` 등)에서 하드코딩된 기호 번호 텍스트를 DB에서 불러온 기호 번호 값으로 교체하여 렌더링.
-- [V] 5. 기호 번호 값이 없을 경우의 Fallback 로직 추가 (표시 안 함 또는 기본값 지정).
-- [V] 6. 저장 및 렌더링이 정상 작동하는지 여부 확인 및 TypeScript 컴파일/Lint 에러 체크.
+- [V] 1. `src/app/vote/page.tsx` 내부 `filteredCandidates` 의 정렬(`.sort`) 함수 구조 파악
+- [V] 2. 두 후보 모두 `candidateNumber`를 가지고 있을 때, `candidateNumber`의 오름차순으로 우선 정렬
+- [V] 3. 한 후보만 `candidateNumber`를 가지고 있을 때, 해당 후보를 무조건 우선순위로 위로 배치
+- [V] 4. 두 후보 모두 `candidateNumber`가 없을 때, 기존처럼 득표수 또는 가나다순서 등 정렬 버튼(`sortOrder`)의 조건에 따라 폴백(Fallback) 정렬이 되도록 유지
+- [V] 5. `npm run build`를 실행하여 린트/컴파일 오류가 없고 정상 빌드되는지 확인
