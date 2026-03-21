@@ -466,25 +466,7 @@ export default function VotePage() {
                                             }}
                                             onClick={() => handleToggleVote(candidate.id!, currentPosition)}
                                         >
-                                            <Box sx={{ width: '35%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0', position: 'relative' }}>
-                                                {isRound2 && rank && (
-                                                    <Box sx={{
-                                                        position: 'absolute',
-                                                        top: 0,
-                                                        left: 0,
-                                                        bgcolor: 'primary.main',
-                                                        color: 'white',
-                                                        px: 1,
-                                                        py: 0.5,
-                                                        borderBottomRightRadius: 8,
-                                                        fontWeight: 'bold',
-                                                        fontSize: '0.85rem',
-                                                        zIndex: 1,
-                                                        boxShadow: 1
-                                                    }}>
-                                                        기호 {rank}번
-                                                    </Box>
-                                                )}
+                                            <Box sx={{ width: '35%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
                                                 <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl} />
                                                 <Box sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', bgcolor: isSelected ? '#e3f2fd' : 'transparent' }}>
                                                     <Typography variant="subtitle2" fontWeight="bold">
@@ -496,7 +478,23 @@ export default function VotePage() {
                                                 </Box>
                                             </Box>
 
-                                            <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                            <Box sx={{ width: '65%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                                                {isRound2 && rank && (
+                                                    <Box sx={{
+                                                        display: 'inline-block',
+                                                        alignSelf: 'flex-start',
+                                                        bgcolor: 'primary.main',
+                                                        color: 'white',
+                                                        px: 1,
+                                                        py: 0.25,
+                                                        borderRadius: 1,
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.8rem',
+                                                        mb: 1,
+                                                    }}>
+                                                        기호 {rank}번
+                                                    </Box>
+                                                )}
                                                 {candidate.profileDesc && (
                                                     <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#555' }}>
                                                         {candidate.profileDesc.replace(/\\n/g, '\n')}
