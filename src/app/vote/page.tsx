@@ -86,6 +86,8 @@ export default function VotePage() {
     });
 
     const [rounds, setRounds] = useState<{ [pos: string]: number }>({});
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const [isTimeUp, setIsTimeUp] = useState(false);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [voterName, setVoterName] = useState('');
@@ -130,6 +132,20 @@ export default function VotePage() {
     }, [candidates, rounds]);
 
     useEffect(() => {
+        if (!endDate) return;
+
+        const checkTime = () => {
+            if (new Date() > endDate) {
+                setIsTimeUp(true);
+            }
+        };
+
+        checkTime();
+        const interval = setInterval(checkTime, 10000); // Check every 10s
+        return () => clearInterval(interval);
+    }, [endDate]);
+
+    useEffect(() => {
         if (electionLoading) return;
         if (!activeElectionId) {
             console.log("No active election");
@@ -160,6 +176,11 @@ export default function VotePage() {
                         );
                     }
                     setRounds(data.rounds || { '장로': 1, '권사': 1, '안수집사': 1 });
+                    if (data.endDate) {
+                        const end = new Date(data.endDate);
+                        setEndDate(end);
+                        if (new Date() > end) setIsTimeUp(true);
+                    }
                 }
 
                 // Fetch Candidates
@@ -183,9 +204,6 @@ export default function VotePage() {
                     initialVotes[pos] = [];
                 });
                 setVotes(initialVotes);
-
-                // Check invalidation/participation logic could go here if needed per-position
-                // But for now we allow re-voting until final submission if not implementing partial updates.
 
             } catch (err) {
                 console.error(err);
@@ -213,6 +231,11 @@ export default function VotePage() {
     };
 
     const handleToggleVote = (candidateId: string, position: string) => {
+        if (isTimeUp) {
+            alert("투표 시간이 종료되어 선택을 변경할 수 없습니다.");
+            return;
+        }
+
         setVotes(prev => {
             const currentList = prev[position] || [];
             const isSelected = currentList.includes(candidateId);
@@ -238,6 +261,11 @@ export default function VotePage() {
 
     const handleSubmitAll = async () => {
         if (submitting) return; // 다중 클릭 방지 guard
+
+        if (isTimeUp) {
+            alert("투표 시간이 이미 종료되었습니다.");
+            return;
+        }
 
         if (!confirm("모든 투표를 완료하시겠습니까? 제출 후에는 수정할 수 없습니다.")) return;
 
@@ -382,6 +410,11 @@ export default function VotePage() {
 
             <Container maxWidth="md" sx={{ mt: 3, flexGrow: 1 }}>
 
+                {isTimeUp && (
+                    <Alert severity="error" sx={{ mb: 2, fontWeight: 'bold' }}>
+                        투표 가능 시간이 종료되었습니다. 현재 화면을 더 이상 제출할 수 없습니다.
+                    </Alert>
+                )}
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
                 {isReviewTab ? (
@@ -415,7 +448,6 @@ export default function VotePage() {
                                         <List dense>
                                             {selectedCandidates.map(c => {
                                                 const isR2 = (rounds[pos] ?? 1) >= 2;
-                                                // DB candidateNumber 우선, fallback으로 동적 rank
                                                 const rank = c.candidateNumber ?? (isR2 && c.id ? candidateRanks[c.id] : undefined);
                                                 return (
                                                     <ListItem key={c.id}>
@@ -462,7 +494,6 @@ export default function VotePage() {
                                 </Box>
                             ) : filteredCandidates.map((candidate) => {
                                 const isSelected = (votes[currentPosition] || []).includes(candidate.id!);
-                                // DB에 candidateNumber가 있으면 우선 사용, 없으면 동적 계산된 rank로 fallback
                                 const rank = candidate.candidateNumber ?? (isRound2 && candidate.id ? candidateRanks[candidate.id] : undefined);
 
                                 return (
@@ -470,13 +501,14 @@ export default function VotePage() {
                                         <Card
                                             sx={{
                                                 position: 'relative',
-                                                cursor: 'pointer',
+                                                cursor: isTimeUp ? 'default' : 'pointer',
                                                 border: isSelected ? '2px solid #1976d2' : '1px solid #eee',
                                                 transition: 'all 0.2s',
                                                 transform: isSelected ? 'scale(1.02)' : 'none',
                                                 display: 'flex',
                                                 height: '100%',
                                                 minHeight: 160,
+                                                opacity: isTimeUp ? 0.8 : 1
                                             }}
                                             onClick={() => handleToggleVote(candidate.id!, currentPosition)}
                                         >
@@ -540,6 +572,7 @@ export default function VotePage() {
 
                                             <Checkbox
                                                 checked={isSelected}
+                                                disabled={isTimeUp}
                                                 sx={{
                                                     position: 'absolute',
                                                     top: 4,
@@ -581,17 +614,17 @@ export default function VotePage() {
                             variant="contained"
                             color="primary"
                             size="large"
-                            disabled={submitting}
+                            disabled={submitting || isTimeUp}
                             onClick={handleSubmitAll}
                             sx={{ py: 1.5, fontSize: '1.2rem', fontWeight: 'bold', boxShadow: 3 }}
                         >
-                            {submitting ? '제출 중...' : '투표 제출하기 (수정 불가)'}
+                            {isTimeUp ? '투표 종료됨' : (submitting ? '제출 중...' : '투표 제출하기 (수정 불가)')}
                         </Button>
                     ) : (
                         <Button
                             fullWidth
                             variant="contained"
-                            color="inherit" // Neutral color for next step
+                            color="inherit"
                             size="large"
                             onClick={() => {
                                 const nextTab = activePositionTab + 1;

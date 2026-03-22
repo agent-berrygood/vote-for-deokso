@@ -25,9 +25,19 @@ export async function submitVote(votes: Record<string, string[]>) {
 
         const { voterId, electionId } = payload;
 
-        // Settings / Config 가져오기 (라운드 정보 파악 로직 백엔드 수행)
+        // Settings / Config 가져오기 (라운드 정보 파악 및 종료 시간 체크)
         const settingsSnap = await getDoc(doc(db, `elections/${electionId}/settings`, 'config'));
         const settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
+
+        // 투표 종료 시간 체크
+        if (settingsData.endDate) {
+            const now = new Date();
+            const end = new Date(settingsData.endDate);
+            if (now > end) {
+                return { success: false, message: '투표 시간이 종료되었습니다. 더 이상 투표할 수 없습니다.' };
+            }
+        }
+
         const rounds = settingsData.rounds || { '장로': 1, '권사': 1, '안수집사': 1 };
 
         // 트랜잭션 수행

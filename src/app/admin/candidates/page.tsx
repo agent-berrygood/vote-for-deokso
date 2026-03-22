@@ -1,14 +1,12 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, Container, Typography, IconButton, Breadcrumbs, Link, ToggleButtonGroup, ToggleButton, Paper } from '@mui/material';
+import { Box, Container, Typography, IconButton, Breadcrumbs, Link, ToggleButtonGroup, ToggleButton, Paper, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CandidatePositionManager from '@/components/CandidatePositionManager';
 
 const POSITIONS = ['장로', '안수집사', '권사'];
 
-export default function IntegratedCandidateManagerPage() {
+function IntegratedCandidateManagerContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialPosition = searchParams.get('pos') || '장로';
@@ -21,8 +19,6 @@ export default function IntegratedCandidateManagerPage() {
     ) => {
         if (newPosition !== null) {
             setSelectedPosition(newPosition);
-            // Update URL for bookmarking/refreshing without full reload if needed, 
-            // but for now local state is sufficient and faster.
             const params = new URLSearchParams(searchParams.toString());
             params.set('pos', newPosition);
             window.history.replaceState(null, '', `?${params.toString()}`);
@@ -30,7 +26,7 @@ export default function IntegratedCandidateManagerPage() {
     };
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <>
             <Box sx={{ mb: 4 }}>
                 <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
                     <Link underline="hover" color="inherit" href="/admin" onClick={(e) => { e.preventDefault(); router.push('/admin'); }} sx={{ cursor: 'pointer' }}>
@@ -66,6 +62,20 @@ export default function IntegratedCandidateManagerPage() {
             </Box>
 
             <CandidatePositionManager position={selectedPosition} />
+        </>
+    );
+}
+
+export default function IntegratedCandidateManagerPage() {
+    return (
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+            <Suspense fallback={
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                    <CircularProgress />
+                </Box>
+            }>
+                <IntegratedCandidateManagerContent />
+            </Suspense>
         </Container>
     );
 }
