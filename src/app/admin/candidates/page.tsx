@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Container, Typography, IconButton, Breadcrumbs, Link, ToggleButtonGroup, ToggleButton, Paper, CircularProgress } from '@mui/material';
