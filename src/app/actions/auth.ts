@@ -20,29 +20,38 @@ export async function verifyVoterInfo(
     participated?: Record<string, boolean>;
 }> {
     try {
-        const cleanName = name.trim();
+        const normalizedInputName = name.replace(/\s+/g, '');
         const cleanPhone = phone.trim();
         const cleanBirthdate = birthdate.trim();
 
-        if (!cleanName || !cleanPhone || !cleanBirthdate || !electionId) {
+        if (!normalizedInputName || !cleanPhone || !cleanBirthdate || !electionId) {
             return { success: false, message: '모든 정보를 입력해주세요.' };
         }
 
-        // 1. Firestore 선거인 명부 대조
+        // 1. Firestore 선거인 명부 대조 (이름은 공백 무시를 위해 메모리에서 필터링)
         const votersRef = collection(db, `elections/${electionId}/voters`);
         const q = query(
             votersRef,
-            where('name', '==', cleanName),
             where('phone', '==', cleanPhone),
             where('birthdate', '==', cleanBirthdate)
         );
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-            return { success: false, message: '등록된 선거인 정보가 없습니다. (이름, 전화번호, 생년월일 확인)' };
+            return { success: false, message: '등록된 선거인 정보가 없습니다. (전화번호, 생년월일 확인)' };
         }
 
-        const voterDoc = snapshot.docs[0];
+        // 이름 공백 무시 비교 (DB의 이름도 공백 제거 후 비교)
+        const voterDoc = snapshot.docs.find(doc => {
+            const data = doc.data();
+            const dbName = (data.name || '').replace(/\s+/g, '');
+            return dbName === normalizedInputName;
+        });
+
+        if (!voterDoc) {
+            return { success: false, message: '등록된 선거인 정보가 없습니다. (이름 확인)' };
+        }
+
         const voterData = voterDoc.data();
         const participated = voterData.participated || {};
 

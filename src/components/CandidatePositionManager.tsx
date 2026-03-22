@@ -388,8 +388,11 @@ export default function CandidatePositionManager({ position }: Props) {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            // Prepare data - all candidates for this position
-            const data = candidates.map(c => ({
+            const selectedRound = activeTab + 1;
+            // Prepare data - only candidates for the currently selected round
+            const filteredForExcel = candidates.filter(c => c.round === selectedRound);
+
+            const data = filteredForExcel.map(c => ({
                 '이름': c.name,
                 '생년월일': c.birthdate || '',
                 '교구/구역': c.district || '',
@@ -417,7 +420,7 @@ export default function CandidatePositionManager({ position }: Props) {
 
             // Generate filename
             const dateStr = new Date().toISOString().split('T')[0];
-            const filename = `${position}_후보자명부_${dateStr}.xlsx`;
+            const filename = `${position}_${selectedRound}차_후보자명부_${dateStr}.xlsx`;
 
             // Write and download
             XLSX.writeFile(wb, filename);
@@ -425,10 +428,10 @@ export default function CandidatePositionManager({ position }: Props) {
             await logAdminAction({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
-                description: `'${position}' 후보자명부 엑셀 다운로드 (${candidates.length}명)`
+                description: `'${position}' ${selectedRound}차 후보자명부 엑셀 다운로드 (${filteredForExcel.length}명)`
             });
 
-            setMessage({ type: 'success', text: `${position} 후보자명부 엑셀 파일이 생성되었습니다.` });
+            setMessage({ type: 'success', text: `${position} ${selectedRound}차 후보자명부 엑셀 파일이 생성되었습니다.` });
         } catch (err) {
             console.error("Error exporting excel:", err);
             setMessage({ type: 'error', text: '엑셀 다운로드 중 오류가 발생했습니다.' });

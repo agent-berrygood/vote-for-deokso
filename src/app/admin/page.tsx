@@ -566,21 +566,21 @@ export default function AdminPage() {
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Button
                             variant="outlined"
-                            onClick={() => router.push('/admin/candidates/장로')}
+                            onClick={() => router.push('/admin/candidates?pos=장로')}
                             disabled={!activeElectionId}
                         >
                             장로 관리
                         </Button>
                         <Button
                             variant="outlined"
-                            onClick={() => router.push('/admin/candidates/안수집사')}
+                            onClick={() => router.push('/admin/candidates?pos=안수집사')}
                             disabled={!activeElectionId}
                         >
                             안수집사 관리
                         </Button>
                         <Button
                             variant="outlined"
-                            onClick={() => router.push('/admin/candidates/권사')}
+                            onClick={() => router.push('/admin/candidates?pos=권사')}
                             disabled={!activeElectionId}
                         >
                             권사 관리

@@ -167,7 +167,7 @@ export default function LoginPage() {
     }
 
     // Basic Validation
-    const cleanName = name.trim();
+    const cleanName = name.replace(/\s+/g, '');
     if (!cleanName || !phone || !birthdate) {
       console.log("Validation Failed:", { name, phone, birthdate });
       setError('모든 정보를 입력해주세요.');
@@ -279,7 +279,7 @@ export default function LoginPage() {
       return;
     }
 
-    const cleanName = name.trim();
+    const cleanName = name.replace(/\s+/g, '');
     if (!cleanName || !phone || !birthdate || !passkey) {
       setError('모든 정보와 패스키를 입력해주세요.');
       return;
