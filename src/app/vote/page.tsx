@@ -76,6 +76,14 @@ export default function VotePage() {
 
     const [candidates, setCandidates] = useState<Candidate[]>([]);
 
+    const availablePositions = useMemo(() => {
+        return POSITION_ORDER.filter(pos => candidates.some(c => c.position === pos));
+    }, [candidates]);
+
+    const dynamicTabs = useMemo(() => {
+        return [...availablePositions, '최종 확인'];
+    }, [availablePositions]);
+
     // State: Votes per position
     const [votes, setVotes] = useState<Record<string, string[]>>({});
 
@@ -321,7 +329,7 @@ export default function VotePage() {
         );
     }
 
-    const currentTabName = TABS[activePositionTab];
+    const currentTabName = dynamicTabs[activePositionTab] || '최종 확인';
     const isReviewTab = currentTabName === '최종 확인';
     const currentPosition = isReviewTab ? 'REVIEW' : currentTabName;
 
@@ -383,7 +391,7 @@ export default function VotePage() {
                         aria-label="position tabs"
                         sx={{ borderBottom: 1, borderColor: 'divider' }}
                     >
-                        {TABS.map((label, index) => (
+                        {dynamicTabs.map((label, index) => (
                             <Tab key={label} label={label} sx={{ fontWeight: activePositionTab === index ? 'bold' : 'normal' }} />
                         ))}
                     </Tabs>
@@ -427,7 +435,7 @@ export default function VotePage() {
                             각 직분별 선택한 후보를 확인해주세요. &apos;투표 제출하기&apos;를 누르면 수정할 수 없습니다.
                         </Alert>
 
-                        {POSITION_ORDER.map(pos => {
+                        {availablePositions.map(pos => {
                             const selectedForPos = votes[pos] || [];
                             const selectedCandidates = candidates.filter(c => selectedForPos.includes(c.id!));
 
@@ -628,13 +636,13 @@ export default function VotePage() {
                             size="large"
                             onClick={() => {
                                 const nextTab = activePositionTab + 1;
-                                if (nextTab < TABS.length) {
+                                if (nextTab < dynamicTabs.length) {
                                     handlePositionTabChange({} as React.SyntheticEvent, nextTab);
                                 }
                             }}
                             sx={{ py: 1.5, fontSize: '1.1rem', bgcolor: '#333', color: 'white', '&:hover': { bgcolor: '#555' } }}
                         >
-                            다음 단계 ({TABS[activePositionTab + 1]})
+                            다음 단계 ({dynamicTabs[activePositionTab + 1]})
                         </Button>
                     )}
                 </Container>
