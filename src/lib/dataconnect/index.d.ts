@@ -142,6 +142,14 @@ export interface DeleteCandidatesByRoundVariables {
   round: number;
 }
 
+export interface DeleteSurveyData {
+  survey_delete?: Survey_Key | null;
+}
+
+export interface DeleteSurveyVariables {
+  id: UUIDString;
+}
+
 export interface DeleteVoterData {
   voter_delete?: Voter_Key | null;
 }
@@ -937,4 +945,16 @@ export const submitSurveyResponseRef: SubmitSurveyResponseRef;
 
 export function submitSurveyResponse(vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
 export function submitSurveyResponse(dc: DataConnect, vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
+
+interface DeleteSurveyRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSurveyVariables): MutationRef<DeleteSurveyData, DeleteSurveyVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteSurveyVariables): MutationRef<DeleteSurveyData, DeleteSurveyVariables>;
+  operationName: string;
+}
+export const deleteSurveyRef: DeleteSurveyRef;
+
+export function deleteSurvey(vars: DeleteSurveyVariables): MutationPromise<DeleteSurveyData, DeleteSurveyVariables>;
+export function deleteSurvey(dc: DataConnect, vars: DeleteSurveyVariables): MutationPromise<DeleteSurveyData, DeleteSurveyVariables>;
 

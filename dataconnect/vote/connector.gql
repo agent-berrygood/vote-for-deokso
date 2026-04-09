@@ -372,3 +372,7 @@ mutation SubmitSurveyResponse($surveyId: UUID!, $memberId: UUID!, $answers: Stri
   })
 }
 
+mutation DeleteSurvey($id: UUID!) @auth(level: PUBLIC) {
+  survey_delete(id: $id)
+}
+

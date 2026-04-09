@@ -32,6 +32,7 @@ import {
     getMemberByInfo as getMemberByInfoSDK,
     getSurvey as getSurveySDK,
     listSurveys as listSurveysSDK,
+    deleteSurvey as deleteSurveySDK,
     getVoterByInfo as getVoterByInfoSDK
 } from '@/lib/dataconnect';
 
@@ -289,5 +290,15 @@ export async function listSurveysAction() {
     } catch (error) {
         console.error('listSurveysAction error:', error);
         return { success: false, error: '설문 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function deleteSurveyAction(id: string) {
+    try {
+        await deleteSurveySDK({ id });
+        return { success: true };
+    } catch (error) {
+        console.error('deleteSurveyAction error:', error);
+        return { success: false, error: '설문을 삭제하지 못했습니다.' };
     }
 }

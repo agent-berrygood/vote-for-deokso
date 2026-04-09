@@ -44,6 +44,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*UpdateSystemService*](#updatesystemservice)
   - [*CreateSurvey*](#createsurvey)
   - [*SubmitSurveyResponse*](#submitsurveyresponse)
+  - [*DeleteSurvey*](#deletesurvey)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `vote`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -4190,6 +4191,115 @@ console.log(data.surveyResponse_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.surveyResponse_insert);
+});
+```
+
+## DeleteSurvey
+You can execute the `DeleteSurvey` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+deleteSurvey(vars: DeleteSurveyVariables): MutationPromise<DeleteSurveyData, DeleteSurveyVariables>;
+
+interface DeleteSurveyRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSurveyVariables): MutationRef<DeleteSurveyData, DeleteSurveyVariables>;
+}
+export const deleteSurveyRef: DeleteSurveyRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+deleteSurvey(dc: DataConnect, vars: DeleteSurveyVariables): MutationPromise<DeleteSurveyData, DeleteSurveyVariables>;
+
+interface DeleteSurveyRef {
+  ...
+  (dc: DataConnect, vars: DeleteSurveyVariables): MutationRef<DeleteSurveyData, DeleteSurveyVariables>;
+}
+export const deleteSurveyRef: DeleteSurveyRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the deleteSurveyRef:
+```typescript
+const name = deleteSurveyRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `DeleteSurvey` mutation requires an argument of type `DeleteSurveyVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface DeleteSurveyVariables {
+  id: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `DeleteSurvey` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `DeleteSurveyData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface DeleteSurveyData {
+  survey_delete?: Survey_Key | null;
+}
+```
+### Using `DeleteSurvey`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, deleteSurvey, DeleteSurveyVariables } from '@vote/dataconnect';
+
+// The `DeleteSurvey` mutation requires an argument of type `DeleteSurveyVariables`:
+const deleteSurveyVars: DeleteSurveyVariables = {
+  id: ..., 
+};
+
+// Call the `deleteSurvey()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await deleteSurvey(deleteSurveyVars);
+// Variables can be defined inline as well.
+const { data } = await deleteSurvey({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await deleteSurvey(dataConnect, deleteSurveyVars);
+
+console.log(data.survey_delete);
+
+// Or, you can use the `Promise` API.
+deleteSurvey(deleteSurveyVars).then((response) => {
+  const data = response.data;
+  console.log(data.survey_delete);
+});
+```
+
+### Using `DeleteSurvey`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, deleteSurveyRef, DeleteSurveyVariables } from '@vote/dataconnect';
+
+// The `DeleteSurvey` mutation requires an argument of type `DeleteSurveyVariables`:
+const deleteSurveyVars: DeleteSurveyVariables = {
+  id: ..., 
+};
+
+// Call the `deleteSurveyRef()` function to get a reference to the mutation.
+const ref = deleteSurveyRef(deleteSurveyVars);
+// Variables can be defined inline as well.
+const ref = deleteSurveyRef({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = deleteSurveyRef(dataConnect, deleteSurveyVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.survey_delete);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.survey_delete);
 });
 ```
 

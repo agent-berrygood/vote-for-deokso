@@ -391,3 +391,14 @@ export function submitSurveyResponse(dcOrVars, vars) {
   return executeMutation(submitSurveyResponseRef(dcOrVars, vars));
 }
 
+export const deleteSurveyRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteSurvey', inputVars);
+}
+deleteSurveyRef.operationName = 'DeleteSurvey';
+
+export function deleteSurvey(dcOrVars, vars) {
+  return executeMutation(deleteSurveyRef(dcOrVars, vars));
+}
+

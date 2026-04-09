@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { createSurveyAction, updateSystemServiceAction, listSurveysAction } from '@/app/actions/data';
+import { createSurveyAction, updateSystemServiceAction, listSurveysAction, deleteSurveyAction } from '@/app/actions/data';
 
 interface SurveyManagerProps {
     systemId: string;
@@ -95,6 +95,23 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
         }
     };
 
+    const handleDeleteSurvey = async (surveyId: string) => {
+        if (!window.confirm("정말 이 설문조사를 삭제하시겠습니까? (관련된 모든 응답도 삭제될 수 있습니다.)")) return;
+        setLoading(true);
+        try {
+            const res = await deleteSurveyAction(surveyId);
+            if (res.success) {
+                fetchSurveys();
+            } else {
+                alert(res.error || '설문 삭제 실패');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Paper sx={{ p: 4, mb: 4, bgcolor: '#fcf8ff', border: '1px solid #e1bee7' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -144,6 +161,18 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                             )}
                             {sy.id === activeSurveyId && (
                                 <Chip label="✅ 활성 상태" color="success" size="small" />
+                            )}
+                            {sy.id !== activeSurveyId && (
+                                <IconButton 
+                                    edge="end" 
+                                    aria-label="delete" 
+                                    color="error" 
+                                    onClick={() => handleDeleteSurvey(sy.id)}
+                                    disabled={loading}
+                                    sx={{ ml: 2 }}
+                                >
+                                    <DeleteIcon />
+                                </IconButton>
                             )}
                         </ListItem>
                     ))
