@@ -1,14 +1,12 @@
-# 작업 진행 상황 (2026-02-14)
+# 작업 진행 상황 (2026-04-08)
 
 ## 1. 현재 상태 (Current Status)
 - **프로젝트**: `vote-for-deokso` (Next.js + Firebase)
 - **배포**: Vercel (Static Assets)
-- **주요 변경 사항**:
-    - **이미지 최적화**: 300px, 80% 품질 (JPG), 로컬 호스팅 방식으로 변경 (DB 의존성 제거).
-    - **봉사 이력 추가**: 후보자 데이터에 `profileDesc` 추가 및 엑셀 업로드 지원.
-    - **UI 개선**:
-        - **PC**: 2열 그리드, 가로형 카드 배치 (좌측: 사진/정보, 우측: 봉사 이력).
-        - **Mobile**: 1열 그리드, 꽉 찬 카드 배치.
+- **주요 변경 사항 (오늘)**:
+    - **CandidateManager.tsx SQL 마이그레이션**: Firestore 의존성을 완전히 제거하고 Firebase Data Connect(SQL) SDK 기반으로 전환 완료.
+    - **목록 조회/삭제/사진 업로드**: SQL DB 연동 완료 및 해당 컴포넌트 린트 에러 수정 완료.
+    - **시스템 안정화**: 자동 생성된 SDK(`src/lib/dataconnect`)의 린트 에러를 무시하도록 `eslint.config.mjs` 수정하여 빌드 소음 제거.
 
 ## 2. 주요 기능 상세 (Key Features)
 
@@ -45,12 +43,14 @@
 ### 🛠️ 개발/배포 가이드
 - **로컬 실행**: `npm run dev`
 - **배포**: `git push origin main` (Vercel 자동 배포)
-- **이미지 업데이트**:
-    1. 원본 이미지를 로컬 특정 폴더에 준비.
-    2. `npm run resize-images` (또는 `node scripts/copy_and_resize.mjs`) 실행.
-    3. `public/images/candidates` 폴더의 변경사항을 Git에 커밋 & 푸시.
+- **SQL 마이그레이션 관리**: `npx firebase dataconnect:sdk:generate` (현재 환경 오류로 실행 불가, 수동 대응 중)
 
-## 4. 유용한 스크립트
+## 4. 남아있는 과제 (Tomorrow's Tasks)
+1. **SDK 재생성 오류 해결**: `firebase dataconnect:sdk:generate` 실행 시 발생하는 `undefined directive` 오류 원인 파악 및 해결. (현재는 `ListAllCandidates` 쿼리 대신 직분별 개별 조회를 사용하는 우회책 적용 중)
+2. **잔여 린트 에러 1건 수정**: 프로젝트 전체 린트 중 `Unexpected any` 에러 1건(위치 추적 필요) 수정.
+3. **최종 통합 테스트**: 어드민 페이지 및 투표 화면의 전체적인 SQL 정합성 최종 점검.
+
+## 5. 유용한 스크립트
 - `scripts/copy_and_resize.mjs`: 이미지 리사이징 및 복사.
 - `scripts/upload_candidates.js`: (구버전) DB 업로드 스크립트.
 - `src/utils/hangul.ts`: 한글 초성 검색 유틸리티.

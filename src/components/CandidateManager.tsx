@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { listAllCandidates, deleteCandidate, updateCandidate } from '@/lib/dataconnect';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { storage } from '@/lib/firebase';
 import imageCompression from 'browser-image-compression';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
@@ -44,17 +44,14 @@ export default function CandidateManager() {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            const q = query(collection(db, `elections/${activeElectionId}/candidates`));
-            const querySnapshot = await getDocs(q);
-            const loaded: Candidate[] = [];
-            querySnapshot.forEach((doc) => {
-                loaded.push({ id: doc.id, ...doc.data() } as Candidate);
-            });
-            // Sort by name
-            loaded.sort((a, b) => a.name.localeCompare(b.name));
-            setCandidates(loaded);
+            const res = await listAllCandidates({ electionId: activeElectionId });
+            const allCandidates = res.data.candidates as Candidate[];
+            
+            // Sort by name (keeping the current UI behavior)
+            const sorted = [...allCandidates].sort((a, b) => a.name.localeCompare(b.name));
+            setCandidates(sorted);
         } catch (err) {
-            console.error("Error fetching candidates:", err);
+            console.error("Error fetching SQL candidates:", err);
             setMessage({ type: 'error', text: '후보자 목록을 불러오지 못했습니다.' });
         } finally {
             setLoading(false);
@@ -70,8 +67,8 @@ export default function CandidateManager() {
         if (!activeElectionId || !deleteTarget || !deleteTarget.id) return;
 
         try {
-            // Delete from Firestore
-            await deleteDoc(doc(db, `elections/${activeElectionId}/candidates`, deleteTarget.id));
+            // Delete from SQL
+            await deleteCandidate({ id: deleteTarget.id });
 
             // Log action
             await logAdminAction({
@@ -92,9 +89,10 @@ export default function CandidateManager() {
         }
     };
 
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, candidateId: string) => {
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, candidate: Candidate) => {
         const file = event.target.files?.[0];
-        if (!file || !activeElectionId) return;
+        const candidateId = candidate.id;
+        if (!file || !activeElectionId || !candidateId) return;
 
         setUploadingId(candidateId);
         try {
@@ -112,9 +110,12 @@ export default function CandidateManager() {
             await uploadBytes(storageRef, compressedFile);
             const downloadURL = await getDownloadURL(storageRef);
 
-            // Update Firestore
-            const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidateId);
-            await updateDoc(candidateRef, { photoUrl: downloadURL });
+            // Update SQL DB
+            await updateCandidate({ 
+                id: candidateId, 
+                name: candidate.name,
+                photoUrl: downloadURL 
+            });
 
             // Update local state
             setCandidates(prev => prev.map(c =>
@@ -181,15 +182,18 @@ export default function CandidateManager() {
 
                     // Upload for EACH matched candidate (if duplicates exist)
                     // Usually just 1
-                    for (const candidate of matchedCandidates) {
+                        for (const candidate of matchedCandidates) {
                         if (!candidate.id) continue;
 
                         const storageRef = ref(storage, `elections/${activeElectionId}/candidates/${candidate.id}/profile.jpg`);
                         await uploadBytes(storageRef, compressedFile);
                         const downloadURL = await getDownloadURL(storageRef);
 
-                        const candidateRef = doc(db, `elections/${activeElectionId}/candidates`, candidate.id);
-                        await updateDoc(candidateRef, { photoUrl: downloadURL });
+                        await updateCandidate({ 
+                            id: candidate.id, 
+                            name: candidate.name,
+                            photoUrl: downloadURL 
+                        });
 
                         // Update local state immediately
                         setCandidates(prev => prev.map(c =>
@@ -301,7 +305,7 @@ export default function CandidateManager() {
                                         secondary={
                                             <>
                                                 <Typography component="span" variant="body2" color="text.primary">
-                                                    {calculateAge(candidate.birthdate, candidate.age)}세 | 현재 득표: {Object.values(candidate.votesByRound || {}).reduce((a, b) => a + b, 0)}
+                                                    {calculateAge(candidate.birthdate, candidate.age)}세 | 현재 득표: {candidate.voteCount}
                                                 </Typography>
                                                 <br />
                                                 <Typography component="span" variant="caption" color="text.secondary">
@@ -328,7 +332,7 @@ export default function CandidateManager() {
                                                 type="file"
                                                 hidden
                                                 accept="image/*"
-                                                onChange={(e) => handleImageUpload(e, candidate.id!)}
+                                                onChange={(e) => handleImageUpload(e, candidate)}
                                             />
                                         </Button>
                                         <IconButton edge="end" aria-label="delete" color="error" onClick={() => setDeleteTarget(candidate)}>

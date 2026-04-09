@@ -1,0 +1,6 @@
+# dataconnect/vote/connector.yaml
+connectorId: "vote"
+generate:
+  javascriptSdk:
+    outputDir: "../../src/lib/dataconnect"
+    package: "@vote/dataconnect"

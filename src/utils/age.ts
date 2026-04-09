@@ -3,7 +3,7 @@
  * Supports various formats: 'YYYYMMDD', 'YYYY-MM-DD', 'YYMMDD'.
  * Returns legacyAge if birthdate is invalid or missing.
  */
-export const calculateAge = (birthdate?: string, legacyAge?: number): number => {
+export const calculateAge = (birthdate?: string | null, legacyAge?: number | null): number => {
     if (!birthdate) return legacyAge || 0;
 
     const today = new Date();

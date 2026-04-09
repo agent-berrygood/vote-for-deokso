@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useElection } from '@/hooks/useElection';
 import { Candidate } from '@/types';
+import {
+    getElectionSettings,
+    getResultsByRound
+} from '@/lib/dataconnect';
 import {
     Box,
     Button,
@@ -14,7 +16,6 @@ import {
     Paper,
     Grid,
     CircularProgress,
-    LinearProgress,
     Card,
     CardContent,
     Divider,
@@ -45,46 +46,40 @@ export default function LiveResultsPage() {
         setLoading(true);
 
         try {
-            // 1. Get Election Config
-            const configRef = doc(db, `elections/${activeElectionId}/settings`, 'config');
-            const configSnap = await getDoc(configRef);
-            const configData = configSnap.exists() ? configSnap.data() : {};
-            const rounds = configData.rounds || { '장로': 1, '권사': 1, '안수집사': 1 };
-            const maxVotesMap = configData.maxVotes || { '장로': 5, '권사': 5, '안수집사': 5 };
+            // 1. Get Election Settings (SQL)
+            const resS = await getElectionSettings({ electionId: activeElectionId });
+            const sData = resS.data.election;
+            if (!sData) throw new Error("Election settings not found");
 
-            // 2. Get Total Voters Count
-            const votersRef = collection(db, `elections/${activeElectionId}/voters`);
-            const totalVotersSnap = await getDocs(votersRef);
-            const totalVoters = totalVotersSnap.size;
+            // Parse rounds from JSON string
+            let roundsMap: Record<string, number> = { '장로': 1, '권사': 1, '안수집사': 1 };
+            try {
+                if (sData.rounds) {
+                    roundsMap = JSON.parse(sData.rounds);
+                }
+            } catch (e) {
+                console.error("Failed to parse rounds JSON:", e);
+            }
 
-            // 3. Get Results for each position
+            const maxVoteLimit = sData.maxVotes || 5;
+
+            // 2. Get Results for each position (SQL)
             const newResults: typeof results = {};
             let ballotsSum = 0;
 
             for (const pos of POSITIONS) {
-                const round = rounds[pos] || 1;
-                const limit = typeof maxVotesMap === 'number' ? maxVotesMap : (maxVotesMap[pos] || 5);
+                const round = roundsMap[pos] || 1;
+                const limit = maxVoteLimit;
 
-                // Count ballots for this pos_round
-                const ballotQuery = query(votersRef, where(`participated.${pos}_${round}`, '==', true));
-                const ballotSnap = await getDocs(ballotQuery);
-                const posBallots = ballotSnap.size;
-                ballotsSum += posBallots;
-
-                // Get Candidates
-                const candidateQuery = query(
-                    collection(db, `elections/${activeElectionId}/candidates`),
-                    where('position', '==', pos),
-                    where('round', '==', round)
-                );
-                const candidateSnap = await getDocs(candidateQuery);
-                const candidatesData: Candidate[] = [];
-                candidateSnap.forEach(doc => {
-                    candidatesData.push(doc.data() as Candidate);
+                const resR = await getResultsByRound({
+                    electionId: activeElectionId,
+                    position: pos,
+                    round: round
                 });
-
-                // Sort by current round votes
-                candidatesData.sort((a, b) => (b.votesByRound?.[round] || 0) - (a.votesByRound?.[round] || 0));
+                
+                const candidatesData = resR.data.candidates as Candidate[];
+                const posBallots = candidatesData.reduce((acc, curr) => acc + (curr.voteCount || 0), 0);
+                ballotsSum += posBallots;
 
                 newResults[pos] = {
                     candidates: candidatesData,
@@ -96,13 +91,13 @@ export default function LiveResultsPage() {
 
             setResults(newResults);
             setStats({
-                totalVoters,
-                totalBallots: ballotsSum // Note: This is sum of participants across buckets, might exceed totalVoters if simultaneous rounds
+                totalVoters: 0, 
+                totalBallots: ballotsSum
             });
             setLastUpdated(new Date());
-            setCooldown(60); // 60 seconds cooldown
+            setCooldown(30); 
         } catch (err) {
-            console.error("Error fetching live results:", err);
+            console.error("Error fetching live SQL results:", err);
         } finally {
             setLoading(false);
         }
@@ -112,7 +107,6 @@ export default function LiveResultsPage() {
         fetchData();
     }, [fetchData]);
 
-    // Cooldown Timer
     useEffect(() => {
         if (cooldown > 0) {
             const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
@@ -121,7 +115,7 @@ export default function LiveResultsPage() {
     }, [cooldown]);
 
     const getThreshold = (pos: string, ballots: number) => {
-        if (ballots <= 0) return 999999; // 투표가 없으면 달성 불가능한 점수 반환
+        if (ballots <= 0) return 999999;
         if (pos === '장로') return Math.ceil(ballots * (2 / 3));
         return Math.floor(ballots / 2) + 1;
     };
@@ -143,7 +137,7 @@ export default function LiveResultsPage() {
                         대시보드
                     </Button>
                     <Typography variant="h4" fontWeight="bold">
-                        개표 종합 현황
+                        개표 종합 현황 (SQL)
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -164,37 +158,17 @@ export default function LiveResultsPage() {
             </Box>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{ bgcolor: '#e3f2fd' }}>
-                        <CardContent>
-                            <Typography color="primary" gutterBottom variant="overline" fontWeight="bold">
-                                투표 참여율 (종합)
-                            </Typography>
-                            <Typography variant="h3" fontWeight="bold">
-                                {stats.totalVoters > 0 ? ((results[POSITIONS[0]]?.ballots / stats.totalVoters) * 100).toFixed(1) : 0}%
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                전체 선거인 {stats.totalVoters}명 중 {results[POSITIONS[0]]?.ballots || 0}명 참여 (장로 기준)
-                            </Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={stats.totalVoters > 0 ? (results[POSITIONS[0]]?.ballots / stats.totalVoters) * 100 : 0}
-                                sx={{ mt: 2, height: 10, borderRadius: 5 }}
-                            />
-                        </CardContent>
-                    </Card>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12 }}>
                     <Card sx={{ bgcolor: '#fff3e0' }}>
                         <CardContent>
                             <Typography color="orange" gutterBottom variant="overline" fontWeight="bold">
-                                실시간 투표수 (합계)
+                                실시간 전체 득표수 (합계)
                             </Typography>
                             <Typography variant="h3" fontWeight="bold" sx={{ color: '#e65100' }}>
-                                {Object.values(results).reduce((acc, curr) => acc + curr.ballots, 0)}
+                                {stats.totalBallots}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                모든 직분/차수 합산 투표용지 수
+                                모든 직분/차수 유효 투표 합계
                             </Typography>
                         </CardContent>
                     </Card>
@@ -216,12 +190,12 @@ export default function LiveResultsPage() {
                                             {pos} ({data.round}차 투표)
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            유효 투표: {data.ballots}표 | 피택 기준: {threshold}표 이상
+                                            총 득표 합계: {data.ballots}표 | 피택 기준: {threshold}표 이상
                                         </Typography>
                                     </Box>
                                     <Chip
                                         label={`${data.candidates.filter(c => {
-                                            const v = (c.votesByRound?.[data.round] || 0);
+                                            const v = c.voteCount || 0;
                                             return data.ballots > 0 && v >= threshold && v > 0;
                                         }).length}명 피택 가능`}
                                         color="success"
@@ -232,7 +206,7 @@ export default function LiveResultsPage() {
                                 <Divider sx={{ mb: 2 }} />
                                 <Grid container spacing={2}>
                                     {data.candidates.slice(0, 10).map((c, idx) => {
-                                        const votes = c.votesByRound?.[data.round] || 0;
+                                        const votes = c.voteCount || 0;
                                         const isElected = votes >= threshold && votes > 0;
                                         const progress = data.ballots > 0 ? (votes / data.ballots) * 100 : 0;
                                         const thresholdProgress = data.ballots > 0 ? (threshold / data.ballots) * 100 : 0;
@@ -255,7 +229,6 @@ export default function LiveResultsPage() {
                                                             bgcolor: isElected ? '#4caf50' : '#2196f3',
                                                             transition: 'width 0.5s ease-in-out'
                                                         }} />
-                                                        {/* Threshold marker */}
                                                         <Box sx={{
                                                             position: 'absolute',
                                                             left: `${thresholdProgress}%`,

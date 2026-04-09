@@ -47,3 +47,11 @@ test_data/
 
 # Report Data
 당회보고용/
+
+# Temporary Logs and Results
+*.log
+*_output.txt
+*_results.json
+help_all.txt
+lint_full.txt
+migration_guide.txt

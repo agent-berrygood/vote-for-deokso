@@ -1,0 +1,45 @@
+﻿
+> vote-app@0.1.0 lint
+> eslint
+
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\actions\auth.ts
+   7:7   warning  'POSITION_ORDER' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  55:15  warning  'electionData' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\admin\live-results\page.tsx
+  64:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\admin\login\page.tsx
+  12:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\admin\page.tsx
+   15:5    warning  'createAdminLog' is defined but never used           @typescript-eslint/no-unused-vars
+   20:21   warning  'Voter' is defined but never used                    @typescript-eslint/no-unused-vars
+   47:45   warning  'createElection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  185:108  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  354:11   warning  'formatVotedAt' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  404:19   warning  'resC' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  406:19   warning  'resV' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  667:82   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  761:64   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\vote\page.tsx
+  41:7  warning  'TABS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\components\CandidatePositionManager.tsx
+   31:5   warning  'CircularProgress' is defined but never used              @typescript-eslint/no-unused-vars
+   35:5   warning  'Chip' is defined but never used                          @typescript-eslint/no-unused-vars
+   46:8   warning  'FileDownloadIcon' is defined but never used              @typescript-eslint/no-unused-vars
+   48:8   warning  'SaveIcon' is defined but never used                      @typescript-eslint/no-unused-vars
+   59:12  warning  'loading' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  293:11  warning  'handleDownloadExcel' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\components\VoterManager.tsx
+  34:5   warning  'Tooltip' is defined but never used                  @typescript-eslint/no-unused-vars
+  35:5   warning  'Select' is defined but never used                   @typescript-eslint/no-unused-vars
+  36:5   warning  'MenuItem' is defined but never used                 @typescript-eslint/no-unused-vars
+  67:25  warning  'setRowsPerPage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+??24 problems (4 errors, 20 warnings)
+

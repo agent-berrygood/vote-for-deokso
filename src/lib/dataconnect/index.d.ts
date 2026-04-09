@@ -1,0 +1,729 @@
+import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, MutationRef, MutationPromise } from 'firebase/data-connect';
+
+export const connectorConfig: ConnectorConfig;
+
+export type TimestampString = string;
+export type UUIDString = string;
+export type Int64String = string;
+export type DateString = string;
+
+
+
+
+export interface AdminLog_Key {
+  id: UUIDString;
+  __typename?: 'AdminLog_Key';
+}
+
+export interface AuditLog_Key {
+  id: string;
+  __typename?: 'AuditLog_Key';
+}
+
+export interface Candidate_Key {
+  id: string;
+  __typename?: 'Candidate_Key';
+}
+
+export interface CreateAdminLogData {
+  adminLog_insert: AdminLog_Key;
+}
+
+export interface CreateAdminLogVariables {
+  electionId: string;
+  adminId?: string | null;
+  actionType: string;
+  description: string;
+}
+
+export interface CreateCandidateData {
+  candidate_insert: Candidate_Key;
+}
+
+export interface CreateCandidateVariables {
+  electionId: string;
+  name: string;
+  position: string;
+  round: number;
+  district?: string | null;
+  birthdate?: string | null;
+  photoUrl?: string | null;
+  profileDesc?: string | null;
+  volunteerInfo?: string | null;
+  candidateNumber?: number | null;
+}
+
+export interface CreateElectionData {
+  election_insert: Election_Key;
+}
+
+export interface CreateElectionVariables {
+  id: string;
+  name?: string | null;
+  maxVotes: number;
+}
+
+export interface CreateVoterData {
+  voter_insert: Voter_Key;
+}
+
+export interface CreateVoterVariables {
+  electionId: string;
+  name: string;
+  phone?: string | null;
+  birthdate?: string | null;
+  authKey: string;
+}
+
+export interface DeleteAllCandidatesData {
+  candidate_deleteMany: number;
+}
+
+export interface DeleteAllCandidatesVariables {
+  electionId: string;
+}
+
+export interface DeleteAllVotersData {
+  voter_deleteMany: number;
+}
+
+export interface DeleteAllVotersVariables {
+  electionId: string;
+}
+
+export interface DeleteCandidateData {
+  candidate_delete?: Candidate_Key | null;
+}
+
+export interface DeleteCandidateVariables {
+  id: string;
+}
+
+export interface DeleteCandidatesByRoundData {
+  candidate_deleteMany: number;
+}
+
+export interface DeleteCandidatesByRoundVariables {
+  electionId: string;
+  position: string;
+  round: number;
+}
+
+export interface DeleteVoterData {
+  voter_delete?: Voter_Key | null;
+}
+
+export interface DeleteVoterVariables {
+  id: string;
+}
+
+export interface Election_Key {
+  id: string;
+  __typename?: 'Election_Key';
+}
+
+export interface GetElectionSettingsData {
+  election?: {
+    id: string;
+    name?: string | null;
+    maxVotes: number;
+    rounds?: string | null;
+    roundTitle?: string | null;
+    startDate?: TimestampString | null;
+    endDate?: TimestampString | null;
+  } & Election_Key;
+}
+
+export interface GetElectionSettingsVariables {
+  electionId: string;
+}
+
+export interface GetResultsByRoundData {
+  candidates: ({
+    id: string;
+    name: string;
+    position: string;
+    voteCount: number;
+    candidateNumber?: number | null;
+    birthdate?: string | null;
+    photoUrl?: string | null;
+    profileDesc?: string | null;
+    volunteerInfo?: string | null;
+    district?: string | null;
+  } & Candidate_Key)[];
+}
+
+export interface GetResultsByRoundVariables {
+  electionId: string;
+  position: string;
+  round: number;
+}
+
+export interface GetSystemSettingData {
+  systemSetting?: {
+    id: string;
+    activeElection: {
+      id: string;
+      name?: string | null;
+    } & Election_Key;
+  } & SystemSetting_Key;
+}
+
+export interface GetSystemSettingVariables {
+  id: string;
+}
+
+export interface GetVoterByInfoData {
+  voters: ({
+    id: string;
+    name: string;
+    phone?: string | null;
+    birthdate?: string | null;
+  } & Voter_Key)[];
+}
+
+export interface GetVoterByInfoVariables {
+  electionId: string;
+  phone: string;
+  birthdate: string;
+}
+
+export interface ListAdminLogsData {
+  adminLogs: ({
+    id: UUIDString;
+    electionId: string;
+    adminId?: string | null;
+    actionType: string;
+    description: string;
+    timestamp: TimestampString;
+  } & AdminLog_Key)[];
+}
+
+export interface ListAdminLogsVariables {
+  electionId: string;
+}
+
+export interface ListAllCandidatesData {
+  candidates: ({
+    id: string;
+    name: string;
+    position: string;
+    birthdate?: string | null;
+    photoUrl?: string | null;
+    round: number;
+    district?: string | null;
+    profileDesc?: string | null;
+    volunteerInfo?: string | null;
+    candidateNumber?: number | null;
+    voteCount: number;
+  } & Candidate_Key)[];
+}
+
+export interface ListAllCandidatesVariables {
+  electionId: string;
+}
+
+export interface ListAuditLogsData {
+  auditLogs: ({
+    id: string;
+    voterId?: string | null;
+    voterName?: string | null;
+    actionType: string;
+    approvedBy?: string | null;
+    ipAddress?: string | null;
+    timestamp: TimestampString;
+  } & AuditLog_Key)[];
+}
+
+export interface ListAuditLogsVariables {
+  electionId: string;
+}
+
+export interface ListCandidatesByPositionData {
+  candidates: ({
+    id: string;
+    name: string;
+    position: string;
+    birthdate?: string | null;
+    photoUrl?: string | null;
+    round: number;
+    district?: string | null;
+    profileDesc?: string | null;
+    volunteerInfo?: string | null;
+    candidateNumber?: number | null;
+    voteCount: number;
+  } & Candidate_Key)[];
+}
+
+export interface ListCandidatesByPositionVariables {
+  electionId: string;
+  position: string;
+}
+
+export interface ListCandidatesByRoundData {
+  candidates: ({
+    id: string;
+    name: string;
+    position: string;
+    birthdate?: string | null;
+    photoUrl?: string | null;
+    round: number;
+    district?: string | null;
+    profileDesc?: string | null;
+    volunteerInfo?: string | null;
+    candidateNumber?: number | null;
+    voteCount: number;
+  } & Candidate_Key)[];
+}
+
+export interface ListCandidatesByRoundVariables {
+  electionId: string;
+  position: string;
+  round: number;
+}
+
+export interface ListElectionsData {
+  elections: ({
+    id: string;
+    name?: string | null;
+    rounds?: string | null;
+  } & Election_Key)[];
+}
+
+export interface ListVoterParticipationsData {
+  voterParticipations: ({
+    voterId: string;
+    position: string;
+    roundNumber: number;
+    votedAt: TimestampString;
+  })[];
+}
+
+export interface ListVoterParticipationsVariables {
+  electionId: string;
+}
+
+export interface ListVotersData {
+  voters: ({
+    id: string;
+    name: string;
+    phone?: string | null;
+    birthdate?: string | null;
+    authKey: string;
+  } & Voter_Key)[];
+}
+
+export interface ListVotersVariables {
+  electionId: string;
+}
+
+export interface SubmitVoteData {
+  voterParticipation_upsert: VoterParticipation_Key;
+}
+
+export interface SubmitVoteVariables {
+  voterId: string;
+  electionId: string;
+  position: string;
+  round: number;
+}
+
+export interface SystemSetting_Key {
+  id: string;
+  __typename?: 'SystemSetting_Key';
+}
+
+export interface UpdateActiveElectionData {
+  systemSetting_update?: SystemSetting_Key | null;
+}
+
+export interface UpdateActiveElectionVariables {
+  systemId: string;
+  electionId: string;
+}
+
+export interface UpdateCandidateData {
+  candidate_update?: Candidate_Key | null;
+}
+
+export interface UpdateCandidateVariables {
+  id: string;
+  name: string;
+  position?: string | null;
+  round?: number | null;
+  district?: string | null;
+  birthdate?: string | null;
+  photoUrl?: string | null;
+  profileDesc?: string | null;
+  volunteerInfo?: string | null;
+  candidateNumber?: number | null;
+}
+
+export interface UpdateCandidateVoteData {
+  candidate_update?: Candidate_Key | null;
+}
+
+export interface UpdateCandidateVoteVariables {
+  candidateId: string;
+  newCount: number;
+}
+
+export interface UpdateElectionSettingsData {
+  election_update?: Election_Key | null;
+}
+
+export interface UpdateElectionSettingsVariables {
+  id: string;
+  name?: string | null;
+  maxVotes: number;
+  rounds?: string | null;
+  roundTitle?: string | null;
+  startDate?: TimestampString | null;
+  endDate?: TimestampString | null;
+}
+
+export interface UpdateVoterData {
+  voter_update?: Voter_Key | null;
+}
+
+export interface UpdateVoterVariables {
+  id: string;
+  name: string;
+  phone?: string | null;
+  birthdate?: string | null;
+}
+
+export interface VoterParticipation_Key {
+  id: UUIDString;
+  __typename?: 'VoterParticipation_Key';
+}
+
+export interface Voter_Key {
+  id: string;
+  __typename?: 'Voter_Key';
+}
+
+interface GetSystemSettingRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSystemSettingVariables): QueryRef<GetSystemSettingData, GetSystemSettingVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSystemSettingVariables): QueryRef<GetSystemSettingData, GetSystemSettingVariables>;
+  operationName: string;
+}
+export const getSystemSettingRef: GetSystemSettingRef;
+
+export function getSystemSetting(vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+export function getSystemSetting(dc: DataConnect, vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+
+interface GetVoterByInfoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetVoterByInfoVariables): QueryRef<GetVoterByInfoData, GetVoterByInfoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetVoterByInfoVariables): QueryRef<GetVoterByInfoData, GetVoterByInfoVariables>;
+  operationName: string;
+}
+export const getVoterByInfoRef: GetVoterByInfoRef;
+
+export function getVoterByInfo(vars: GetVoterByInfoVariables): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
+export function getVoterByInfo(dc: DataConnect, vars: GetVoterByInfoVariables): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
+
+interface GetElectionSettingsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetElectionSettingsVariables): QueryRef<GetElectionSettingsData, GetElectionSettingsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetElectionSettingsVariables): QueryRef<GetElectionSettingsData, GetElectionSettingsVariables>;
+  operationName: string;
+}
+export const getElectionSettingsRef: GetElectionSettingsRef;
+
+export function getElectionSettings(vars: GetElectionSettingsVariables): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
+export function getElectionSettings(dc: DataConnect, vars: GetElectionSettingsVariables): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
+
+interface ListCandidatesByPositionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListCandidatesByPositionVariables): QueryRef<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListCandidatesByPositionVariables): QueryRef<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+  operationName: string;
+}
+export const listCandidatesByPositionRef: ListCandidatesByPositionRef;
+
+export function listCandidatesByPosition(vars: ListCandidatesByPositionVariables): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+export function listCandidatesByPosition(dc: DataConnect, vars: ListCandidatesByPositionVariables): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+
+interface ListCandidatesByRoundRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListCandidatesByRoundVariables): QueryRef<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListCandidatesByRoundVariables): QueryRef<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+  operationName: string;
+}
+export const listCandidatesByRoundRef: ListCandidatesByRoundRef;
+
+export function listCandidatesByRound(vars: ListCandidatesByRoundVariables): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+export function listCandidatesByRound(dc: DataConnect, vars: ListCandidatesByRoundVariables): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+
+interface SubmitVoteRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: SubmitVoteVariables): MutationRef<SubmitVoteData, SubmitVoteVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: SubmitVoteVariables): MutationRef<SubmitVoteData, SubmitVoteVariables>;
+  operationName: string;
+}
+export const submitVoteRef: SubmitVoteRef;
+
+export function submitVote(vars: SubmitVoteVariables): MutationPromise<SubmitVoteData, SubmitVoteVariables>;
+export function submitVote(dc: DataConnect, vars: SubmitVoteVariables): MutationPromise<SubmitVoteData, SubmitVoteVariables>;
+
+interface UpdateCandidateVoteRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateCandidateVoteVariables): MutationRef<UpdateCandidateVoteData, UpdateCandidateVoteVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateCandidateVoteVariables): MutationRef<UpdateCandidateVoteData, UpdateCandidateVoteVariables>;
+  operationName: string;
+}
+export const updateCandidateVoteRef: UpdateCandidateVoteRef;
+
+export function updateCandidateVote(vars: UpdateCandidateVoteVariables): MutationPromise<UpdateCandidateVoteData, UpdateCandidateVoteVariables>;
+export function updateCandidateVote(dc: DataConnect, vars: UpdateCandidateVoteVariables): MutationPromise<UpdateCandidateVoteData, UpdateCandidateVoteVariables>;
+
+interface ListVotersRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListVotersVariables): QueryRef<ListVotersData, ListVotersVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListVotersVariables): QueryRef<ListVotersData, ListVotersVariables>;
+  operationName: string;
+}
+export const listVotersRef: ListVotersRef;
+
+export function listVoters(vars: ListVotersVariables): QueryPromise<ListVotersData, ListVotersVariables>;
+export function listVoters(dc: DataConnect, vars: ListVotersVariables): QueryPromise<ListVotersData, ListVotersVariables>;
+
+interface CreateVoterRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateVoterVariables): MutationRef<CreateVoterData, CreateVoterVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateVoterVariables): MutationRef<CreateVoterData, CreateVoterVariables>;
+  operationName: string;
+}
+export const createVoterRef: CreateVoterRef;
+
+export function createVoter(vars: CreateVoterVariables): MutationPromise<CreateVoterData, CreateVoterVariables>;
+export function createVoter(dc: DataConnect, vars: CreateVoterVariables): MutationPromise<CreateVoterData, CreateVoterVariables>;
+
+interface UpdateVoterRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateVoterVariables): MutationRef<UpdateVoterData, UpdateVoterVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateVoterVariables): MutationRef<UpdateVoterData, UpdateVoterVariables>;
+  operationName: string;
+}
+export const updateVoterRef: UpdateVoterRef;
+
+export function updateVoter(vars: UpdateVoterVariables): MutationPromise<UpdateVoterData, UpdateVoterVariables>;
+export function updateVoter(dc: DataConnect, vars: UpdateVoterVariables): MutationPromise<UpdateVoterData, UpdateVoterVariables>;
+
+interface DeleteVoterRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteVoterVariables): MutationRef<DeleteVoterData, DeleteVoterVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteVoterVariables): MutationRef<DeleteVoterData, DeleteVoterVariables>;
+  operationName: string;
+}
+export const deleteVoterRef: DeleteVoterRef;
+
+export function deleteVoter(vars: DeleteVoterVariables): MutationPromise<DeleteVoterData, DeleteVoterVariables>;
+export function deleteVoter(dc: DataConnect, vars: DeleteVoterVariables): MutationPromise<DeleteVoterData, DeleteVoterVariables>;
+
+interface ListVoterParticipationsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListVoterParticipationsVariables): QueryRef<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListVoterParticipationsVariables): QueryRef<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+  operationName: string;
+}
+export const listVoterParticipationsRef: ListVoterParticipationsRef;
+
+export function listVoterParticipations(vars: ListVoterParticipationsVariables): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+export function listVoterParticipations(dc: DataConnect, vars: ListVoterParticipationsVariables): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+
+interface CreateCandidateRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateCandidateVariables): MutationRef<CreateCandidateData, CreateCandidateVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateCandidateVariables): MutationRef<CreateCandidateData, CreateCandidateVariables>;
+  operationName: string;
+}
+export const createCandidateRef: CreateCandidateRef;
+
+export function createCandidate(vars: CreateCandidateVariables): MutationPromise<CreateCandidateData, CreateCandidateVariables>;
+export function createCandidate(dc: DataConnect, vars: CreateCandidateVariables): MutationPromise<CreateCandidateData, CreateCandidateVariables>;
+
+interface UpdateCandidateRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateCandidateVariables): MutationRef<UpdateCandidateData, UpdateCandidateVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateCandidateVariables): MutationRef<UpdateCandidateData, UpdateCandidateVariables>;
+  operationName: string;
+}
+export const updateCandidateRef: UpdateCandidateRef;
+
+export function updateCandidate(vars: UpdateCandidateVariables): MutationPromise<UpdateCandidateData, UpdateCandidateVariables>;
+export function updateCandidate(dc: DataConnect, vars: UpdateCandidateVariables): MutationPromise<UpdateCandidateData, UpdateCandidateVariables>;
+
+interface DeleteCandidateRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteCandidateVariables): MutationRef<DeleteCandidateData, DeleteCandidateVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteCandidateVariables): MutationRef<DeleteCandidateData, DeleteCandidateVariables>;
+  operationName: string;
+}
+export const deleteCandidateRef: DeleteCandidateRef;
+
+export function deleteCandidate(vars: DeleteCandidateVariables): MutationPromise<DeleteCandidateData, DeleteCandidateVariables>;
+export function deleteCandidate(dc: DataConnect, vars: DeleteCandidateVariables): MutationPromise<DeleteCandidateData, DeleteCandidateVariables>;
+
+interface DeleteCandidatesByRoundRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteCandidatesByRoundVariables): MutationRef<DeleteCandidatesByRoundData, DeleteCandidatesByRoundVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteCandidatesByRoundVariables): MutationRef<DeleteCandidatesByRoundData, DeleteCandidatesByRoundVariables>;
+  operationName: string;
+}
+export const deleteCandidatesByRoundRef: DeleteCandidatesByRoundRef;
+
+export function deleteCandidatesByRound(vars: DeleteCandidatesByRoundVariables): MutationPromise<DeleteCandidatesByRoundData, DeleteCandidatesByRoundVariables>;
+export function deleteCandidatesByRound(dc: DataConnect, vars: DeleteCandidatesByRoundVariables): MutationPromise<DeleteCandidatesByRoundData, DeleteCandidatesByRoundVariables>;
+
+interface UpdateElectionSettingsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateElectionSettingsVariables): MutationRef<UpdateElectionSettingsData, UpdateElectionSettingsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateElectionSettingsVariables): MutationRef<UpdateElectionSettingsData, UpdateElectionSettingsVariables>;
+  operationName: string;
+}
+export const updateElectionSettingsRef: UpdateElectionSettingsRef;
+
+export function updateElectionSettings(vars: UpdateElectionSettingsVariables): MutationPromise<UpdateElectionSettingsData, UpdateElectionSettingsVariables>;
+export function updateElectionSettings(dc: DataConnect, vars: UpdateElectionSettingsVariables): MutationPromise<UpdateElectionSettingsData, UpdateElectionSettingsVariables>;
+
+interface CreateAdminLogRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateAdminLogVariables): MutationRef<CreateAdminLogData, CreateAdminLogVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateAdminLogVariables): MutationRef<CreateAdminLogData, CreateAdminLogVariables>;
+  operationName: string;
+}
+export const createAdminLogRef: CreateAdminLogRef;
+
+export function createAdminLog(vars: CreateAdminLogVariables): MutationPromise<CreateAdminLogData, CreateAdminLogVariables>;
+export function createAdminLog(dc: DataConnect, vars: CreateAdminLogVariables): MutationPromise<CreateAdminLogData, CreateAdminLogVariables>;
+
+interface CreateElectionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateElectionVariables): MutationRef<CreateElectionData, CreateElectionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateElectionVariables): MutationRef<CreateElectionData, CreateElectionVariables>;
+  operationName: string;
+}
+export const createElectionRef: CreateElectionRef;
+
+export function createElection(vars: CreateElectionVariables): MutationPromise<CreateElectionData, CreateElectionVariables>;
+export function createElection(dc: DataConnect, vars: CreateElectionVariables): MutationPromise<CreateElectionData, CreateElectionVariables>;
+
+interface ListElectionsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListElectionsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListElectionsData, undefined>;
+  operationName: string;
+}
+export const listElectionsRef: ListElectionsRef;
+
+export function listElections(): QueryPromise<ListElectionsData, undefined>;
+export function listElections(dc: DataConnect): QueryPromise<ListElectionsData, undefined>;
+
+interface UpdateActiveElectionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateActiveElectionVariables): MutationRef<UpdateActiveElectionData, UpdateActiveElectionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateActiveElectionVariables): MutationRef<UpdateActiveElectionData, UpdateActiveElectionVariables>;
+  operationName: string;
+}
+export const updateActiveElectionRef: UpdateActiveElectionRef;
+
+export function updateActiveElection(vars: UpdateActiveElectionVariables): MutationPromise<UpdateActiveElectionData, UpdateActiveElectionVariables>;
+export function updateActiveElection(dc: DataConnect, vars: UpdateActiveElectionVariables): MutationPromise<UpdateActiveElectionData, UpdateActiveElectionVariables>;
+
+interface GetResultsByRoundRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetResultsByRoundVariables): QueryRef<GetResultsByRoundData, GetResultsByRoundVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetResultsByRoundVariables): QueryRef<GetResultsByRoundData, GetResultsByRoundVariables>;
+  operationName: string;
+}
+export const getResultsByRoundRef: GetResultsByRoundRef;
+
+export function getResultsByRound(vars: GetResultsByRoundVariables): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
+export function getResultsByRound(dc: DataConnect, vars: GetResultsByRoundVariables): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
+
+interface ListAdminLogsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListAdminLogsVariables): QueryRef<ListAdminLogsData, ListAdminLogsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListAdminLogsVariables): QueryRef<ListAdminLogsData, ListAdminLogsVariables>;
+  operationName: string;
+}
+export const listAdminLogsRef: ListAdminLogsRef;
+
+export function listAdminLogs(vars: ListAdminLogsVariables): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
+export function listAdminLogs(dc: DataConnect, vars: ListAdminLogsVariables): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
+
+interface ListAuditLogsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListAuditLogsVariables): QueryRef<ListAuditLogsData, ListAuditLogsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListAuditLogsVariables): QueryRef<ListAuditLogsData, ListAuditLogsVariables>;
+  operationName: string;
+}
+export const listAuditLogsRef: ListAuditLogsRef;
+
+export function listAuditLogs(vars: ListAuditLogsVariables): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
+export function listAuditLogs(dc: DataConnect, vars: ListAuditLogsVariables): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
+
+interface DeleteAllCandidatesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteAllCandidatesVariables): MutationRef<DeleteAllCandidatesData, DeleteAllCandidatesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteAllCandidatesVariables): MutationRef<DeleteAllCandidatesData, DeleteAllCandidatesVariables>;
+  operationName: string;
+}
+export const deleteAllCandidatesRef: DeleteAllCandidatesRef;
+
+export function deleteAllCandidates(vars: DeleteAllCandidatesVariables): MutationPromise<DeleteAllCandidatesData, DeleteAllCandidatesVariables>;
+export function deleteAllCandidates(dc: DataConnect, vars: DeleteAllCandidatesVariables): MutationPromise<DeleteAllCandidatesData, DeleteAllCandidatesVariables>;
+
+interface DeleteAllVotersRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteAllVotersVariables): MutationRef<DeleteAllVotersData, DeleteAllVotersVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteAllVotersVariables): MutationRef<DeleteAllVotersData, DeleteAllVotersVariables>;
+  operationName: string;
+}
+export const deleteAllVotersRef: DeleteAllVotersRef;
+
+export function deleteAllVoters(vars: DeleteAllVotersVariables): MutationPromise<DeleteAllVotersData, DeleteAllVotersVariables>;
+export function deleteAllVoters(dc: DataConnect, vars: DeleteAllVotersVariables): MutationPromise<DeleteAllVotersData, DeleteAllVotersVariables>;
+
+interface ListAllCandidatesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListAllCandidatesVariables): QueryRef<ListAllCandidatesData, ListAllCandidatesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListAllCandidatesVariables): QueryRef<ListAllCandidatesData, ListAllCandidatesVariables>;
+  operationName: string;
+}
+export const listAllCandidatesRef: ListAllCandidatesRef;
+
+export function listAllCandidates(vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+export function listAllCandidates(dc: DataConnect, vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+

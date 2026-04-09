@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useState, useEffect, useCallback } from 'react';
+import { getSystemSetting, listElections, createElection as createElectionMutation, updateActiveElection } from '@/lib/dataconnect';
 
-const SYSTEM_SETTINGS_DOC = 'settings/system';
 const DEFAULT_ELECTION_ID = 'default-2026';
+const SYSTEM_SETTINGS_ID = 'system';
 
 export function useElection() {
     const [activeElectionId, setActiveElectionId] = useState<string | null>(null);
@@ -11,49 +10,65 @@ export function useElection() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const unsubscribe = onSnapshot(doc(db, SYSTEM_SETTINGS_DOC), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setActiveElectionId(data.activeElectionId || DEFAULT_ELECTION_ID);
-                setElectionList(data.electionList || [DEFAULT_ELECTION_ID]);
-                setError(null);
-            } else {
-                // Initialize state if not exists, but DO NOT overwrite DB automatically
-                setActiveElectionId(DEFAULT_ELECTION_ID);
-                setElectionList([DEFAULT_ELECTION_ID]);
-            }
-            setLoading(false);
-        }, (err) => {
-            console.error("Failed to subscribe to election settings:", err);
-            setError(err.message);
-            setLoading(false);
-        });
+    const refreshData = useCallback(async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch System Settings (Active Election)
+            const sysRes = await getSystemSetting({ id: SYSTEM_SETTINGS_ID });
+            const sysData = sysRes.data.systemSetting;
 
-        return () => unsubscribe();
+            if (sysData && sysData.activeElection) {
+                setActiveElectionId(sysData.activeElection.id);
+            } else {
+                setActiveElectionId(DEFAULT_ELECTION_ID);
+            }
+
+            // 2. Fetch All Elections List
+            const elecRes = await listElections();
+            const elecData = elecRes.data.elections;
+            setElectionList(elecData.map(e => e.id));
+            
+            setError(null);
+        } catch (err: unknown) {
+            console.error("Failed to fetch election data from SQL:", err);
+            setError(err instanceof Error ? err.message : String(err));
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const createElection = async (newId: string) => {
-        if (!newId) return;
-        if (electionList.includes(newId)) {
-            alert('Election ID already exists.');
-            return;
-        }
+    useEffect(() => {
+        refreshData();
+    }, [refreshData]);
 
-        const newList = [...electionList, newId];
-        await setDoc(doc(db, SYSTEM_SETTINGS_DOC), {
-            activeElectionId: activeElectionId, // Keep current active
-            electionList: newList
-        }, { merge: true });
+    const createElection = async (newId: string) => {
+        try {
+            await createElectionMutation({ 
+                id: newId, 
+                name: newId, 
+                maxVotes: 5 
+            });
+            await refreshData();
+        } catch (err: unknown) {
+            console.error("Failed to create election in SQL:", err);
+            throw err;
+        }
     };
 
     const switchElection = async (targetId: string) => {
-        await setDoc(doc(db, SYSTEM_SETTINGS_DOC), {
-            activeElectionId: targetId
-        }, { merge: true });
+        try {
+            await updateActiveElection({ 
+                systemId: SYSTEM_SETTINGS_ID, 
+                electionId: targetId 
+            });
+            await refreshData();
+        } catch (err: unknown) {
+            console.error("Failed to switch election in SQL:", err);
+            throw err;
+        }
     };
 
-    // Helper to get collection paths based on active ID
+    // Helper for Legacy Compatibility (Gradually remove)
     const getElectionPath = (collectionName: string) => {
         const id = activeElectionId || DEFAULT_ELECTION_ID;
         return `elections/${id}/${collectionName}`;
@@ -66,6 +81,7 @@ export function useElection() {
         createElection,
         switchElection,
         getElectionPath,
+        refreshData,
         error
     };
 }

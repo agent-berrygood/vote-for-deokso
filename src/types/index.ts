@@ -2,44 +2,37 @@ export interface Candidate {
     id?: string; // Firestore ID
     name: string;
     position: string; // e.g., '장로', '안수집사', '권사'
-    birthdate?: string; // YYYYMMDD or equivalent
-    age?: number; // Deprecated, but keeping for legacy
-    photoUrl: string; // Original or transformed URL
+    birthdate?: string | null; // YYYYMMDD or equivalent
+    age?: number | null; // Deprecated, but keeping for legacy
+    photoUrl?: string | null; // Original or transformed URL
     voteCount: number; // For backward compatibility (or current round total)
-    votesByRound?: { [key: number]: number }; // e.g. { 1: 50, 2: 30 }
+    votesByRound?: { [key: number]: number } | null; // e.g. { 1: 50, 2: 30 }
     round?: number; // The round this candidate belongs to (Default 1)
-    profileDesc?: string; // Career/Service History
-    volunteerInfo?: string; // Volunteer History
-    churchTitle?: string; // e.g. '교인', '집사'
-    district?: string; // e.g. '1교구'
-    candidateNumber?: number; // 기호 번호 (관리자 직접 설정)
+    profileDesc?: string | null; // Career/Service History
+    volunteerInfo?: string | null; // Volunteer History
+    churchTitle?: string | null; // e.g. '교인', '집사'
+    district?: string | null; // e.g. '1교구'
+    candidateNumber?: number | null; // 기호 번호 (관리자 직접 설정)
 }
 
 export interface Voter {
     id?: string;
     name: string;
-    authKey: string; // Unique key (Birthday 4 digits etc.)
-    hasVoted: boolean; // For backward compatibility
-    participatedRounds?: number[]; // e.g. [1, 2] - tracks which rounds the voter has participated in (Globally? Or per position?)
-    // Note: If rounds are per-position, we might need a more complex structure, but for simplicity, 
-    // let's assume 'Round 1' involves voting for ALL active positions in that round.
-    // If 'Elders' are in Round 2 and 'Deacons' in Round 1, the voter votes for both in one session?
-    // Let's assume the Voter participates in a "Global Round Index" or we track { '장로': [1], '권사': [1] }?
-    // To keep it simple and manageable: The "Event" has a Round. Or better:
-    // If the User is allowed to vote for 'Elders Round 2', we track that they voted for 'Elders Round 2'.
-    participated?: { [positionAndRound: string]: boolean }; // e.g. "장로_1": true, "안수집사_2": true
-    votedAt?: number | null; // Timestamp of last vote
+    authKey: string; 
+    hasVoted: boolean; 
+    participatedRounds?: number[]; 
+    participated?: { [positionAndRound: string]: boolean }; 
+    votedAt?: string | number | null; 
     phone?: string;
     birthdate?: string;
 }
 
 export interface SystemSettings {
     maxVotes: number;
-    // currentRound is deprecated in favor of rounds mapping
-    rounds: { [position: string]: number }; // e.g. { '장로': 2, '권사': 1, '안수집사': 1 }
+    rounds: { [position: string]: number }; 
     roundTitle?: string;
-    startDate?: string; // ISO String
-    endDate?: string;   // ISO String
+    startDate?: string; 
+    endDate?: string;   
 }
 
 export interface AdminLog {
@@ -47,6 +40,6 @@ export interface AdminLog {
     electionId: string;
     actionType: 'CREATE_ELECTION' | 'UPDATE_SETTINGS' | 'UPLOAD_CANDIDATES' | 'DELETE_CANDIDATE' | 'UPLOAD_VOTERS' | 'ADD_SINGLE_VOTER' | 'RESET_DATA' | 'DOWNLOAD_RESULTS' | 'DOWNLOAD_VOTERS' | 'DOWNLOAD_TEMPLATE' | 'OTHER';
     description: string;
-    timestamp: number;
-    adminId?: string; // Optional if we don't have distinct admin accounts yet
+    timestamp: string | number;
+    adminId?: string; 
 }

@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, getDocs, doc, deleteDoc, setDoc, updateDoc, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Voter } from '@/types';
 import { useElection } from '@/hooks/useElection';
-import { logAdminAction } from '@/lib/adminLogger';
+import {
+    listVoters,
+    listVoterParticipations,
+    createVoter,
+    updateVoter,
+    deleteVoter,
+    createAdminLog
+} from '@/lib/dataconnect';
 import {
     Box,
     Paper,
@@ -59,7 +64,7 @@ export default function VoterManager() {
 
     // Pagination
     const [page, setPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(20); // Default to 20
+    const [rowsPerPage, setRowsPerPage] = useState(20);
 
     // State for Editing
     const [editTarget, setEditTarget] = useState<Voter | null>(null);
@@ -85,16 +90,30 @@ export default function VoterManager() {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            const vRef = collection(db, `elections/${activeElectionId}/voters`);
-            const q = query(vRef, orderBy('name', 'asc'));
-            const querySnapshot = await getDocs(q);
-            const loadedVoters: Voter[] = [];
-            querySnapshot.forEach((doc) => {
-                loadedVoters.push({ id: doc.id, ...doc.data() } as Voter);
+            // 1. Fetch Basic Voter List (SQL)
+            const vRes = await listVoters({ electionId: activeElectionId });
+            const loadedVoters = vRes.data.voters as Voter[];
+
+            // 2. Fetch Participations (SQL)
+            const pRes = await listVoterParticipations({ electionId: activeElectionId });
+            const pList = pRes.data.voterParticipations;
+
+            // 3. Map Participations to Voters for UI compatibility
+            const participationMap: Record<string, Record<string, boolean>> = {};
+            pList.forEach(p => {
+                const voterId = p.voterId;
+                if (!participationMap[voterId]) participationMap[voterId] = {};
+                participationMap[voterId][`${p.position}_${p.roundNumber}`] = true;
             });
-            setVoters(loadedVoters);
+
+            const mergedVoters = loadedVoters.map(v => ({
+                ...v,
+                participated: v.id ? participationMap[v.id] || {} : {}
+            }));
+
+            setVoters(mergedVoters);
         } catch (err) {
-            console.error("Error fetching voters:", err);
+            console.error("Error fetching SQL voters:", err);
             setMessage({ type: 'error', text: '선거인 명부를 불러오지 못했습니다.' });
         } finally {
             setLoading(false);
@@ -115,20 +134,16 @@ export default function VoterManager() {
 
         setAdding(true);
         try {
-            const voterRef = doc(collection(db, `elections/${activeElectionId}/voters`));
             const authKey = generateAuthKey();
-            const newVoter: Voter = {
-                id: voterRef.id,
+            await createVoter({
+                electionId: activeElectionId,
                 name: newName.trim(),
                 phone: newPhone.trim(),
                 birthdate: newBirthdate.trim(),
-                authKey: authKey,
-                hasVoted: false,
-                votedAt: null
-            };
+                authKey: authKey
+            });
 
-            await setDoc(voterRef, newVoter);
-            await logAdminAction({
+            await createAdminLog({
                 electionId: activeElectionId,
                 actionType: 'ADD_SINGLE_VOTER',
                 description: `선거인 '${newName}' 직접 추가 (인증키: ${authKey})`
@@ -144,7 +159,7 @@ export default function VoterManager() {
             // Refresh
             fetchVoters();
         } catch (err) {
-            console.error("Error adding voter:", err);
+            console.error("Error adding SQL voter:", err);
             setMessage({ type: 'error', text: '선거인 추가 중 오류가 발생했습니다.' });
         } finally {
             setAdding(false);
@@ -167,25 +182,24 @@ export default function VoterManager() {
 
         setUpdating(true);
         try {
-            const voterRef = doc(db, `elections/${activeElectionId}/voters`, editTarget.id);
-            const updatedData = {
+            await updateVoter({
+                id: editTarget.id,
                 name: editName.trim(),
                 phone: editPhone.trim(),
                 birthdate: editBirthdate.trim()
-            };
+            });
 
-            await updateDoc(voterRef, updatedData);
-            await logAdminAction({
+            await createAdminLog({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
                 description: `선거인 정보 수정: '${editTarget.name}' -> '${editName}'`
             });
 
-            setVoters(prev => prev.map(v => v.id === editTarget.id ? { ...v, ...updatedData } : v));
             setMessage({ type: 'success', text: `'${editName}' 선거인 정보가 수정되었습니다.` });
             setEditTarget(null);
+            fetchVoters();
         } catch (err) {
-            console.error("Error updating voter:", err);
+            console.error("Error updating SQL voter:", err);
             setMessage({ type: 'error', text: '선거인 정보 수정 중 오류가 발생했습니다.' });
         } finally {
             setUpdating(false);
@@ -196,8 +210,8 @@ export default function VoterManager() {
         if (!activeElectionId || !deleteTarget || !deleteTarget.id) return;
 
         try {
-            await deleteDoc(doc(db, `elections/${activeElectionId}/voters`, deleteTarget.id));
-            await logAdminAction({
+            await deleteVoter({ id: deleteTarget.id });
+            await createAdminLog({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
                 description: `선거인 '${deleteTarget.name}' (${deleteTarget.authKey}) 삭제`
@@ -206,7 +220,7 @@ export default function VoterManager() {
             setVoters(prev => prev.filter(v => v.id !== deleteTarget.id));
             setMessage({ type: 'success', text: `'${deleteTarget.name}' 선거인이 삭제되었습니다.` });
         } catch (err) {
-            console.error("Error deleting voter:", err);
+            console.error("Error deleting SQL voter:", err);
             setMessage({ type: 'error', text: '선거인 삭제 중 오류가 발생했습니다.' });
         } finally {
             setDeleteTarget(null);
@@ -217,7 +231,6 @@ export default function VoterManager() {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            // Prepare data
             const data = voters.map(v => {
                 const baseInfo = {
                     '이름': v.name,
@@ -226,7 +239,6 @@ export default function VoterManager() {
                     '인증키': v.authKey || '',
                 };
 
-                // Add Participation by Position and Round (Max 5 rounds as per logic)
                 const participationInfo: { [key: string]: string } = {};
                 const positions = ['장로', '권사', '안수집사'];
                 for (const pos of positions) {
@@ -238,32 +250,16 @@ export default function VoterManager() {
                 return { ...baseInfo, ...participationInfo };
             });
 
-            // Create worksheet
             const ws = XLSX.utils.json_to_sheet(data);
-
-            // Force "생년월일" column (index 1) to be text to prevent scientific notation or numeric formatting
-            // In XLSX, 'z' is the format code. '@' means text.
-            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-            for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-                const cellRef = XLSX.utils.encode_cell({ r: R, c: 1 }); // Column B
-                if (ws[cellRef]) {
-                    ws[cellRef].t = 's'; // Set type to string
-                    ws[cellRef].z = '@'; // Set format to text
-                }
-            }
-
-            // Create workbook and append sheet
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "선거인명부");
 
-            // Generate filename with date
             const dateStr = new Date().toISOString().split('T')[0];
-            const filename = `선거인명부_${dateStr}.xlsx`;
+            const filename = `선거인명부_SQL_${dateStr}.xlsx`;
 
-            // Write and download
             XLSX.writeFile(wb, filename);
 
-            await logAdminAction({
+            await createAdminLog({
                 electionId: activeElectionId,
                 actionType: 'DOWNLOAD_VOTERS',
                 description: `선거인명부 엑셀 다운로드 (${voters.length}명)`
@@ -271,7 +267,7 @@ export default function VoterManager() {
 
             setMessage({ type: 'success', text: '선거인명부 엑셀 파일이 생성되었습니다.' });
         } catch (err) {
-            console.error("Error exporting excel:", err);
+            console.error("Error exporting SQL excel:", err);
             setMessage({ type: 'error', text: '엑셀 다운로드 중 오류가 발생했습니다.' });
         } finally {
             setLoading(false);
@@ -283,7 +279,6 @@ export default function VoterManager() {
         alert('인증키가 복사되었습니다: ' + text);
     };
 
-    // Filter Logic
     const filteredVoters = voters.filter(v =>
         v.name.includes(searchTerm) ||
         v.phone?.includes(searchTerm) ||
@@ -304,11 +299,10 @@ export default function VoterManager() {
             )}
 
             <Grid container spacing={3}>
-                {/* 1. Add Voter Form */}
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <PersonAddIcon color="secondary" /> 선거인 개별 추가
+                            <PersonAddIcon color="secondary" /> 선거인 개별 추가 (SQL)
                         </Typography>
                         <Divider sx={{ mb: 2 }} />
                         <form onSubmit={handleAddVoter}>
@@ -335,18 +329,13 @@ export default function VoterManager() {
                                 <Button type="submit" variant="contained" color="secondary" disabled={adding} fullWidth>
                                     {adding ? <CircularProgress size={24} /> : '선거인 등록'}
                                 </Button>
-                                <Typography variant="caption" color="text.secondary">
-                                    * 인증키는 등록 시 자동으로 생성됩니다.
-                                </Typography>
                             </Box>
                         </form>
                     </Paper>
                 </Grid>
 
-                {/* 2. Voter List Table */}
                 <Grid size={{ xs: 12, md: 8 }}>
                     <Paper sx={{ p: 3 }}>
-                        {/* Round & Position Selection Buttons */}
                         <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                 <Typography variant="subtitle2" sx={{ mr: 1, fontWeight: 'bold' }}>차수 선택:</Typography>
@@ -356,7 +345,6 @@ export default function VoterManager() {
                                         variant={selectedRound === r ? "contained" : "outlined"}
                                         size="small"
                                         onClick={() => setSelectedRound(r)}
-                                        sx={{ minWidth: 60 }}
                                     >
                                         {r}차
                                     </Button>
@@ -384,11 +372,11 @@ export default function VoterManager() {
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 1 }}>
                                 <TextField
-                                    placeholder="이름, 번호, 생일, 인증키 검색"
+                                    placeholder="검색"
                                     value={searchTerm}
                                     onChange={e => { setSearchTerm(e.target.value); setPage(1); }}
                                     size="small"
-                                    sx={{ width: 250 }}
+                                    sx={{ width: 150 }}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -405,7 +393,7 @@ export default function VoterManager() {
                                     disabled={loading || voters.length === 0}
                                     size="small"
                                 >
-                                    엑셀 다운로드
+                                    엑셀
                                 </Button>
                                 <IconButton onClick={fetchVoters} disabled={loading}>
                                     <RefreshIcon />
@@ -429,7 +417,7 @@ export default function VoterManager() {
                                     {loading ? (
                                         <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress /></TableCell></TableRow>
                                     ) : paginatedVoters.length === 0 ? (
-                                        <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>선거인 데이터가 없습니다.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>데이터가 없습니다.</TableCell></TableRow>
                                     ) : (
                                         paginatedVoters.map((v) => (
                                             <TableRow key={v.id} hover>
@@ -447,29 +435,23 @@ export default function VoterManager() {
                                                 <TableCell align="center">
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
                                                         {v.participated?.[`${selectedPosition}_${selectedRound}`] ? (
-                                                            <Chip label="참여" color="success" size="small" variant="filled" />
+                                                            <Chip label="참여" color="success" size="small" />
                                                         ) : (
-                                                            <Chip label="미참여" color="default" size="small" variant="outlined" sx={{ opacity: 0.6 }} />
+                                                            <Chip label="미참여" color="default" size="small" variant="outlined" />
                                                         )}
-                                                        <Tooltip title="전체 참여 상세">
-                                                            <IconButton size="small" onClick={() => setDetailTarget(v)}>
-                                                                <VisibilityIcon fontSize="inherit" />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                        <IconButton size="small" onClick={() => setDetailTarget(v)}>
+                                                            <VisibilityIcon fontSize="inherit" />
+                                                        </IconButton>
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                                                        <Tooltip title="정보 수정">
-                                                            <IconButton color="primary" size="small" onClick={() => handleEditOpen(v)}>
-                                                                <EditIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Tooltip title="선거인 삭제">
-                                                            <IconButton color="error" size="small" onClick={() => setDeleteTarget(v)}>
-                                                                <DeleteIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                        <IconButton color="primary" size="small" onClick={() => handleEditOpen(v)}>
+                                                            <EditIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <IconButton color="error" size="small" onClick={() => setDeleteTarget(v)}>
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>
@@ -479,34 +461,15 @@ export default function VoterManager() {
                             </Table>
                         </TableContainer>
 
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3, gap: 3, flexWrap: 'wrap' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="caption" color="text.secondary">표시 인원:</Typography>
-                                <Select
-                                    value={rowsPerPage}
-                                    onChange={(e) => {
-                                        setRowsPerPage(Number(e.target.value));
-                                        setPage(1);
-                                    }}
-                                    size="small"
-                                    sx={{ height: 32, minWidth: 80, fontSize: '0.75rem' }}
-                                >
-                                    <MenuItem value={20}>20명</MenuItem>
-                                    <MenuItem value={50}>50명</MenuItem>
-                                    <MenuItem value={100}>100명</MenuItem>
-                                    <MenuItem value={-1}>전체</MenuItem>
-                                </Select>
-                            </Box>
-
-                            {rowsPerPage !== -1 && (
-                                <Pagination
-                                    count={Math.ceil(filteredVoters.length / rowsPerPage)}
-                                    page={page}
-                                    onChange={(e, p) => setPage(p)}
-                                    color="primary"
-                                    size="small"
-                                />
-                            )}
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                            <Pagination
+                                count={Math.ceil(filteredVoters.length / rowsPerPage)}
+                                page={page}
+                                onChange={(e, p) => setPage(p)}
+                                color="primary"
+                                size="small"
+                                disabled={rowsPerPage === -1}
+                            />
                         </Box>
                     </Paper>
                 </Grid>
@@ -515,109 +478,52 @@ export default function VoterManager() {
             <ConfirmDialog
                 open={!!deleteTarget}
                 title="선거인 삭제"
-                description={`'${deleteTarget?.name}' 선거인을 명부에서 삭제하시겠습니까? 투표 기록이 있을 경우 함께 관리되지 않을 수 있습니다.`}
+                description={`'${deleteTarget?.name}' 선거인을 삭제하시겠습니까?`}
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteTarget(null)}
-                requireReAuth
             />
 
-            {/* Edit Dialog */}
             <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} fullWidth maxWidth="xs">
-                <DialogTitle fontWeight="bold">선거인 정보 수정</DialogTitle>
+                <DialogTitle fontWeight="bold">선거인 정보 수정 (SQL)</DialogTitle>
                 <DialogContent dividers>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-                        <TextField
-                            label="이름"
-                            value={editName}
-                            onChange={e => setEditName(e.target.value)}
-                            size="small"
-                            fullWidth
-                            required
-                        />
-                        <TextField
-                            label="휴대폰 번호"
-                            value={editPhone}
-                            onChange={e => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                let formatted = val;
-                                if (val.length > 3 && val.length <= 7) {
-                                    formatted = `${val.slice(0, 3)}-${val.slice(3)}`;
-                                } else if (val.length > 7) {
-                                    formatted = `${val.slice(0, 3)}-${val.slice(3, 7)}-${val.slice(7, 11)}`;
-                                }
-                                setEditPhone(formatted);
-                            }}
-                            size="small"
-                            fullWidth
-                            placeholder="010-0000-0000"
-                        />
-                        <TextField
-                            label="생년월일 (6자리)"
-                            value={editBirthdate}
-                            onChange={e => setEditBirthdate(e.target.value)}
-                            size="small"
-                            fullWidth
-                            placeholder="700101"
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setEditTarget(null)} color="inherit">취소</Button>
-                    <Button
-                        onClick={handleUpdateVoter}
-                        variant="contained"
-                        color="primary"
-                        disabled={updating}
-                    >
-                        {updating ? <CircularProgress size={24} /> : '수정 완료'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Voter Participation Detail Dialog */}
-            <Dialog open={!!detailTarget} onClose={() => setDetailTarget(null)} fullWidth maxWidth="sm">
-                <DialogTitle fontWeight="bold">
-                    [상세 참여 현황] {detailTarget?.name} 선거인
-                </DialogTitle>
-                <DialogContent dividers>
-                    <Box sx={{ pt: 1 }}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                            각 직분 및 차수별 투표 참여 여부를 확인할 수 있습니다.
-                        </Typography>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>구분</TableCell>
-                                    {[1, 2, 3, 4, 5].map(r => (
-                                        <TableCell key={r} align="center" sx={{ fontWeight: 'bold' }}>{r}차</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {['장로', '권사', '안수집사'].map(pos => (
-                                    <TableRow key={pos}>
-                                        <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f9f9f9' }}>{pos}</TableCell>
-                                        {[1, 2, 3, 4, 5].map(r => {
-                                            const key = `${pos}_${r}`;
-                                            const participated = detailTarget?.participated?.[key];
-                                            return (
-                                                <TableCell key={r} align="center">
-                                                    {participated ? (
-                                                        <CheckCircleIcon color="success" sx={{ fontSize: 20 }} />
-                                                    ) : (
-                                                        <HelpOutlineIcon color="disabled" sx={{ fontSize: 18 }} />
-                                                    )}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <TextField label="이름" value={editName} onChange={e => setEditName(e.target.value)} size="small" fullWidth required />
+                        <TextField label="휴대폰" value={editPhone} onChange={e => setEditPhone(e.target.value)} size="small" fullWidth />
+                        <TextField label="생년월일" value={editBirthdate} onChange={e => setEditBirthdate(e.target.value)} size="small" fullWidth />
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDetailTarget(null)} color="primary">닫기</Button>
+                    <Button onClick={() => setEditTarget(null)}>취소</Button>
+                    <Button onClick={handleUpdateVoter} variant="contained" disabled={updating}>수정</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={!!detailTarget} onClose={() => setDetailTarget(null)} fullWidth maxWidth="sm">
+                <DialogTitle fontWeight="bold">상세 참여 현황</DialogTitle>
+                <DialogContent dividers>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>구분</TableCell>
+                                {[1, 2, 3, 4, 5].map(r => <TableCell key={r} align="center">{r}차</TableCell>)}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {['장로', '권사', '안수집사'].map(pos => (
+                                <TableRow key={pos}>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>{pos}</TableCell>
+                                    {[1, 2, 3, 4, 5].map(r => (
+                                        <TableCell key={r} align="center">
+                                            {detailTarget?.participated?.[`${pos}_${r}`] ? <CheckCircleIcon color="success" /> : <HelpOutlineIcon color="disabled" />}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDetailTarget(null)}>닫기</Button>
                 </DialogActions>
             </Dialog>
         </Box>

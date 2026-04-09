@@ -1,0 +1,12 @@
+# dataconnect/dataconnect.yaml
+specVersion: "v1"
+serviceId: "vote-deokso-sql"
+location: "asia-northeast3"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "vote-deokso-sql-fdc"
+connectorDirs: ["./vote"]

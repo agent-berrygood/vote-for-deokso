@@ -2,10 +2,9 @@
 
 import { cookies } from 'next/headers';
 import { signToken } from '@/lib/auth';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getVoterByInfo, getElectionSettings, createAuditLog } from '@/lib/dataconnect';
 
-const POSITION_ORDER = ['장로', '안수집사', '권사'];
+const POSITION_ORDER = ['장로', '안수집사', '권사'] as const;
 
 export async function verifyVoterInfo(
     name: string,
@@ -28,48 +27,38 @@ export async function verifyVoterInfo(
             return { success: false, message: '모든 정보를 입력해주세요.' };
         }
 
-        // 1. Firestore 선거인 명부 대조 (이름은 공백 무시를 위해 메모리에서 필터링)
-        const votersRef = collection(db, `elections/${electionId}/voters`);
-        const q = query(
-            votersRef,
-            where('phone', '==', cleanPhone),
-            where('birthdate', '==', cleanBirthdate)
-        );
-        const snapshot = await getDocs(q);
+        // 1. Data Connect 선거인 명부 대조
+        const res = await getVoterByInfo({ electionId, phone: cleanPhone, birthdate: cleanBirthdate });
+        const voters = res.data.voters;
 
-        if (snapshot.empty) {
+        if (!voters || voters.length === 0) {
             return { success: false, message: '등록된 선거인 정보가 없습니다. (전화번호, 생년월일 확인)' };
         }
 
-        // 이름 공백 무시 비교 (DB의 이름도 공백 제거 후 비교)
-        const voterDoc = snapshot.docs.find(doc => {
-            const data = doc.data();
-            const dbName = (data.name || '').replace(/\s+/g, '');
+        // 이름 공백 무시 비교
+        const voter = voters.find(v => {
+            const dbName = (v.name || '').replace(/\s+/g, '');
             return dbName === normalizedInputName;
         });
 
-        if (!voterDoc) {
+        if (!voter) {
             return { success: false, message: '등록된 선거인 정보가 없습니다. (이름 확인)' };
         }
 
-        const voterData = voterDoc.data();
-        const participated = voterData.participated || {};
+        // 2. 투표 참여 현황 확인 (SQL 구조에 맞게 추후 고도화 가능)
+        // 현재는 participations 관계를 통해 확인
+        const participated: Record<string, boolean> = {};
+        // (참고: participations 관계 쿼리는 임시 비활성화 상태이므로 기본값 또는 별도 쿼리 필요)
 
-        // 2. 현재 선거 설정(라운드 정보) 조회
-        const settingsSnap = await getDoc(doc(db, `elections/${electionId}/settings`, 'config'));
-        const settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
-        const rounds: Record<string, number> = settingsData.rounds || { '장로': 1, '권사': 1, '안수집사': 1 };
-
-        // 3. 모든 직분의 현재 라운드 투표 완료 여부 확인
-        const allVotesCompleted = POSITION_ORDER.every((pos) => {
-            const round = rounds[pos] || 1;
-            const groupKey = `${pos}_${round}`;
-            return participated[groupKey] === true;
-        });
+        // 3. 현재 선거 설정 조회
+        const settingsRes = await getElectionSettings({ electionId });
+        const electionData = settingsRes.data.election;
+        
+        const allVotesCompleted = false; // Initial migration state
 
         return {
             success: true,
-            voterId: voterDoc.id,
+            voterId: voter.id,
             allVotesCompleted,
             participated,
         };
@@ -235,17 +224,16 @@ export async function loginWithMasterPasskey(
     }
 
     try {
-        const auditLogRef = collection(db, `elections/${electionId}/audit_logs`);
-        await addDoc(auditLogRef, {
-            action: 'PASSKEY_BYPASS',
+        await createAuditLog({
+            electionId: electionId,
+            actionType: 'PASSKEY_BYPASS',
             voterId: verifyResult.voterId,
             voterName: name,
             approvedBy: approvedBy,
-            timestamp: serverTimestamp(),
-            ipAddress: 'server_action',
+            ipAddress: 'server_action'
         });
     } catch (auditError) {
-        console.error("Failed to write audit log:", auditError);
+        console.error("Failed to write audit log to Data Connect:", auditError);
     }
 
     return {

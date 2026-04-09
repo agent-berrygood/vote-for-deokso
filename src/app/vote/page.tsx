@@ -2,16 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-    collection,
-    getDocs,
-    doc,
-    getDoc
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getElectionSettings, listCandidatesByRound } from '@/lib/dataconnect';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
-import { submitVote } from '@/app/actions/vote';
+import { submitVoteAction } from '@/app/actions/vote';
 
 import {
     Box,
@@ -173,37 +167,57 @@ export default function VotePage() {
         // Initialize Data
         const initData = async () => {
             try {
-                // Fetch Settings
-                const settingsSnap = await getDoc(doc(db, `elections/${activeElectionId}/settings`, 'config'));
-                if (settingsSnap.exists()) {
-                    const data = settingsSnap.data();
-                    if (data.maxVotes) {
-                        setMaxVotesMap(typeof data.maxVotes === 'number'
-                            ? { '장로': data.maxVotes, '권사': data.maxVotes, '안수집사': data.maxVotes }
-                            : data.maxVotes
+                // Fetch Settings using Data Connect
+                const settingsRes = await getElectionSettings({ electionId: activeElectionId });
+                
+                let currentRounds: { [key: string]: number } = { '장로': 1, '권사': 1, '안수집사': 1 };
+
+                if (settingsRes && settingsRes.data && settingsRes.data.election) {
+                    const settings = settingsRes.data.election;
+                    if (settings.maxVotes) {
+                        setMaxVotesMap(typeof settings.maxVotes === 'number'
+                            ? { '장로': settings.maxVotes, '권사': settings.maxVotes, '안수집사': settings.maxVotes }
+                            : settings.maxVotes
                         );
                     }
-                    setRounds(data.rounds || { '장로': 1, '권사': 1, '안수집사': 1 });
-                    if (data.endDate) {
-                        const end = new Date(data.endDate);
+                    if (settings.rounds) {
+                        currentRounds = JSON.parse(settings.rounds);
+                    }
+                    setRounds(currentRounds);
+
+                    if (settings.endDate) {
+                        const end = new Date(settings.endDate);
                         setEndDate(end);
                         if (new Date() > end) setIsTimeUp(true);
                     }
+                } else {
+                    setError('선거 설정을 불러올 수 없습니다. 기본 설정으로 진행합니다.');
                 }
 
-                // Fetch Candidates
-                const querySnapshot = await getDocs(collection(db, `elections/${activeElectionId}/candidates`));
+                // Fetch Candidates for each position using Data Connect
                 const loadedCandidates: Candidate[] = [];
-                const currentSettings = settingsSnap.exists() ? settingsSnap.data().rounds : { '장로': 1, '권사': 1, '안수집사': 1 };
-
-                querySnapshot.forEach((doc) => {
-                    const c = { id: doc.id, ...doc.data() } as Candidate;
-                    const targetRound = currentSettings[c.position] || 1;
-                    if (c.round === targetRound) {
-                        loadedCandidates.push(c);
+                for (const position of POSITION_ORDER) {
+                    const round = currentRounds[position] || 1;
+                    const candidatesRes = await listCandidatesByRound({
+                        electionId: activeElectionId,
+                        position: position,
+                        round: round,
+                    });
+                    
+                    if (candidatesRes && candidatesRes.data && candidatesRes.data.candidates) {
+                        const candidatesFromDB = candidatesRes.data.candidates.map(c => ({
+                            ...c,
+                            birthdate: c.birthdate ?? undefined,
+                            photoUrl: c.photoUrl ?? '',
+                            profileDesc: c.profileDesc ?? undefined,
+                            volunteerInfo: c.volunteerInfo ?? undefined,
+                            district: c.district ?? undefined,
+                            candidateNumber: c.candidateNumber ?? undefined,
+                        }));
+                        loadedCandidates.push(...candidatesFromDB);
                     }
-                });
-
+                }
+                
                 setCandidates(loadedCandidates);
 
                 // Initialize votes state
@@ -214,7 +228,7 @@ export default function VotePage() {
                 setVotes(initialVotes);
 
             } catch (err) {
-                console.error(err);
+                console.error("Data loading error:", err);
                 setError('데이터를 불러오는 중 오류가 발생했습니다.');
             } finally {
                 setLoading(false);
@@ -281,11 +295,8 @@ export default function VotePage() {
         setError('');
 
         try {
-            const res = await submitVote(votes);
-
-            if (!res.success) {
-                throw new Error(res.message);
-            }
+            const res = await submitVoteAction(votes);
+            if (!res.success) throw new Error(res.message);
 
             setSuccess(true);
             window.scrollTo(0, 0);

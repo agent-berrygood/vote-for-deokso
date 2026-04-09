@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useElection } from '@/hooks/useElection';
+import { listAuditLogs } from '@/lib/dataconnect';
 import {
     Container,
     Typography,
@@ -20,17 +19,19 @@ import {
     TableHead,
     TableRow,
     CircularProgress,
-    Alert
+    Alert,
+    Chip
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 interface AuditLog {
     id: string;
-    action: string;
+    actionType: string;
     voterId: string;
     voterName: string;
     approvedBy: string;
-    timestamp: Date | null;
+    ipAddress?: string;
+    timestamp: string | number;
 }
 
 export default function AuditLogsPage() {
@@ -41,49 +42,31 @@ export default function AuditLogsPage() {
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<string>('전체');
 
-    useEffect(() => {
+    const fetchLogs = useCallback(async () => {
         if (!activeElectionId) {
             setLoading(false);
             return;
         }
 
-        const fetchLogs = async () => {
-            setLoading(true);
-            try {
-                const logsRef = collection(db, `elections/${activeElectionId}/audit_logs`);
-                const q = query(logsRef, orderBy('timestamp', 'desc'));
-                const snapshot = await getDocs(q);
-
-                const fetched: AuditLog[] = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    let dateObj = null;
-                    if (data.timestamp?.toDate) {
-                        dateObj = data.timestamp.toDate();
-                    }
-                    fetched.push({
-                        id: doc.id,
-                        action: data.action || '',
-                        voterId: data.voterId || '',
-                        voterName: data.voterName || '',
-                        approvedBy: data.approvedBy || '알수없음',
-                        timestamp: dateObj,
-                    });
-                });
-                setLogs(fetched);
-            } catch (err) {
-                console.error(err);
-                setError('승인 내역을 불러오는데 실패했습니다.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchLogs();
+        setLoading(true);
+        try {
+            const res = await listAuditLogs({ electionId: activeElectionId });
+            setLogs(res.data.auditLogs as AuditLog[]);
+        } catch (err) {
+            console.error(err);
+            setError('승인 내역을 불러오는데 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
     }, [activeElectionId]);
 
-    const formatTimestamp = (date: Date | null) => {
-        if (!date) return '시간 기록 없음';
+    useEffect(() => {
+        fetchLogs();
+    }, [fetchLogs]);
+
+    const formatTimestamp = (ts: string | number) => {
+        if (!ts) return '시간 기록 없음';
+        const date = new Date(ts);
         const pad = (n: number) => n.toString().padStart(2, '0');
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     };
@@ -98,9 +81,9 @@ export default function AuditLogsPage() {
     if (!activeElectionId && !loading) {
         return (
             <Container maxWidth="md" sx={{ py: 4 }}>
-                <Alert severity="warning">현재 활성화된 선거가 없어 내역을 조회할 수 없습니다.</Alert>
-                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => router.back()}>
-                    돌아가기
+                <Alert severity="warning">활성화된 선거가 없어 대시보드로 돌아갑니다.</Alert>
+                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => router.push('/admin')}>
+                    대시보드
                 </Button>
             </Container>
         );
@@ -109,11 +92,11 @@ export default function AuditLogsPage() {
     return (
         <Container maxWidth="md" sx={{ py: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()} sx={{ mr: 2 }}>
-                    뒤로가기
+                <Button startIcon={<ArrowBackIcon />} onClick={() => router.push('/admin')} sx={{ mr: 2 }}>
+                    대시보드
                 </Button>
                 <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
-                    선관위 현장 투표 승인 내역 (Audit Logs)
+                    선관위 현장 투표 승인 내역 (SQL Audit Logs)
                 </Typography>
             </Box>
 
@@ -137,9 +120,7 @@ export default function AuditLogsPage() {
 
                 <Box sx={{ p: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {activeTab === '전체'
-                            ? '모든 위원'
-                            : `'${activeTab}' 위원`}
+                        {activeTab === '전체' ? '모든 위원' : `'${activeTab}' 위원`}
                         의 문자인증 우회 통과 기록입니다. (총 {filteredLogs.length}건)
                     </Typography>
 
@@ -159,6 +140,7 @@ export default function AuditLogsPage() {
                                         <TableCell sx={{ fontWeight: 'bold' }}>승인 일시</TableCell>
                                         <TableCell sx={{ fontWeight: 'bold' }}>담당 위원</TableCell>
                                         <TableCell sx={{ fontWeight: 'bold' }}>통과된 선거인</TableCell>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>작업 구분</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -171,6 +153,9 @@ export default function AuditLogsPage() {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>{log.voterName}</TableCell>
+                                            <TableCell>
+                                                <Chip size="small" label={log.actionType} color="info" variant="outlined" />
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

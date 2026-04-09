@@ -1,0 +1,214 @@
+﻿
+> vote-app@0.1.0 lint
+> eslint
+
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\check_bongsa.js
+  1:12  error    A `require()` style import is forbidden    @typescript-eslint/no-require-imports
+  2:7   warning  'XLSX' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  2:14  error    A `require()` style import is forbidden    @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\check_diff.js
+   1:12  error    A `require()` style import is forbidden          @typescript-eslint/no-require-imports
+   2:14  error    A `require()` style import is forbidden          @typescript-eslint/no-require-imports
+  17:15  warning  'resultData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\check_eligibility.js
+  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\check_settings.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:47  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\compare_candidates.js
+  1:14  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:7   warning  'fs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  2:12  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\extract_2nd_round_profiles.js
+  2:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\fill_bongsa.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\filter_volunteer_history_safe.js
+  1:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\filter_volunteer_history_v12.js
+   1:14  error    A `require()` style import is forbidden        @typescript-eslint/no-require-imports
+   2:14  error    A `require()` style import is forbidden        @typescript-eslint/no-require-imports
+  49:11  warning  'newSheet' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\generate_excel_with_images.js
+  2:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\inspect_excel.js
+  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\inspect_excel_v12.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\inspect_excel_v12_to_file.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\make_voter_list.js
+  1:12  error    A `require()` style import is forbidden    @typescript-eslint/no-require-imports
+  2:7   warning  'path' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  2:14  error    A `require()` style import is forbidden    @typescript-eslint/no-require-imports
+  3:14  error    A `require()` style import is forbidden    @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\make_voter_list_clean.js
+  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\parse_vol.js
+  1:12  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+  7:5   warning  'count' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\process_actuals.js
+   1:12  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+   2:14  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+  10:5   warning  'count' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\restore_election.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:39  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\scan_db.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:60  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\actions\auth.ts
+   7:7   warning  'POSITION_ORDER' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  55:15  warning  'electionData' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\admin\live-results\page.tsx
+  64:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\admin\login\page.tsx
+  12:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\admin\page.tsx
+   15:5    warning  'createAdminLog' is defined but never used           @typescript-eslint/no-unused-vars
+   20:21   warning  'Voter' is defined but never used                    @typescript-eslint/no-unused-vars
+   47:45   warning  'createElection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  185:108  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  354:11   warning  'formatVotedAt' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  404:19   warning  'resC' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  406:19   warning  'resV' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  667:82   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  761:64   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\app\vote\page.tsx
+  41:7  warning  'TABS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\components\CandidatePositionManager.tsx
+   31:5   warning  'CircularProgress' is defined but never used              @typescript-eslint/no-unused-vars
+   35:5   warning  'Chip' is defined but never used                          @typescript-eslint/no-unused-vars
+   46:8   warning  'FileDownloadIcon' is defined but never used              @typescript-eslint/no-unused-vars
+   48:8   warning  'SaveIcon' is defined but never used                      @typescript-eslint/no-unused-vars
+   59:12  warning  'loading' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  293:11  warning  'handleDownloadExcel' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\src\components\VoterManager.tsx
+  34:5   warning  'Tooltip' is defined but never used                  @typescript-eslint/no-unused-vars
+  35:5   warning  'Select' is defined but never used                   @typescript-eslint/no-unused-vars
+  36:5   warning  'MenuItem' is defined but never used                 @typescript-eslint/no-unused-vars
+  67:25  warning  'setRowsPerPage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\test_db.js
+  1:9   warning  'initializeApp' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  1:24  warning  'cert' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  1:33  error    A `require()` style import is forbidden             @typescript-eslint/no-require-imports
+  2:9   warning  'getFirestore' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  2:26  error    A `require()` style import is forbidden             @typescript-eslint/no-require-imports
+  3:7   warning  'path' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  3:14  error    A `require()` style import is forbidden             @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\test_db_conn.js
+  1:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:47  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel_v2.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel_v3.js
+   2:12  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   3:14  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   4:27  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   5:74  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   6:17  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   7:1   error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+  25:11  warning  'tdRegex' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel_v4.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel_v5.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel_v6.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\update_volunteer_and_excel_v7.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  4:27  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:74  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  6:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  7:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\Administrator\Desktop\project temp\vote for deokso\verify_candidates.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+??135 problems (103 errors, 32 warnings)
+
