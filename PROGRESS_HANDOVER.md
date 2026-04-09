@@ -1,56 +1,29 @@
-# 작업 진행 상황 (2026-04-08)
+# 프로젝트 진행 상황 (PROGRESS HANDOVER) - 2026년 4월 기준
 
 ## 1. 현재 상태 (Current Status)
-- **프로젝트**: `vote-for-deokso` (Next.js + Firebase)
-- **배포**: Vercel (Static Assets)
-- **주요 변경 사항 (오늘)**:
-    - **CandidateManager.tsx SQL 마이그레이션**: Firestore 의존성을 완전히 제거하고 Firebase Data Connect(SQL) SDK 기반으로 전환 완료.
-    - **목록 조회/삭제/사진 업로드**: SQL DB 연동 완료 및 해당 컴포넌트 린트 에러 수정 완료.
-    - **시스템 안정화**: 자동 생성된 SDK(`src/lib/dataconnect`)의 린트 에러를 무시하도록 `eslint.config.mjs` 수정하여 빌드 소음 제거.
+- **프로젝트**: `vote-for-deokso` (Next.js 14 App Router + Firebase Data Connect PostgreSQL)
+- **주요 변경 사항**:
+    - **Firestore ➔ Cloud SQL (Data Connect) 전체 마이그레이션 완료**: 후보자(Candidate) 및 선거인 명부(Member)가 모두 안전하게 SQL DB로 마이그레이션 및 적용 완료되었습니다. 기존 Firestore 무료 할당량 이슈는 SQL을 사용함에 따라 완벽히 해결되었습니다.
+    - **전교인 설문조사(Survey) 시스템 도입**: 메인 화면을 선거와 설문조사 두 가지 모드로 오가는 하이브리드 형식으로 확장했습니다.
+    - **통신 권한 수정**: 메인화면과 관리자 대시보드가 DB에서 활성 모드 전환 상태값을 받아오지 못하던 `SystemSetting` 권한 설정 오류(`NO_ACCESS` -> `PUBLIC`)를 고치고 클라우드에 성공적으로 배포했습니다.
+    - **설문 목록 최신화 및 삭제 기능(신규)**: `SurveyManager` 컴포넌트 내부에서 생성한 설문을 목록으로 확인하고, 어떤 설문을 메인화면에 활성화(🟢)시킬지 제어하며, 잘못 만들었을 시 휴지통(🗑️) 버튼으로 완전 삭제하는 파이프라인까지 연동된 상태입니다.
 
-## 2. 주요 기능 상세 (Key Features)
+## 2. 해결된 주요 이슈 내역
+- **SystemSetting 초기값 부재 문제**: SQL 마이그레이션 직후 빈 DB 상황에서 시스템 초기값이 세팅되지 않는 문제를 DBA 백도어 쿼리망으로 수동 강제 생성(`id: system`)하여 영구적으로 고안했습니다.
+- **SurveyManager UI 무반응 문제 해결**: `ListSurveys` 및 `DeleteSurvey` 쿼리를 작성하여 로컬 SDK 생성 후, React의 상태(`surveys`) 연동 작업을 거쳐 시각적으로 반응하도록 UI 보수 작업을 마쳤습니다.
+- **안전한 모드 관리**: 운영 중(투표 중)인 설문이 삭제되면 발생할 대참사를 사전에 100% 방지하기 위해, 현재 활성화 칩(`✅ 활성 상태`)이 켜진 설문은 쓰레기통 버튼이 렌더링되지 않게 컴포넌트 이중 보호 장치를 걸어 두었습니다. 
 
-### A. 이미지 처리 (Image Optimization)
-- 기존의 불규칙한 크기와 포맷(PNG/JPG 혼용) 문제를 해결.
-- `scripts/copy_and_resize.mjs` 스크립트를 통해 일괄 변환:
-    - **Resize**: 가로 300px (세로 자동).
-    - **Format**: `.jpg`로 통일.
-    - **Quality**: 80% (용량 30~50KB 수준으로 최적화).
-- **경로**: `/images/candidates/[Name].jpg` (한글 이름은 자동 인코딩 처리).
+## 3. 남아있는 과제 & 수임자의 다음 작업 요망사항 (Next Steps)
+사용자님의 명확한 방향 제시를 통해 현재 어드민에서의 껍데기("설문 제목/설명") 생성 및 제어 모드 변환은 해결되었으나, **실제 가장 중요한 세부 문항 관리 기능이 개발되지 않았습니다.**
 
-### B. 후보자 봉사 이력 (Service History)
-- **DB 필드**: `profileDesc` (String).
-- **업로드**: 관리자 페이지에서 엑셀/CSV 업로드 시 `ProfileDesc` 칼럼을 자동 인식하여 저장.
-- **표시**: 투표 화면 카드 우측에 상세 봉사 이력 표시 (줄바꿈 지원).
+1. **상세보기 및 설문지 문항 에디터 추가 (💡최우선 작업)**
+    - **대상**: `SurveyManager.tsx` 리스트 또는 개별 라우팅(/admin/survey/[id])
+    - **내용**: 설문을 껍데기로 만들었으니 실제 유저가 응답을 선택할 수 있는 문항들, 즉 `SurveyQuestion`을 동적으로 추가해야 합니다. (객관식/주관식, 보기 옵션 등)
+    - 스키마에는 이미 `SurveyQuestion` 테이블이 잘 준비되어 있습니다. 이를 통제하는 관리자 도구 프론트엔드 UI를 구축해야 합니다.
+2. **설문결과(Response) 엑셀 다운로드 (선택 작업)**
+    - 설문 기간이 종료되었을 시 데이터를 종합해서 엑셀 문서로 추출해 내는 관제망 메뉴 활성화가 필요합니다.
 
-### C. 반응형 디자인 (Responsive UI)
-- **Grid Layout**:
-    - PC/Tablet (sm 이상): `6` (2 Columns) - 정보 밀도를 높이고 가독성 확보.
-    - Mobile (xs): `12` (1 Column) - 작은 화면에서 정보를 명확히 전달.
-- **Card Design**:
-    - 높이 맞춤 (`alignItems: stretch`).
-    - 직분/차수 칩(Chip) 디자인 통일.
-
-## 3. 남아있는 이슈 & 가이드 (Known Issues & Guide)
-
-### 🚨 Firestore 할당량 (Quota)
-- **현상**: 후보자 목록이 뜨지 않음 (빈 화면).
-- **원인**: 무료 플랜(Spark)의 일일 읽기 할당량(50k) 초과.
-- **해결**:
-    - 한국 시간 **오후 5시**에 리셋됨.
-    - 리셋 후 정상 작동함. (이미지는 DB와 무관하게 뜨도록 수정됨).
-
-### 🛠️ 개발/배포 가이드
-- **로컬 실행**: `npm run dev`
-- **배포**: `git push origin main` (Vercel 자동 배포)
-- **SQL 마이그레이션 관리**: `npx firebase dataconnect:sdk:generate` (현재 환경 오류로 실행 불가, 수동 대응 중)
-
-## 4. 남아있는 과제 (Tomorrow's Tasks)
-1. **SDK 재생성 오류 해결**: `firebase dataconnect:sdk:generate` 실행 시 발생하는 `undefined directive` 오류 원인 파악 및 해결. (현재는 `ListAllCandidates` 쿼리 대신 직분별 개별 조회를 사용하는 우회책 적용 중)
-2. **잔여 린트 에러 1건 수정**: 프로젝트 전체 린트 중 `Unexpected any` 에러 1건(위치 추적 필요) 수정.
-3. **최종 통합 테스트**: 어드민 페이지 및 투표 화면의 전체적인 SQL 정합성 최종 점검.
-
-## 5. 유용한 스크립트
-- `scripts/copy_and_resize.mjs`: 이미지 리사이징 및 복사.
-- `scripts/upload_candidates.js`: (구버전) DB 업로드 스크립트.
-- `src/utils/hangul.ts`: 한글 초성 검색 유틸리티.
+## 4. 실행 및 배포 가이드라인
+- **로컬 구동**: `npm run dev`
+- **배포망 적용**: 전체적으로 모든 코드를 Build & Type Checking 통과 후 `master` 브랜치에 올려놨습니다. Vercel 플랫폼을 통해 자동 통합 배포가 이뤄집니다.
+- **스키마/쿼리 수정 시 주의사항**: `dataconnect/vote/connector.gql` 등 백엔드 쿼리를 수동으로 건드렸다면 무조건 터미널에서 `firebase dataconnect:sdk:generate` 를 실행해 클라이언트 함수(SDK)를 리빌드해야 타입 호환성 오류가 나지 않습니다.
