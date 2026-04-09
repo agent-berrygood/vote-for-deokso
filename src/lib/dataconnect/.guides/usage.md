@@ -14,11 +14,14 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { getSystemSetting, getVoterByInfo, getElectionSettings, listCandidatesByPosition, listCandidatesByRound, submitVote, updateCandidateVote, listVoters, createVoter, updateVoter } from '@vote/dataconnect';
+import { getSystemSetting, listSurveys, getVoterByInfo, getElectionSettings, listCandidatesByPosition, listCandidatesByRound, submitVote, updateCandidateVote, listVoters, createVoter } from '@vote/dataconnect';
 
 
 // Operation GetSystemSetting:  For variables, look at type GetSystemSettingVars in ../index.d.ts
 const { data } = await GetSystemSetting(dataConnect, getSystemSettingVars);
+
+// Operation ListSurveys: 
+const { data } = await ListSurveys(dataConnect);
 
 // Operation GetVoterByInfo:  For variables, look at type GetVoterByInfoVars in ../index.d.ts
 const { data } = await GetVoterByInfo(dataConnect, getVoterByInfoVars);
@@ -43,9 +46,6 @@ const { data } = await ListVoters(dataConnect, listVotersVars);
 
 // Operation CreateVoter:  For variables, look at type CreateVoterVars in ../index.d.ts
 const { data } = await CreateVoter(dataConnect, createVoterVars);
-
-// Operation UpdateVoter:  For variables, look at type UpdateVoterVars in ../index.d.ts
-const { data } = await UpdateVoter(dataConnect, updateVoterVars);
 
 
 ```

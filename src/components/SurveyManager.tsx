@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { createSurveyAction, updateSystemServiceAction } from '@/app/actions/data';
+import { createSurveyAction, updateSystemServiceAction, listSurveysAction } from '@/app/actions/data';
 
 interface SurveyManagerProps {
     systemId: string;
@@ -38,6 +38,18 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [loading, setLoading] = useState(false);
+    const [surveys, setSurveys] = useState<any[]>([]);
+
+    const fetchSurveys = async () => {
+        const res = await listSurveysAction();
+        if (res.success && res.data) {
+            setSurveys(res.data);
+        }
+    };
+
+    useEffect(() => {
+        fetchSurveys();
+    }, []);
 
     const handleCreateSurvey = async () => {
         if (!newTitle.trim()) return;
@@ -51,6 +63,7 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                 setCreateDialogOpen(false);
                 setNewTitle('');
                 setNewDesc('');
+                fetchSurveys();
                 onRefresh();
             } else {
                 alert(res.error || '설문 생성 실패');
@@ -101,6 +114,41 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
             <Alert severity="info" sx={{ mb: 2 }}>
                 현재 활성화된 설문 ID: <strong>{activeSurveyId || '없음'}</strong>
             </Alert>
+
+            <List sx={{ bgcolor: 'background.paper', borderRadius: 2, mb: 2, border: '1px solid #ddd' }}>
+                {surveys.length === 0 ? (
+                    <ListItem>
+                        <ListItemText primary="생성된 설문이 없습니다." />
+                    </ListItem>
+                ) : (
+                    surveys.map((sy) => (
+                        <ListItem 
+                            key={sy.id} 
+                            divider 
+                            sx={{ bgcolor: sy.id === activeSurveyId ? '#e8f5e9' : 'inherit' }}
+                        >
+                            <ListItemText 
+                                primary={<strong>{sy.title}</strong>} 
+                                secondary={sy.description} 
+                            />
+                            {sy.id !== activeSurveyId && (
+                                <Button 
+                                    variant="outlined" 
+                                    color="success" 
+                                    size="small" 
+                                    onClick={() => handleSetActiveSurvey(sy.id)}
+                                    disabled={loading}
+                                >
+                                    🟢 이 설문 활성화
+                                </Button>
+                            )}
+                            {sy.id === activeSurveyId && (
+                                <Chip label="✅ 활성 상태" color="success" size="small" />
+                            )}
+                        </ListItem>
+                    ))
+                )}
+            </List>
 
             <Typography variant="body2" color="text.secondary">
                 * 문항 추가 및 상세 관리는 설문 생성 후 해당 항목의 '상세보기'를 통해 가능합니다 (곧 업데이트 예정).

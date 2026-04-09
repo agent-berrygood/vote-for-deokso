@@ -10,7 +10,16 @@ query GetSystemSetting($id: String!) @auth(level: PUBLIC) {
   }
 }
 
-
+query ListSurveys @auth(level: PUBLIC) {
+  surveys(orderBy: [{ id: DESC }]) {
+    id
+    title
+    description
+    isActive
+    startDate
+    endDate
+  }
+}
 query GetVoterByInfo($electionId: String!, $phone: String!, $birthdate: String!) @auth(level: NO_ACCESS) {
   voters(where: {
     electionId: { eq: $electionId },

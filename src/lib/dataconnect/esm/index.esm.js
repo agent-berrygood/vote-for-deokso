@@ -17,6 +17,17 @@ export function getSystemSetting(dcOrVars, vars) {
   return executeQuery(getSystemSettingRef(dcOrVars, vars));
 }
 
+export const listSurveysRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListSurveys');
+}
+listSurveysRef.operationName = 'ListSurveys';
+
+export function listSurveys(dc) {
+  return executeQuery(listSurveysRef(dc));
+}
+
 export const getVoterByInfoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

@@ -354,6 +354,17 @@ export interface ListElectionsData {
   } & Election_Key)[];
 }
 
+export interface ListSurveysData {
+  surveys: ({
+    id: UUIDString;
+    title: string;
+    description?: string | null;
+    isActive?: boolean | null;
+    startDate?: TimestampString | null;
+    endDate?: TimestampString | null;
+  } & Survey_Key)[];
+}
+
 export interface ListVoterParticipationsData {
   voterParticipations: ({
     voterId: UUIDString;
@@ -518,6 +529,18 @@ export const getSystemSettingRef: GetSystemSettingRef;
 
 export function getSystemSetting(vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
 export function getSystemSetting(dc: DataConnect, vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+
+interface ListSurveysRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListSurveysData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListSurveysData, undefined>;
+  operationName: string;
+}
+export const listSurveysRef: ListSurveysRef;
+
+export function listSurveys(): QueryPromise<ListSurveysData, undefined>;
+export function listSurveys(dc: DataConnect): QueryPromise<ListSurveysData, undefined>;
 
 interface GetVoterByInfoRef {
   /* Allow users to create refs without passing in DataConnect */

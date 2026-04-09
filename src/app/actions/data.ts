@@ -31,6 +31,7 @@ import {
     updateSystemService as updateSystemServiceSDK,
     getMemberByInfo as getMemberByInfoSDK,
     getSurvey as getSurveySDK,
+    listSurveys as listSurveysSDK,
     getVoterByInfo as getVoterByInfoSDK
 } from '@/lib/dataconnect';
 
@@ -281,3 +282,12 @@ export async function createSurveyAction(vars: { title: string, description?: st
     }
 }
 
+export async function listSurveysAction() {
+    try {
+        const res = await listSurveysSDK();
+        return { success: true, data: res.data.surveys };
+    } catch (error) {
+        console.error('listSurveysAction error:', error);
+        return { success: false, error: '설문 목록을 불러오지 못했습니다.' };
+    }
+}

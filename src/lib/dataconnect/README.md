@@ -9,6 +9,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*Connecting to the local Emulator*](#connecting-to-the-local-emulator)
 - [**Queries**](#queries)
   - [*GetSystemSetting*](#getsystemsetting)
+  - [*ListSurveys*](#listsurveys)
   - [*GetVoterByInfo*](#getvoterbyinfo)
   - [*GetElectionSettings*](#getelectionsettings)
   - [*ListCandidatesByPosition*](#listcandidatesbyposition)
@@ -203,6 +204,104 @@ console.log(data.systemSetting);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.systemSetting);
+});
+```
+
+## ListSurveys
+You can execute the `ListSurveys` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+listSurveys(): QueryPromise<ListSurveysData, undefined>;
+
+interface ListSurveysRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListSurveysData, undefined>;
+}
+export const listSurveysRef: ListSurveysRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+listSurveys(dc: DataConnect): QueryPromise<ListSurveysData, undefined>;
+
+interface ListSurveysRef {
+  ...
+  (dc: DataConnect): QueryRef<ListSurveysData, undefined>;
+}
+export const listSurveysRef: ListSurveysRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listSurveysRef:
+```typescript
+const name = listSurveysRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ListSurveys` query has no variables.
+### Return Type
+Recall that executing the `ListSurveys` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ListSurveysData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ListSurveysData {
+  surveys: ({
+    id: UUIDString;
+    title: string;
+    description?: string | null;
+    isActive?: boolean | null;
+    startDate?: TimestampString | null;
+    endDate?: TimestampString | null;
+  } & Survey_Key)[];
+}
+```
+### Using `ListSurveys`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, listSurveys } from '@vote/dataconnect';
+
+
+// Call the `listSurveys()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await listSurveys();
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await listSurveys(dataConnect);
+
+console.log(data.surveys);
+
+// Or, you can use the `Promise` API.
+listSurveys().then((response) => {
+  const data = response.data;
+  console.log(data.surveys);
+});
+```
+
+### Using `ListSurveys`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, listSurveysRef } from '@vote/dataconnect';
+
+
+// Call the `listSurveysRef()` function to get a reference to the query.
+const ref = listSurveysRef();
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = listSurveysRef(dataConnect);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.surveys);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveys);
 });
 ```
 
