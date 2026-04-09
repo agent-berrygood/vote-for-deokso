@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { signToken } from '@/lib/auth';
-import { getVoterByInfo, getElectionSettings, createAuditLog } from '@/lib/dataconnect';
+import { getVoterByInfoAction, getElectionSettingsAction, createAuditLogAction } from './data';
 
 const POSITION_ORDER = ['장로', '안수집사', '권사'] as const;
 
@@ -27,9 +27,10 @@ export async function verifyVoterInfo(
             return { success: false, message: '모든 정보를 입력해주세요.' };
         }
 
-        // 1. Data Connect 선거인 명부 대조
-        const res = await getVoterByInfo({ electionId, phone: cleanPhone, birthdate: cleanBirthdate });
-        const voters = res.data.voters;
+        // 1. Data Connect 선거인 명부 대조 (Action)
+        const res = await getVoterByInfoAction({ electionId, phone: cleanPhone, birthdate: cleanBirthdate });
+        if (!res.success || !res.data) throw new Error(res.error || '선거인 데이터를 불러오지 못했습니다.');
+        const voters = res.data;
 
         if (!voters || voters.length === 0) {
             return { success: false, message: '등록된 선거인 정보가 없습니다. (전화번호, 생년월일 확인)' };
@@ -50,9 +51,10 @@ export async function verifyVoterInfo(
         const participated: Record<string, boolean> = {};
         // (참고: participations 관계 쿼리는 임시 비활성화 상태이므로 기본값 또는 별도 쿼리 필요)
 
-        // 3. 현재 선거 설정 조회
-        const settingsRes = await getElectionSettings({ electionId });
-        const electionData = settingsRes.data.election;
+        // 3. 현재 선거 설정 조회 (Action)
+        const settingsRes = await getElectionSettingsAction(electionId);
+        if (!settingsRes.success || !settingsRes.data) throw new Error(settingsRes.error || '선거 설정을 불러오지 못했습니다.');
+        const electionData = settingsRes.data;
         
         const allVotesCompleted = false; // Initial migration state
 
@@ -224,7 +226,7 @@ export async function loginWithMasterPasskey(
     }
 
     try {
-        await createAuditLog({
+        await createAuditLogAction({
             electionId: electionId,
             actionType: 'PASSKEY_BYPASS',
             voterId: verifyResult.voterId,
@@ -233,7 +235,7 @@ export async function loginWithMasterPasskey(
             ipAddress: 'server_action'
         });
     } catch (auditError) {
-        console.error("Failed to write audit log to Data Connect:", auditError);
+        console.error("Failed to write audit log via Action:", auditError);
     }
 
     return {

@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Voter } from '@/types';
 import { useElection } from '@/hooks/useElection';
 import {
-    listVoters,
-    listVoterParticipations,
-    createVoter,
-    updateVoter,
-    deleteVoter,
-    createAdminLog
-} from '@/lib/dataconnect';
+    listVotersAction,
+    listVoterParticipationsAction,
+    createVoterAction,
+    updateVoterAction,
+    deleteVoterAction,
+    createAdminLogAction
+} from '@/app/actions/data';
 import {
     Box,
     Paper,
@@ -90,17 +90,16 @@ export default function VoterManager() {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            // 1. Fetch Basic Voter List (SQL)
-            const vRes = await listVoters({ electionId: activeElectionId });
-            const loadedVoters = vRes.data.voters as Voter[];
+            const vRes = await listVotersAction(activeElectionId);
+            if (!vRes.success || !vRes.data) throw new Error(vRes.error || '선거인 데이터를 불러오지 못했습니다.');
+            const loadedVoters = vRes.data as Voter[];
 
-            // 2. Fetch Participations (SQL)
-            const pRes = await listVoterParticipations({ electionId: activeElectionId });
-            const pList = pRes.data.voterParticipations;
+            const pRes = await listVoterParticipationsAction(activeElectionId);
+            if (!pRes.success || !pRes.data) throw new Error(pRes.error || '참여 데이터를 불러오지 못했습니다.');
+            const pList = pRes.data;
 
-            // 3. Map Participations to Voters for UI compatibility
             const participationMap: Record<string, Record<string, boolean>> = {};
-            pList.forEach(p => {
+            pList.forEach((p: any) => {
                 const voterId = p.voterId;
                 if (!participationMap[voterId]) participationMap[voterId] = {};
                 participationMap[voterId][`${p.position}_${p.roundNumber}`] = true;
@@ -135,15 +134,16 @@ export default function VoterManager() {
         setAdding(true);
         try {
             const authKey = generateAuthKey();
-            await createVoter({
+            const createRes = await createVoterAction({
                 electionId: activeElectionId,
                 name: newName.trim(),
                 phone: newPhone.trim(),
                 birthdate: newBirthdate.trim(),
                 authKey: authKey
             });
+            if (!createRes.success) throw new Error(createRes.error);
 
-            await createAdminLog({
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'ADD_SINGLE_VOTER',
                 description: `선거인 '${newName}' 직접 추가 (인증키: ${authKey})`
@@ -182,14 +182,15 @@ export default function VoterManager() {
 
         setUpdating(true);
         try {
-            await updateVoter({
+            const updateRes = await updateVoterAction({
                 id: editTarget.id,
                 name: editName.trim(),
                 phone: editPhone.trim(),
                 birthdate: editBirthdate.trim()
             });
+            if (!updateRes.success) throw new Error(updateRes.error);
 
-            await createAdminLog({
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
                 description: `선거인 정보 수정: '${editTarget.name}' -> '${editName}'`
@@ -210,8 +211,9 @@ export default function VoterManager() {
         if (!activeElectionId || !deleteTarget || !deleteTarget.id) return;
 
         try {
-            await deleteVoter({ id: deleteTarget.id });
-            await createAdminLog({
+            const deleteRes = await deleteVoterAction({ id: deleteTarget.id });
+            if (!deleteRes.success) throw new Error(deleteRes.error);
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
                 description: `선거인 '${deleteTarget.name}' (${deleteTarget.authKey}) 삭제`
@@ -259,7 +261,7 @@ export default function VoterManager() {
 
             XLSX.writeFile(wb, filename);
 
-            await createAdminLog({
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'DOWNLOAD_VOTERS',
                 description: `선거인명부 엑셀 다운로드 (${voters.length}명)`

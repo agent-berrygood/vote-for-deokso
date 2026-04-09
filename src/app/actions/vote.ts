@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
-import { getElectionSettings, submitVote } from '@/lib/dataconnect';
+import { getElectionSettingsAction, submitVoteSQLAction } from './data';
 
 const POSITION_ORDER = ['장로', '안수집사', '권사'] as const;
 
@@ -23,9 +23,10 @@ export async function submitVoteAction(votes: Record<string, string[]>) {
 
         const { voterId, electionId } = payload;
 
-        // 2. 선거 설정 가져오기 (Data Connect)
-        const settingsRes = await getElectionSettings({ electionId: electionId as string });
-        const electionData = settingsRes.data.election;
+        // 2. 선거 설정 가져오기 (Action)
+        const settingsRes = await getElectionSettingsAction(electionId as string);
+        if (!settingsRes.success) throw new Error(settingsRes.error);
+        const electionData = settingsRes.data;
 
         if (!electionData) {
             return { success: false, message: '선거 설정을 찾을 수 없습니다.' };
@@ -46,13 +47,14 @@ export async function submitVoteAction(votes: Record<string, string[]>) {
             const selectedForPos = votes[pos] || [];
             if (selectedForPos.length === 0) continue;
 
-            // 투표 참여 기록 생성 (Upsert)
-            await submitVote({
+            // 투표 참여 기록 생성 (Upsert Action)
+            const voteRes = await submitVoteSQLAction({
                 voterId: voterId as string,
                 electionId: electionId as string,
                 position: pos,
                 round: 1 // Default round for migration
             });
+            if (!voteRes.success) throw new Error(voteRes.error);
 
             // 후보자 득표수 증가는 추후 PostgreSQL 트리거 또는 
             // 별도 Increment 로직을 통해 처리하도록 아키텍처 구성 가능

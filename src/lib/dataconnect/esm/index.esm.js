@@ -302,4 +302,13 @@ listAllCandidatesRef.operationName = 'ListAllCandidates';
 export function listAllCandidates(dcOrVars, vars) {
   return executeQuery(listAllCandidatesRef(dcOrVars, vars));
 }
+export const createAuditLogRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateAuditLog', inputVars);
+}
+createAuditLogRef.operationName = 'CreateAuditLog';
 
+export function createAuditLog(dcOrVars, vars) {
+  return executeMutation(createAuditLogRef(dcOrVars, vars));
+}

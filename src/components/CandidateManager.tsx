@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { listAllCandidates, deleteCandidate, updateCandidate } from '@/lib/dataconnect';
+import { 
+    listAllCandidatesAction, 
+    deleteCandidateAction, 
+    updateCandidateAction,
+    createAdminLogAction 
+} from '@/app/actions/data';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 import imageCompression from 'browser-image-compression';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
 import { useElection } from '@/hooks/useElection';
-import { logAdminAction } from '@/lib/adminLogger';
 import {
     Box,
     Paper,
@@ -44,10 +48,11 @@ export default function CandidateManager() {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            const res = await listAllCandidates({ electionId: activeElectionId });
-            const allCandidates = res.data.candidates as Candidate[];
+            const res = await listAllCandidatesAction(activeElectionId);
+            if (!res.success || !res.data) throw new Error(res.error || '데이터를 불러오지 못했습니다.');
+            const allCandidates = res.data as Candidate[];
             
-            // Sort by name (keeping the current UI behavior)
+            // Sort by name
             const sorted = [...allCandidates].sort((a, b) => a.name.localeCompare(b.name));
             setCandidates(sorted);
         } catch (err) {
@@ -67,12 +72,12 @@ export default function CandidateManager() {
         if (!activeElectionId || !deleteTarget || !deleteTarget.id) return;
 
         try {
-            // Delete from SQL
-            await deleteCandidate({ id: deleteTarget.id });
+            // Delete from SQL (Action)
+            const res = await deleteCandidateAction({ id: deleteTarget.id });
+            if (!res.success) throw new Error(res.error);
 
-            // Log action
-            await logAdminAction({
-                adminId: 'system',
+            // Log action (Action)
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'DELETE_CANDIDATE',
                 description: `'${deleteTarget.name}' 후보 삭제(사퇴) 처리`
@@ -110,12 +115,13 @@ export default function CandidateManager() {
             await uploadBytes(storageRef, compressedFile);
             const downloadURL = await getDownloadURL(storageRef);
 
-            // Update SQL DB
-            await updateCandidate({ 
+            // Update SQL DB (Action)
+            const upRes = await updateCandidateAction({ 
                 id: candidateId, 
                 name: candidate.name,
                 photoUrl: downloadURL 
             });
+            if (!upRes.success) throw new Error(upRes.error);
 
             // Update local state
             setCandidates(prev => prev.map(c =>
@@ -189,11 +195,12 @@ export default function CandidateManager() {
                         await uploadBytes(storageRef, compressedFile);
                         const downloadURL = await getDownloadURL(storageRef);
 
-                        await updateCandidate({ 
+                        const upRes = await updateCandidateAction({ 
                             id: candidate.id, 
                             name: candidate.name,
                             photoUrl: downloadURL 
                         });
+                        if (!upRes.success) throw new Error(upRes.error);
 
                         // Update local state immediately
                         setCandidates(prev => prev.map(c =>
@@ -293,7 +300,7 @@ export default function CandidateManager() {
                                 <ListItem>
                                     <ListItemAvatar>
                                         <Avatar
-                                            src={candidate.photoUrl || `/images/candidates/${encodeURIComponent(candidate.name)}.jpg`}
+                                            src={candidate.photoUrl ?? undefined}
                                             alt={candidate.name}
                                             imgProps={{ onError: (e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image'; } }}
                                         >

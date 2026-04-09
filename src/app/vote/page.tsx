@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { getElectionSettings, listCandidatesByRound } from '@/lib/dataconnect';
+import { getElectionSettingsAction, listCandidatesByRoundAction } from '@/app/actions/data';
 import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
 import { submitVoteAction } from '@/app/actions/vote';
@@ -41,7 +41,7 @@ const POSITION_ORDER = ['장로', '안수집사', '권사'];
 const TABS = [...POSITION_ORDER, '최종 확인'];
 
 // Separate component to handle image error state independently
-const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string }) => {
+const CandidateImage = ({ name, photoUrl }: { name: string, photoUrl?: string | null }) => {
     const [hasError, setHasError] = useState(false);
     const initialSrc = photoUrl || `/images/candidates/${encodeURIComponent(name)}.jpg`;
 
@@ -167,13 +167,13 @@ export default function VotePage() {
         // Initialize Data
         const initData = async () => {
             try {
-                // Fetch Settings using Data Connect
-                const settingsRes = await getElectionSettings({ electionId: activeElectionId });
+                // Fetch Settings using Data Connect Server Action
+                const settingsRes = await getElectionSettingsAction(activeElectionId);
                 
                 let currentRounds: { [key: string]: number } = { '장로': 1, '권사': 1, '안수집사': 1 };
 
-                if (settingsRes && settingsRes.data && settingsRes.data.election) {
-                    const settings = settingsRes.data.election;
+                if (settingsRes.success && settingsRes.data) {
+                    const settings = settingsRes.data;
                     if (settings.maxVotes) {
                         setMaxVotesMap(typeof settings.maxVotes === 'number'
                             ? { '장로': settings.maxVotes, '권사': settings.maxVotes, '안수집사': settings.maxVotes }
@@ -194,18 +194,14 @@ export default function VotePage() {
                     setError('선거 설정을 불러올 수 없습니다. 기본 설정으로 진행합니다.');
                 }
 
-                // Fetch Candidates for each position using Data Connect
+                // Fetch Candidates for each position using Data Connect Server Action
                 const loadedCandidates: Candidate[] = [];
                 for (const position of POSITION_ORDER) {
                     const round = currentRounds[position] || 1;
-                    const candidatesRes = await listCandidatesByRound({
-                        electionId: activeElectionId,
-                        position: position,
-                        round: round,
-                    });
+                    const candidatesRes = await listCandidatesByRoundAction(activeElectionId, position, round);
                     
-                    if (candidatesRes && candidatesRes.data && candidatesRes.data.candidates) {
-                        const candidatesFromDB = candidatesRes.data.candidates.map(c => ({
+                    if (candidatesRes.success && candidatesRes.data) {
+                        const candidatesFromDB = candidatesRes.data.map((c: any) => ({
                             ...c,
                             birthdate: c.birthdate ?? undefined,
                             photoUrl: c.photoUrl ?? '',
@@ -358,12 +354,12 @@ export default function VotePage() {
             const bNum = b.candidateNumber;
 
             // 둘 다 candidateNumber 있으면 오름차순 우선 정렬
-            if (aNum !== undefined && bNum !== undefined) {
+            if (aNum != null && bNum != null) {
                 return aNum - bNum;
             }
             // 한쪽만 있으면 해당 후보 우선
-            if (aNum !== undefined) return -1;
-            if (bNum !== undefined) return 1;
+            if (aNum != null) return -1;
+            if (bNum != null) return 1;
 
             // 둘 다 없으면 기존 정렬 로직으로 폴백
             if (isRound2) {
@@ -471,7 +467,7 @@ export default function VotePage() {
                                                 return (
                                                     <ListItem key={c.id}>
                                                         <ListItemAvatar>
-                                                            <Avatar src={c.photoUrl} alt={c.name}><PersonIcon /></Avatar>
+                                                            <Avatar src={c.photoUrl ?? undefined} alt={c.name}><PersonIcon /></Avatar>
                                                         </ListItemAvatar>
                                                         <ListItemText
                                                             primary={rank !== undefined ? `[기호 ${rank}번] ${c.name} (${calculateAge(c.birthdate, c.age)}세)` : `${c.name} (${calculateAge(c.birthdate, c.age)}세)`}
@@ -532,7 +528,7 @@ export default function VotePage() {
                                             onClick={() => handleToggleVote(candidate.id!, currentPosition)}
                                         >
                                             <Box sx={{ width: '35%', display: 'flex', flexDirection: 'column', borderRight: '1px solid #f0f0f0' }}>
-                                                <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl} />
+                                                <CandidateImage name={candidate.name} photoUrl={candidate.photoUrl ?? undefined} />
                                                 <Box sx={{ p: 1, textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', bgcolor: isSelected ? '#e3f2fd' : 'transparent' }}>
                                                     <Typography variant="subtitle2" fontWeight="bold">
                                                         {candidate.name}

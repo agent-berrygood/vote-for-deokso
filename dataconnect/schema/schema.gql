@@ -1,25 +1,22 @@
 # Firebase Data Connect Voting System Schema
 
-# 시스템 전체 설정 테이블
 type SystemSetting @table(key: "id") {
   id: String!
   activeElection: Election!
 }
 
-# 선거 정보 테이블 (Election)
 type Election @table(key: "id") {
   id: String!
   name: String
   maxVotes: Int!
-  rounds: String # JSON format: {"장로": 2, "권사": 1, ...}
+  rounds: String
   roundTitle: String
   startDate: Timestamp
   endDate: Timestamp
 }
 
-# 후보자 정보 테이블 (Candidate)
 type Candidate @table(key: "id") {
-  id: String!
+  id: UUID! @default(expr: "uuidV4()")
   election: Election!
   name: String!
   position: String!
@@ -34,26 +31,26 @@ type Candidate @table(key: "id") {
   voteCount: Int! @default(value: 0)
 }
 
-# 선거인 정보 테이블 (Voter)
 type Voter @table(key: "id") {
-  id: String!
+  id: UUID! @default(expr: "uuidV4()")
   election: Election!
   name: String!
-  authKey: String! # 인증용 고유 키 (인덱스 필요)
+  authKey: String! 
   phone: String
   birthdate: String
 }
 
-# 선거인 참여 기록
-type VoterParticipation @table {
+type VoterParticipation @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
   voter: Voter!
+  election: Election!
   position: String!
   roundNumber: Int!
   votedAt: Timestamp! @default(expr: "request.time")
 }
 
-# 관리자 활동 로그 (시스템 설정 변경, 업로드 등)
-type AdminLog @table {
+type AdminLog @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
   electionId: String!
   adminId: String
   actionType: String!
@@ -61,9 +58,8 @@ type AdminLog @table {
   timestamp: Timestamp! @default(expr: "request.time")
 }
 
-# 투표 감사 로그 (패스키 사용 등 민감 액션)
 type AuditLog @table(key: "id") {
-  id: String!
+  id: UUID! @default(expr: "uuidV4()")
   electionId: String!
   voterId: String
   voterName: String

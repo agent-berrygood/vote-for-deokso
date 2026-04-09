@@ -36,6 +36,19 @@ export interface CreateAdminLogVariables {
   description: string;
 }
 
+export interface CreateAuditLogData {
+  auditLog_insert: AuditLog_Key;
+}
+
+export interface CreateAuditLogVariables {
+  electionId: string;
+  voterId?: string | null;
+  voterName?: string | null;
+  actionType: string;
+  approvedBy?: string | null;
+  ipAddress?: string | null;
+}
+
 export interface CreateCandidateData {
   candidate_insert: Candidate_Key;
 }
@@ -618,6 +631,16 @@ export const createAdminLogRef: CreateAdminLogRef;
 
 export function createAdminLog(vars: CreateAdminLogVariables): MutationPromise<CreateAdminLogData, CreateAdminLogVariables>;
 export function createAdminLog(dc: DataConnect, vars: CreateAdminLogVariables): MutationPromise<CreateAdminLogData, CreateAdminLogVariables>;
+
+interface CreateAuditLogRef {
+  (vars: CreateAuditLogVariables): MutationRef<CreateAuditLogData, CreateAuditLogVariables>;
+  (dc: DataConnect, vars: CreateAuditLogVariables): MutationRef<CreateAuditLogData, CreateAuditLogVariables>;
+  operationName: string;
+}
+export const createAuditLogRef: CreateAuditLogRef;
+
+export function createAuditLog(vars: CreateAuditLogVariables): MutationPromise<CreateAuditLogData, CreateAuditLogVariables>;
+export function createAuditLog(dc: DataConnect, vars: CreateAuditLogVariables): MutationPromise<CreateAuditLogData, CreateAuditLogVariables>;
 
 interface CreateElectionRef {
   /* Allow users to create refs without passing in DataConnect */

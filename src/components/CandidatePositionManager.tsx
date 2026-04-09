@@ -5,16 +5,16 @@ import { Candidate } from '@/types';
 import { calculateAge } from '@/utils/age';
 import { useElection } from '@/hooks/useElection';
 import {
-    listCandidatesByPosition,
-    createCandidate,
-    updateCandidate,
-    deleteCandidate,
-    deleteCandidatesByRound,
-    getResultsByRound,
-    getElectionSettings,
-    createAdminLog,
-    listVoterParticipations
-} from '@/lib/dataconnect';
+    getElectionSettingsAction,
+    listCandidatesByPositionAction,
+    createCandidateAction,
+    updateCandidateAction,
+    deleteCandidateAction,
+    deleteCandidatesByRoundAction,
+    getResultsByRoundAction,
+    listVoterParticipationsAction,
+    createAdminLogAction
+} from '@/app/actions/data';
 import {
     Box,
     Paper,
@@ -94,8 +94,9 @@ export default function CandidatePositionManager({ position }: Props) {
         if (!activeElectionId) return;
         setLoading(true);
         try {
-            const res = await listCandidatesByPosition({ electionId: activeElectionId, position });
-            setCandidates(res.data.candidates as Candidate[]);
+            const res = await listCandidatesByPositionAction(activeElectionId, position);
+            if (!res.success) throw new Error(res.error);
+            setCandidates(res.data as Candidate[]);
         } catch (err) {
             console.error("Error fetching SQL candidates:", err);
             setMessage({ type: 'error', text: '후보자 목록을 불러오지 못했습니다.' });
@@ -119,7 +120,7 @@ export default function CandidatePositionManager({ position }: Props) {
         setAdding(true);
         try {
             const parsedCandNum = newCandidateNumber.trim() ? parseInt(newCandidateNumber.trim(), 10) : undefined;
-            await createCandidate({
+            const res = await createCandidateAction({
                 electionId: activeElectionId,
                 name: newName.trim(),
                 position: position,
@@ -130,8 +131,9 @@ export default function CandidatePositionManager({ position }: Props) {
                 volunteerInfo: newVolunteer.trim(),
                 candidateNumber: parsedCandNum
             });
+            if (!res.success) throw new Error(res.error);
 
-            await createAdminLog({
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'ADD_SINGLE_CANDIDATE',
                 description: `'${position}' 후보자 '${newName}' SQL 추가`
@@ -153,8 +155,9 @@ export default function CandidatePositionManager({ position }: Props) {
         setLoading(true);
         try {
             // 1. Get Election Config
-            const settingsRes = await getElectionSettings({ electionId: activeElectionId });
-            const roundsJson = JSON.parse(settingsRes.data.election?.rounds || '{}');
+            const settingsRes = await getElectionSettingsAction(activeElectionId);
+            if (!settingsRes.success || !settingsRes.data) throw new Error(settingsRes.error || '데이터를 불러오지 못했습니다.');
+            const roundsJson = JSON.parse(settingsRes.data.rounds || '{}');
             const maxVotes = roundsJson[position]?.maxVotes || 5;
 
             // 2. Get Previous Round Data
@@ -162,8 +165,9 @@ export default function CandidatePositionManager({ position }: Props) {
             const targetRound = activeTab + 1;
 
             // 3. Count Participations for Threshold
-            const participationsRes = await listVoterParticipations({ electionId: activeElectionId });
-            const ballots = participationsRes.data.voterParticipations.filter(p => p.position === position && p.roundNumber === sourceRound).length;
+            const pRes = await listVoterParticipationsAction(activeElectionId);
+            if (!pRes.success || !pRes.data) throw new Error(pRes.error || '참여 데이터를 불러오지 못했습니다.');
+            const ballots = pRes.data.filter((p: any) => p.position === position && p.roundNumber === sourceRound).length;
 
             let threshold = 999999;
             if (ballots > 0) {
@@ -171,8 +175,9 @@ export default function CandidatePositionManager({ position }: Props) {
             }
 
             // 4. Fetch Prev Results
-            const resultsRes = await getResultsByRound({ electionId: activeElectionId, position, round: sourceRound });
-            const prevCandidates = resultsRes.data.candidates;
+            const resultsRes = await getResultsByRoundAction(activeElectionId, position, sourceRound);
+            if (!resultsRes.success || !resultsRes.data) throw new Error(resultsRes.error || '결과 데이터를 불러오지 못했습니다.');
+            const prevCandidates = resultsRes.data as any[];
 
             // 5. Filter & Sort
             const notElected = prevCandidates.filter(c => (c.voteCount || 0) < threshold);
@@ -186,7 +191,7 @@ export default function CandidatePositionManager({ position }: Props) {
 
             // 6. Create Candidates (SQL Sequence)
             for (const c of selectedCandidates) {
-                await createCandidate({
+                const cRes = await createCandidateAction({
                     electionId: activeElectionId,
                     name: c.name,
                     position: c.position,
@@ -197,9 +202,10 @@ export default function CandidatePositionManager({ position }: Props) {
                     profileDesc: c.profileDesc,
                     volunteerInfo: c.volunteerInfo
                 });
+                if (!cRes.success) throw new Error(cRes.error);
             }
 
-            await createAdminLog({
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
                 description: `'${position}' ${targetRound}차 후보자 ${selectedCandidates.length}명 자동 생성`
@@ -219,8 +225,10 @@ export default function CandidatePositionManager({ position }: Props) {
     const handleDelete = async () => {
         if (!activeElectionId || !deleteTarget || !deleteTarget.id) return;
         try {
-            await deleteCandidate({ id: deleteTarget.id });
-            await createAdminLog({
+            const res = await deleteCandidateAction({ id: deleteTarget.id });
+            if (!res.success) throw new Error(res.error);
+
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'DELETE_CANDIDATE',
                 description: `'${deleteTarget.name}' (${position}) 후보 삭제`
@@ -240,8 +248,10 @@ export default function CandidatePositionManager({ position }: Props) {
         setLoading(true);
         try {
             const targetRound = activeTab + 1;
-            await deleteCandidatesByRound({ electionId: activeElectionId, position, round: targetRound });
-            await createAdminLog({
+            const res = await deleteCandidatesByRoundAction(activeElectionId, position, targetRound);
+            if (!res.success) throw new Error(res.error);
+
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'DELETE_CANDIDATE',
                 description: `'${position}' ${targetRound}차 후보자 전체 삭제`
@@ -262,7 +272,7 @@ export default function CandidatePositionManager({ position }: Props) {
         setIsSaving(true);
         try {
             const parsedCandNum = editCandidateNumber.trim() ? parseInt(editCandidateNumber.trim(), 10) : undefined;
-            await updateCandidate({
+            const res = await updateCandidateAction({
                 id: editTarget.id,
                 name: editName.trim(),
                 birthdate: editBirthdate.trim(),
@@ -272,8 +282,9 @@ export default function CandidatePositionManager({ position }: Props) {
                 round: editRound,
                 candidateNumber: parsedCandNum
             });
+            if (!res.success) throw new Error(res.error);
 
-            await createAdminLog({
+            await createAdminLogAction({
                 electionId: activeElectionId,
                 actionType: 'OTHER',
                 description: `'${editName}' (${position}) 후보 정보 수정`
@@ -307,7 +318,7 @@ export default function CandidatePositionManager({ position }: Props) {
         setEditTarget(c); setEditName(c.name); setEditBirthdate(c.birthdate || '');
         setEditDistrict(c.district || ''); setEditProfile(c.profileDesc || '');
         setEditVolunteer(c.volunteerInfo || ''); setEditRound(c.round || activeTab + 1);
-        setEditCandidateNumber(c.candidateNumber !== undefined ? String(c.candidateNumber) : '');
+        setEditCandidateNumber(c.candidateNumber != null ? String(c.candidateNumber) : '');
     };
 
     const filteredCandidates = candidates.filter(c => (c.round === activeTab + 1) && (c.name.includes(searchTerm) || c.district?.includes(searchTerm)));
@@ -349,7 +360,7 @@ export default function CandidatePositionManager({ position }: Props) {
                         <List>
                             {filteredCandidates.map(c => (
                                 <ListItem key={c.id} divider>
-                                    <ListItemAvatar><Avatar src={c.photoUrl}>{c.name[0]}</Avatar></ListItemAvatar>
+                                    <ListItemAvatar><Avatar src={c.photoUrl ?? undefined}>{c.name[0]}</Avatar></ListItemAvatar>
                                     <ListItemText primary={`${c.name} (${calculateAge(c.birthdate, 0)}세)`} secondary={`${c.district} | 기호 ${c.candidateNumber || '-'}`} />
                                     <ListItemSecondaryAction>
                                         <IconButton onClick={() => handleEditClick(c)}><EditIcon /></IconButton>

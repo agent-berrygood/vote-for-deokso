@@ -1,0 +1,215 @@
+'use server';
+
+import { 
+    getElectionSettings as getSettingsSDK,
+    listCandidatesByRound as listCandidatesSDK,
+    listVoters as listVotersSDK,
+    listAllCandidates as listAllCandidatesSDK,
+    listAuditLogs as listAuditLogsSDK,
+    listVoterParticipations as listParticipationsSDK,
+    createVoter as createVoterSDK,
+    updateVoter as updateVoterSDK,
+    deleteVoter as deleteVoterSDK,
+    createCandidate as createCandidateSDK,
+    updateCandidate as updateCandidateSDK,
+    deleteCandidate as deleteCandidateSDK,
+    deleteCandidatesByRound as deleteCandidatesByRoundSDK,
+    getResultsByRound as getResultsByRoundSDK,
+    listCandidatesByPosition as listCandidatesByPositionSDK,
+    submitVote as submitVoteSDK,
+    getVoterByInfo as getVoterByInfoSDK,
+    createAuditLog as createAuditLogSDK,
+    createAdminLog as createAdminLogSDK
+} from '@/lib/dataconnect';
+
+// --- Queries ---
+export async function getElectionSettingsAction(electionId: string) {
+    try {
+        const res = await getSettingsSDK({ electionId });
+        return { success: true, data: res.data.election };
+    } catch (error) {
+        console.error('getElectionSettingsAction error:', error);
+        return { success: false, error: '선거 설정을 불러오지 못했습니다.' };
+    }
+}
+
+export async function listCandidatesByRoundAction(electionId: string, position: string, round: number) {
+    try {
+        const res = await listCandidatesSDK({ electionId, position, round });
+        return { success: true, data: res.data.candidates };
+    } catch (error) {
+        console.error('listCandidatesByRoundAction error:', error);
+        return { success: false, error: '후보자 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function listVotersAction(electionId: string) {
+    try {
+        const res = await listVotersSDK({ electionId });
+        return { success: true, data: res.data.voters };
+    } catch (error) {
+        console.error('listVotersAction error:', error);
+        return { success: false, error: '선거인 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function listAllCandidatesAction(electionId: string) {
+    try {
+        const res = await listAllCandidatesSDK({ electionId });
+        return { success: true, data: res.data.candidates };
+    } catch (error) {
+        console.error('listAllCandidatesAction error:', error);
+        return { success: false, error: '모든 후보자 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function listVoterParticipationsAction(electionId: string) {
+    try {
+        const res = await listParticipationsSDK({ electionId });
+        return { success: true, data: res.data.voterParticipations };
+    } catch (error) {
+        console.error('listVoterParticipationsAction error:', error);
+        return { success: false, error: '투표 참여 현황을 불러오지 못했습니다.' };
+    }
+}
+
+export async function listAuditLogsAction(electionId: string) {
+    try {
+        const res = await listAuditLogsSDK({ electionId });
+        return { success: true, data: res.data.auditLogs };
+    } catch (error) {
+        console.error('listAuditLogsAction error:', error);
+        return { success: false, error: '감사 로그를 불러오지 못했습니다.' };
+    }
+}
+
+export async function getVoterByInfoAction(vars: { electionId: string, phone: string, birthdate: string }) {
+    try {
+        const res = await getVoterByInfoSDK(vars);
+        return { success: true, data: res.data.voters };
+    } catch (error) {
+        console.error('getVoterByInfoAction error:', error);
+        return { success: false, error: '선거인 정보를 조회하지 못했습니다.' };
+    }
+}
+
+export async function listCandidatesByPositionAction(electionId: string, position: string) {
+    try {
+        const res = await listCandidatesByPositionSDK({ electionId, position });
+        return { success: true, data: res.data.candidates };
+    } catch (error) {
+        console.error('listCandidatesByPositionAction error:', error);
+        return { success: false, error: '직분별 후보자 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function getResultsByRoundAction(electionId: string, position: string, round: number) {
+    try {
+        const res = await getResultsByRoundSDK({ electionId, position, round });
+        return { success: true, data: res.data.candidates };
+    } catch (error) {
+        console.error('getResultsByRoundAction error:', error);
+        return { success: false, error: '투표 결과를 불러오지 못했습니다.' };
+    }
+}
+
+// --- Mutations ---
+export async function createVoterAction(vars: any) {
+    try {
+        await createVoterSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createVoterAction error:', error);
+        return { success: false, error: '선거인 등록에 실패했습니다.' };
+    }
+}
+
+export async function updateVoterAction(vars: any) {
+    try {
+        await updateVoterSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('updateVoterAction error:', error);
+        return { success: false, error: '선거인 정보 수정에 실패했습니다.' };
+    }
+}
+
+export async function deleteVoterAction(vars: any) {
+    try {
+        await deleteVoterSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('deleteVoterAction error:', error);
+        return { success: false, error: '선거인 삭제에 실패했습니다.' };
+    }
+}
+
+export async function createCandidateAction(vars: any) {
+    try {
+        await createCandidateSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createCandidateAction error:', error);
+        return { success: false, error: '후보자 등록에 실패했습니다.' };
+    }
+}
+
+export async function updateCandidateAction(vars: any) {
+    try {
+        await updateCandidateSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('updateCandidateAction error:', error);
+        return { success: false, error: '후보자 정보 수정에 실패했습니다.' };
+    }
+}
+
+export async function deleteCandidateAction(vars: any) {
+    try {
+        await deleteCandidateSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('deleteCandidateAction error:', error);
+        return { success: false, error: '후보자 삭제에 실패했습니다.' };
+    }
+}
+
+export async function createAdminLogAction(vars: any) {
+    try {
+        await createAdminLogSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createAdminLogAction error:', error);
+        return { success: false, error: '어드민 로그 기록에 실패했습니다.' };
+    }
+}
+
+export async function createAuditLogAction(vars: any) {
+    try {
+        await createAuditLogSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createAuditLogAction error:', error);
+        return { success: false, error: '감사 로그 기록에 실패했습니다.' };
+    }
+}
+
+export async function submitVoteSQLAction(vars: { voterId: string, electionId: string, position: string, round: number }) {
+    try {
+        await submitVoteSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('submitVoteSQLAction error:', error);
+        return { success: false, error: '투표 기록 저장에 실패했습니다.' };
+    }
+}
+
+export async function deleteCandidatesByRoundAction(electionId: string, position: string, round: number) {
+    try {
+        await deleteCandidatesByRoundSDK({ electionId, position, round });
+        return { success: true };
+    } catch (error) {
+        console.error('deleteCandidatesByRoundAction error:', error);
+        return { success: false, error: '후보자 일괄 삭제에 실패했습니다.' };
+    }
+}

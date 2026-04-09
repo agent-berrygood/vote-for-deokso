@@ -330,3 +330,15 @@ exports.listAllCandidatesRef = listAllCandidatesRef;
 exports.listAllCandidates = function listAllCandidates(dcOrVars, vars) {
   return executeQuery(listAllCandidatesRef(dcOrVars, vars));
 };
+
+const createAuditLogRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateAuditLog', inputVars);
+}
+createAuditLogRef.operationName = 'CreateAuditLog';
+exports.createAuditLogRef = createAuditLogRef;
+
+exports.createAuditLog = function createAuditLog(dcOrVars, vars) {
+  return executeMutation(createAuditLogRef(dcOrVars, vars));
+};
