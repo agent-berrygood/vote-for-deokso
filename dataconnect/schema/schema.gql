@@ -3,6 +3,8 @@
 type SystemSetting @table(key: "id") {
   id: String!
   activeElection: Election!
+  activeService: String @default(value: "ELECTION") # "ELECTION" or "SURVEY"
+  activeSurveyId: String
 }
 
 type Election @table(key: "id") {
@@ -67,4 +69,40 @@ type AuditLog @table(key: "id") {
   approvedBy: String
   ipAddress: String
   timestamp: Timestamp! @default(expr: "request.time")
+}
+
+# --- NEW: 통합 교인 명부 및 설문조사 시스템 ---
+
+type Member @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  phone: String
+  birthdate: String
+  originalId: String # 파이어스토어에서 이관된 원본 ID 추적용
+}
+
+type Survey @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
+  title: String!
+  description: String
+  startDate: Timestamp
+  endDate: Timestamp
+  isActive: Boolean @default(value: true)
+}
+
+type SurveyQuestion @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
+  survey: Survey!
+  text: String!
+  type: String! # 예: "MULTIPLE_CHOICE", "TEXT"
+  options: String # JSON string (객관식 보기)
+  orderIdx: Int!
+}
+
+type SurveyResponse @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
+  survey: Survey!
+  member: Member!
+  answers: String! # JSON string (문항별 응답 내용)
+  submittedAt: Timestamp! @default(expr: "request.time")
 }

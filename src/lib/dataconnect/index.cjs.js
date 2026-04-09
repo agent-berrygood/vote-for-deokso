@@ -223,6 +223,18 @@ exports.createAdminLog = function createAdminLog(dcOrVars, vars) {
   return executeMutation(createAdminLogRef(dcOrVars, vars));
 };
 
+const createAuditLogRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateAuditLog', inputVars);
+}
+createAuditLogRef.operationName = 'CreateAuditLog';
+exports.createAuditLogRef = createAuditLogRef;
+
+exports.createAuditLog = function createAuditLog(dcOrVars, vars) {
+  return executeMutation(createAuditLogRef(dcOrVars, vars));
+};
+
 const createElectionRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -331,14 +343,74 @@ exports.listAllCandidates = function listAllCandidates(dcOrVars, vars) {
   return executeQuery(listAllCandidatesRef(dcOrVars, vars));
 };
 
-const createAuditLogRef = (dcOrVars, vars) => {
+const getMemberByInfoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'CreateAuditLog', inputVars);
+  return queryRef(dcInstance, 'GetMemberByInfo', inputVars);
 }
-createAuditLogRef.operationName = 'CreateAuditLog';
-exports.createAuditLogRef = createAuditLogRef;
+getMemberByInfoRef.operationName = 'GetMemberByInfo';
+exports.getMemberByInfoRef = getMemberByInfoRef;
 
-exports.createAuditLog = function createAuditLog(dcOrVars, vars) {
-  return executeMutation(createAuditLogRef(dcOrVars, vars));
+exports.getMemberByInfo = function getMemberByInfo(dcOrVars, vars) {
+  return executeQuery(getMemberByInfoRef(dcOrVars, vars));
+};
+
+const createMemberRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateMember', inputVars);
+}
+createMemberRef.operationName = 'CreateMember';
+exports.createMemberRef = createMemberRef;
+
+exports.createMember = function createMember(dcOrVars, vars) {
+  return executeMutation(createMemberRef(dcOrVars, vars));
+};
+
+const updateSystemServiceRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateSystemService', inputVars);
+}
+updateSystemServiceRef.operationName = 'UpdateSystemService';
+exports.updateSystemServiceRef = updateSystemServiceRef;
+
+exports.updateSystemService = function updateSystemService(dcOrVars, vars) {
+  return executeMutation(updateSystemServiceRef(dcOrVars, vars));
+};
+
+const createSurveyRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateSurvey', inputVars);
+}
+createSurveyRef.operationName = 'CreateSurvey';
+exports.createSurveyRef = createSurveyRef;
+
+exports.createSurvey = function createSurvey(dcOrVars, vars) {
+  return executeMutation(createSurveyRef(dcOrVars, vars));
+};
+
+const getSurveyRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetSurvey', inputVars);
+}
+getSurveyRef.operationName = 'GetSurvey';
+exports.getSurveyRef = getSurveyRef;
+
+exports.getSurvey = function getSurvey(dcOrVars, vars) {
+  return executeQuery(getSurveyRef(dcOrVars, vars));
+};
+
+const submitSurveyResponseRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SubmitSurveyResponse', inputVars);
+}
+submitSurveyResponseRef.operationName = 'SubmitSurveyResponse';
+exports.submitSurveyResponseRef = submitSurveyResponseRef;
+
+exports.submitSurveyResponse = function submitSurveyResponse(dcOrVars, vars) {
+  return executeMutation(submitSurveyResponseRef(dcOrVars, vars));
 };

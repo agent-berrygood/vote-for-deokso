@@ -39,13 +39,15 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 import { useElection } from '@/hooks/useElection';
+import SurveyManager from '@/components/SurveyManager';
+import { updateSystemServiceAction } from '@/app/actions/data';
 
 const generateAuthKey = () => Math.floor(1000000 + Math.random() * 9000000).toString();
 
 export default function AdminPage() {
     const router = useRouter();
 
-    const { activeElectionId, electionList, createElection, switchElection } = useElection();
+    const { activeElectionId, activeService, activeSurveyId, electionList, createElection, switchElection, refreshData } = useElection();
     const [newElectionId, setNewElectionId] = useState('');
 
     const [loading, setLoading] = useState(false);
@@ -159,6 +161,28 @@ export default function AdminPage() {
             setSettingLoading(false);
         }
     };
+
+    const handleSwitchService = async (service: 'ELECTION' | 'SURVEY') => {
+        setLoading(true);
+        try {
+            const res = await updateSystemServiceAction({
+                systemId: 'system',
+                activeService: service,
+                activeSurveyId: activeSurveyId ?? undefined
+            });
+            if (res.success) {
+                await refreshData();
+                setMessage({ type: 'success', text: `서비스 모드가 '${service}'로 전환되었습니다.` });
+            } else {
+                setMessage({ type: 'error', text: res.error || '서비스 전환 실패' });
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const handleDownloadTemplate = (type: 'candidate' | 'voter') => {
         let headers: string[] = [];
@@ -433,6 +457,30 @@ export default function AdminPage() {
 
             <Paper sx={{ p: 4, mb: 4, bgcolor: '#f0f7ff' }}>
                 <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
+                    🗳 시스템 서비스 모드 설정
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 4, p: 2, bgcolor: '#fff', borderRadius: 2, border: '1px solid #ddd' }}>
+                    <Button 
+                        variant={activeService === 'ELECTION' ? 'contained' : 'outlined'} 
+                        color="primary" 
+                        fullWidth
+                        onClick={() => handleSwitchService('ELECTION')}
+                        disabled={loading}
+                    >
+                        선거 모드 활성화
+                    </Button>
+                    <Button 
+                        variant={activeService === 'SURVEY' ? 'contained' : 'outlined'} 
+                        color="secondary" 
+                        fullWidth
+                        onClick={() => handleSwitchService('SURVEY')}
+                        disabled={loading}
+                    >
+                        설문조사 모드 활성화
+                    </Button>
+                </Box>
+
+                <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
                     🗳 선거 관리
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
@@ -583,6 +631,13 @@ export default function AdminPage() {
                     </Typography>
                 </Box>
             </Paper>
+
+            <SurveyManager 
+                systemId="system" 
+                activeSurveyId={activeSurveyId} 
+                onRefresh={refreshData} 
+            />
+
 
             <Paper sx={{ p: 4, mb: 4 }}>
                 <Typography variant="h6" gutterBottom>

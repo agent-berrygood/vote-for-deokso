@@ -1,5 +1,7 @@
 'use server';
 
+import '@/lib/firebase'; // Ensure Firebase is initialized on server-side
+
 import { 
     getElectionSettings as getSettingsSDK,
     listCandidatesByRound as listCandidatesSDK,
@@ -16,11 +18,22 @@ import {
     deleteCandidatesByRound as deleteCandidatesByRoundSDK,
     getResultsByRound as getResultsByRoundSDK,
     listCandidatesByPosition as listCandidatesByPositionSDK,
-    submitVote as submitVoteSDK,
-    getVoterByInfo as getVoterByInfoSDK,
+    createAdminLog as createAdminLogSDK,
     createAuditLog as createAuditLogSDK,
-    createAdminLog as createAdminLogSDK
+    createElection as createElectionSDK,
+    listElections as listElectionsSDK,
+    updateActiveElection as updateActiveElectionSDK,
+    deleteAllCandidates as deleteAllCandidatesSDK,
+    deleteAllVoters as deleteAllVotersSDK,
+    submitVote as submitVoteSDK,
+    createMember as createMemberSDK,
+    createSurvey as createSurveySDK,
+    updateSystemService as updateSystemServiceSDK,
+    getMemberByInfo as getMemberByInfoSDK,
+    getSurvey as getSurveySDK,
+    getVoterByInfo as getVoterByInfoSDK
 } from '@/lib/dataconnect';
+
 
 // --- Queries ---
 export async function getElectionSettingsAction(electionId: string) {
@@ -112,6 +125,28 @@ export async function getResultsByRoundAction(electionId: string, position: stri
         return { success: false, error: '투표 결과를 불러오지 못했습니다.' };
     }
 }
+
+// --- NEW Member & Survey Queries ---
+export async function getMemberByInfoAction(vars: { phone: string, birthdate: string }) {
+    try {
+        const res = await getMemberByInfoSDK(vars);
+        return { success: true, data: res.data.members };
+    } catch (error) {
+        console.error('getMemberByInfoAction error:', error);
+        return { success: false, error: '교인 정보를 조회하지 못했습니다.' };
+    }
+}
+
+export async function getSurveyAction(vars: { id: string }) {
+    try {
+        const res = await getSurveySDK({ id: vars.id });
+        return { success: true, data: res.data.survey };
+    } catch (error) {
+        console.error('getSurveyAction error:', error);
+        return { success: false, error: '설문 정보를 불러오지 못했습니다.' };
+    }
+}
+
 
 // --- Mutations ---
 export async function createVoterAction(vars: any) {
@@ -213,3 +248,36 @@ export async function deleteCandidatesByRoundAction(electionId: string, position
         return { success: false, error: '후보자 일괄 삭제에 실패했습니다.' };
     }
 }
+
+// --- NEW: Member / System / Survey Mutations ---
+
+export async function createMemberAction(vars: { name: string, phone?: string, birthdate?: string, originalId?: string }) {
+    try {
+        await createMemberSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createMemberAction error:', error);
+        return { success: false, error: '교인 등록에 실패했습니다.' };
+    }
+}
+
+export async function updateSystemServiceAction(vars: { systemId: string, activeService: string, activeSurveyId?: string }) {
+    try {
+        await updateSystemServiceSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('updateSystemServiceAction error:', error);
+        return { success: false, error: '서비스 설정 업데이트에 실패했습니다.' };
+    }
+}
+
+export async function createSurveyAction(vars: { title: string, description?: string }) {
+    try {
+        await createSurveySDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createSurveyAction error:', error);
+        return { success: false, error: '설문 생성에 실패했습니다.' };
+    }
+}
+

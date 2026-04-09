@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
-import { createVoterSession, verifyVoterInfo, loginWithMasterPasskey } from '@/app/actions/auth';
+import { createVoterSession, verifyVoterInfo, loginWithMasterPasskey, verifyMemberInfo, createSurveySession } from '@/app/actions/auth';
 
 declare global {
   interface Window {
@@ -28,7 +28,7 @@ declare global {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { activeElectionId, loading: electionLoading } = useElection();
+  const { activeElectionId, activeService, activeSurveyId, loading: electionLoading } = useElection();
 
   const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Info Input, 2: Auth Verification, 3: Master Password Bypass
 
@@ -199,40 +199,60 @@ export default function LoginPage() {
 
     try {
       // 1. 서버 액션으로 선거인 명부 확인
-      const verifyResult = await verifyVoterInfo(cleanName, phone.trim(), birthdate.trim(), activeElectionId);
+      if (activeService === 'ELECTION') {
+        const verifyResult = await verifyVoterInfo(cleanName, phone.trim(), birthdate.trim(), activeElectionId);
 
-      if (!verifyResult.success) {
-        setError(verifyResult.message || '선거인 확인에 실패했습니다.');
-        setLoading(false);
-        return;
+        if (!verifyResult.success) {
+          setError(verifyResult.message || '선거인 확인에 실패했습니다.');
+          setLoading(false);
+          return;
+        }
+
+        // 2. 모든 투표 완료 여부 확인 — 완료 시 인증문자 전송 중단
+        if (verifyResult.allVotesCompleted) {
+          setError('이미 모든 투표를 완료하셨습니다.');
+          setLoading(false);
+          return;
+        }
+
+        // 3. Send SMS via Firebase (미완료 투표가 있는 경우에만 실행)
+        const { signInWithPhoneNumber } = await import('firebase/auth');
+
+        if (!window.recaptchaVerifier) {
+          setError("보안 인증 초기화 중입니다. 잠시 후 다시 시도해주세요.");
+          setLoading(false);
+          return;
+        }
+
+        const appVerifier = window.recaptchaVerifier;
+        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+        setConfirmationResult(confirmation);
+        setStep(2);
+
+        sessionStorage.setItem('tempVoterId', verifyResult.voterId!);
+        sessionStorage.setItem('tempVoterName', cleanName);
+      } else {
+        // --- SURVEY MODE: Bypass SMS ---
+        const verifyResult = await verifyMemberInfo(cleanName, phone.trim(), birthdate.trim());
+
+        if (!verifyResult.success || !verifyResult.memberId) {
+          setError(verifyResult.message || '등록된 교인 정보가 없습니다.');
+          setLoading(false);
+          return;
+        }
+
+        const sessionResult = await createSurveySession(verifyResult.memberId, cleanName);
+        if (!sessionResult.success) {
+          setError(sessionResult.message || '인증 세션 생성 실패');
+          setLoading(false);
+          return;
+        }
+
+        sessionStorage.setItem('memberId', verifyResult.memberId);
+        sessionStorage.setItem('memberName', cleanName);
+        
+        router.push('/survey');
       }
-
-      // 2. 모든 투표 완료 여부 확인 — 완료 시 인증문자 전송 중단
-      if (verifyResult.allVotesCompleted) {
-        setError('이미 모든 투표를 완료하셨습니다.');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Send SMS via Firebase (미완료 투표가 있는 경우에만 실행)
-      const { signInWithPhoneNumber } = await import('firebase/auth');
-
-      // Ensure verifier exists (should be done in useEffect, but safe check)
-      if (!window.recaptchaVerifier) {
-        setError("보안 인증 초기화 중입니다. 잠시 후 다시 시도해주세요.");
-        setLoading(false);
-        return;
-      }
-
-      const appVerifier = window.recaptchaVerifier;
-
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      setConfirmationResult(confirmation);
-      setStep(2);
-
-      // Save voter ID for later use
-      sessionStorage.setItem('tempVoterId', verifyResult.voterId!);
-      sessionStorage.setItem('tempVoterName', cleanName);
 
     } catch (err: unknown) {
       console.error("Auth Error Object:", err);
@@ -376,7 +396,8 @@ export default function LoginPage() {
 
 
         <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.4 }}>
-          높은뜻덕소교회 <br /> 장로, 안수집사, 권사 선거
+          높은뜻덕소교회 <br /> 
+          {activeService === 'ELECTION' ? '장로, 안수집사, 권사 선거' : '전교인 설문조사'}
         </Typography>
 
         <Box sx={{ mt: 1, width: '100%' }}>
@@ -396,7 +417,7 @@ export default function LoginPage() {
             <form onSubmit={handleRequestAuth}>
               <fieldset disabled={scheduleStatus !== 'open'} style={{ border: 'none', padding: 0 }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                  선거인 본인 확인
+                  {activeService === 'ELECTION' ? '선거인 본인 확인' : '교인 본인 확인'}
                 </Typography>
                 <TextField
                   margin="normal"

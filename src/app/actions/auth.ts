@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { signToken } from '@/lib/auth';
-import { getVoterByInfoAction, getElectionSettingsAction, createAuditLogAction } from './data';
+import { getVoterByInfoAction, getElectionSettingsAction, createAuditLogAction, getMemberByInfoAction } from './data';
 
 const POSITION_ORDER = ['장로', '안수집사', '권사'] as const;
 
@@ -37,7 +37,7 @@ export async function verifyVoterInfo(
         }
 
         // 이름 공백 무시 비교
-        const voter = voters.find(v => {
+        const voter = (voters as any[]).find((v: any) => {
             const dbName = (v.name || '').replace(/\s+/g, '');
             return dbName === normalizedInputName;
         });
@@ -69,6 +69,53 @@ export async function verifyVoterInfo(
         return { success: false, message: '선거인 확인 중 오류가 발생했습니다.' };
     }
 }
+
+// --- NEW: Survey Login (Member Verification No SMS) ---
+export async function verifyMemberInfo(
+    name: string,
+    phone: string,
+    birthdate: string
+): Promise<{
+    success: boolean;
+    message?: string;
+    memberId?: string;
+}> {
+    try {
+        const normalizedInputName = name.replace(/\s+/g, '');
+        const cleanPhone = phone.trim();
+        const cleanBirthdate = birthdate.trim();
+
+        if (!normalizedInputName || !cleanPhone || !cleanBirthdate) {
+            return { success: false, message: '모든 정보를 입력해주세요.' };
+        }
+
+        const res = await getMemberByInfoAction({ phone: cleanPhone, birthdate: cleanBirthdate });
+        if (!res.success || !res.data) throw new Error(res.error || '교인 데이터를 불러오지 못했습니다.');
+        const members = res.data;
+
+        if (!members || members.length === 0) {
+            return { success: false, message: '등록된 교인 정보가 없습니다. (전화번호, 생년월일 확인)' };
+        }
+
+        const member = members.find((m: any) => {
+            const dbName = (m.name || '').replace(/\s+/g, '');
+            return dbName === normalizedInputName;
+        });
+
+        if (!member) {
+            return { success: false, message: '등록된 교인 정보가 없습니다. (이름 확인)' };
+        }
+
+        return {
+            success: true,
+            memberId: member.id,
+        };
+    } catch (error) {
+        console.error('verifyMemberInfo error:', error);
+        return { success: false, message: '교인 확인 중 오류가 발생했습니다.' };
+    }
+}
+
 
 export async function loginAdmin(password: string) {
     const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -177,6 +224,38 @@ export async function clearVoterSession() {
     cookieStore.delete('voter_token');
     return { success: true };
 }
+
+// SMS 없이 세션을 바로 발급하는 설문 전용 인증 세션 로직
+export async function createSurveySession(memberId: string, memberName: string) {
+    if (!memberId) {
+        return { success: false, message: 'Invalid session data' };
+    }
+
+    try {
+        const cookieStore = await cookies();
+        const payload = {
+            role: 'survey_member',
+            memberId,
+            memberName,
+        };
+
+        const token = await signToken(payload, '2h'); // 2 hours validity
+
+        cookieStore.set('survey_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+            maxAge: 60 * 60 * 2 // 2 hours
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to create survey session:', error);
+        return { success: false, message: '세션 생성 중 오류가 발생했습니다.' };
+    }
+}
+
 
 export async function loginWithMasterPasskey(
     name: string,

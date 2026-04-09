@@ -6,6 +6,8 @@ const SYSTEM_SETTINGS_ID = 'system';
 
 export function useElection() {
     const [activeElectionId, setActiveElectionId] = useState<string | null>(null);
+    const [activeService, setActiveService] = useState<'ELECTION' | 'SURVEY'>('ELECTION');
+    const [activeSurveyId, setActiveSurveyId] = useState<string | null>(null);
     const [electionList, setElectionList] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -21,6 +23,13 @@ export function useElection() {
                 setActiveElectionId(sysData.activeElection.id);
             } else {
                 setActiveElectionId(DEFAULT_ELECTION_ID);
+            }
+
+            if (sysData && sysData.activeService) {
+                setActiveService(sysData.activeService as 'ELECTION' | 'SURVEY');
+            }
+            if (sysData && sysData.activeSurveyId) {
+                setActiveSurveyId(sysData.activeSurveyId);
             }
 
             // 2. Fetch All Elections List
@@ -76,6 +85,8 @@ export function useElection() {
 
     return {
         activeElectionId,
+        activeService,
+        activeSurveyId,
         electionList,
         loading,
         createElection,

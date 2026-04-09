@@ -16,12 +16,12 @@ export interface AdminLog_Key {
 }
 
 export interface AuditLog_Key {
-  id: string;
+  id: UUIDString;
   __typename?: 'AuditLog_Key';
 }
 
 export interface Candidate_Key {
-  id: string;
+  id: UUIDString;
   __typename?: 'Candidate_Key';
 }
 
@@ -76,6 +76,26 @@ export interface CreateElectionVariables {
   maxVotes: number;
 }
 
+export interface CreateMemberData {
+  member_insert: Member_Key;
+}
+
+export interface CreateMemberVariables {
+  name: string;
+  phone?: string | null;
+  birthdate?: string | null;
+  originalId?: string | null;
+}
+
+export interface CreateSurveyData {
+  survey_insert: Survey_Key;
+}
+
+export interface CreateSurveyVariables {
+  title: string;
+  description?: string | null;
+}
+
 export interface CreateVoterData {
   voter_insert: Voter_Key;
 }
@@ -109,7 +129,7 @@ export interface DeleteCandidateData {
 }
 
 export interface DeleteCandidateVariables {
-  id: string;
+  id: UUIDString;
 }
 
 export interface DeleteCandidatesByRoundData {
@@ -127,7 +147,7 @@ export interface DeleteVoterData {
 }
 
 export interface DeleteVoterVariables {
-  id: string;
+  id: UUIDString;
 }
 
 export interface Election_Key {
@@ -151,9 +171,23 @@ export interface GetElectionSettingsVariables {
   electionId: string;
 }
 
+export interface GetMemberByInfoData {
+  members: ({
+    id: UUIDString;
+    name: string;
+    phone?: string | null;
+    birthdate?: string | null;
+  } & Member_Key)[];
+}
+
+export interface GetMemberByInfoVariables {
+  phone: string;
+  birthdate: string;
+}
+
 export interface GetResultsByRoundData {
   candidates: ({
-    id: string;
+    id: UUIDString;
     name: string;
     position: string;
     voteCount: number;
@@ -172,6 +206,21 @@ export interface GetResultsByRoundVariables {
   round: number;
 }
 
+export interface GetSurveyData {
+  survey?: {
+    id: UUIDString;
+    title: string;
+    description?: string | null;
+    isActive?: boolean | null;
+    startDate?: TimestampString | null;
+    endDate?: TimestampString | null;
+  } & Survey_Key;
+}
+
+export interface GetSurveyVariables {
+  id: UUIDString;
+}
+
 export interface GetSystemSettingData {
   systemSetting?: {
     id: string;
@@ -179,6 +228,8 @@ export interface GetSystemSettingData {
       id: string;
       name?: string | null;
     } & Election_Key;
+      activeService?: string | null;
+      activeSurveyId?: string | null;
   } & SystemSetting_Key;
 }
 
@@ -188,7 +239,7 @@ export interface GetSystemSettingVariables {
 
 export interface GetVoterByInfoData {
   voters: ({
-    id: string;
+    id: UUIDString;
     name: string;
     phone?: string | null;
     birthdate?: string | null;
@@ -218,7 +269,7 @@ export interface ListAdminLogsVariables {
 
 export interface ListAllCandidatesData {
   candidates: ({
-    id: string;
+    id: UUIDString;
     name: string;
     position: string;
     birthdate?: string | null;
@@ -238,7 +289,7 @@ export interface ListAllCandidatesVariables {
 
 export interface ListAuditLogsData {
   auditLogs: ({
-    id: string;
+    id: UUIDString;
     voterId?: string | null;
     voterName?: string | null;
     actionType: string;
@@ -254,7 +305,7 @@ export interface ListAuditLogsVariables {
 
 export interface ListCandidatesByPositionData {
   candidates: ({
-    id: string;
+    id: UUIDString;
     name: string;
     position: string;
     birthdate?: string | null;
@@ -275,7 +326,7 @@ export interface ListCandidatesByPositionVariables {
 
 export interface ListCandidatesByRoundData {
   candidates: ({
-    id: string;
+    id: UUIDString;
     name: string;
     position: string;
     birthdate?: string | null;
@@ -305,7 +356,7 @@ export interface ListElectionsData {
 
 export interface ListVoterParticipationsData {
   voterParticipations: ({
-    voterId: string;
+    voterId: UUIDString;
     position: string;
     roundNumber: number;
     votedAt: TimestampString;
@@ -318,7 +369,7 @@ export interface ListVoterParticipationsVariables {
 
 export interface ListVotersData {
   voters: ({
-    id: string;
+    id: UUIDString;
     name: string;
     phone?: string | null;
     birthdate?: string | null;
@@ -330,15 +381,45 @@ export interface ListVotersVariables {
   electionId: string;
 }
 
+export interface Member_Key {
+  id: UUIDString;
+  __typename?: 'Member_Key';
+}
+
+export interface SubmitSurveyResponseData {
+  surveyResponse_insert: SurveyResponse_Key;
+}
+
+export interface SubmitSurveyResponseVariables {
+  surveyId: UUIDString;
+  memberId: UUIDString;
+  answers: string;
+}
+
 export interface SubmitVoteData {
-  voterParticipation_upsert: VoterParticipation_Key;
+  voterParticipation_insert: VoterParticipation_Key;
 }
 
 export interface SubmitVoteVariables {
-  voterId: string;
+  voterId: UUIDString;
   electionId: string;
   position: string;
   round: number;
+}
+
+export interface SurveyQuestion_Key {
+  id: UUIDString;
+  __typename?: 'SurveyQuestion_Key';
+}
+
+export interface SurveyResponse_Key {
+  id: UUIDString;
+  __typename?: 'SurveyResponse_Key';
+}
+
+export interface Survey_Key {
+  id: UUIDString;
+  __typename?: 'Survey_Key';
 }
 
 export interface SystemSetting_Key {
@@ -360,7 +441,7 @@ export interface UpdateCandidateData {
 }
 
 export interface UpdateCandidateVariables {
-  id: string;
+  id: UUIDString;
   name: string;
   position?: string | null;
   round?: number | null;
@@ -377,7 +458,7 @@ export interface UpdateCandidateVoteData {
 }
 
 export interface UpdateCandidateVoteVariables {
-  candidateId: string;
+  candidateId: UUIDString;
   newCount: number;
 }
 
@@ -395,12 +476,22 @@ export interface UpdateElectionSettingsVariables {
   endDate?: TimestampString | null;
 }
 
+export interface UpdateSystemServiceData {
+  systemSetting_update?: SystemSetting_Key | null;
+}
+
+export interface UpdateSystemServiceVariables {
+  systemId: string;
+  activeService?: string | null;
+  activeSurveyId?: string | null;
+}
+
 export interface UpdateVoterData {
   voter_update?: Voter_Key | null;
 }
 
 export interface UpdateVoterVariables {
-  id: string;
+  id: UUIDString;
   name: string;
   phone?: string | null;
   birthdate?: string | null;
@@ -412,7 +503,7 @@ export interface VoterParticipation_Key {
 }
 
 export interface Voter_Key {
-  id: string;
+  id: UUIDString;
   __typename?: 'Voter_Key';
 }
 
@@ -633,7 +724,9 @@ export function createAdminLog(vars: CreateAdminLogVariables): MutationPromise<C
 export function createAdminLog(dc: DataConnect, vars: CreateAdminLogVariables): MutationPromise<CreateAdminLogData, CreateAdminLogVariables>;
 
 interface CreateAuditLogRef {
+  /* Allow users to create refs without passing in DataConnect */
   (vars: CreateAuditLogVariables): MutationRef<CreateAuditLogData, CreateAuditLogVariables>;
+  /* Allow users to pass in custom DataConnect instances */
   (dc: DataConnect, vars: CreateAuditLogVariables): MutationRef<CreateAuditLogData, CreateAuditLogVariables>;
   operationName: string;
 }
@@ -749,4 +842,76 @@ export const listAllCandidatesRef: ListAllCandidatesRef;
 
 export function listAllCandidates(vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
 export function listAllCandidates(dc: DataConnect, vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+
+interface GetMemberByInfoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetMemberByInfoVariables): QueryRef<GetMemberByInfoData, GetMemberByInfoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetMemberByInfoVariables): QueryRef<GetMemberByInfoData, GetMemberByInfoVariables>;
+  operationName: string;
+}
+export const getMemberByInfoRef: GetMemberByInfoRef;
+
+export function getMemberByInfo(vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
+export function getMemberByInfo(dc: DataConnect, vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
+
+interface CreateMemberRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateMemberVariables): MutationRef<CreateMemberData, CreateMemberVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateMemberVariables): MutationRef<CreateMemberData, CreateMemberVariables>;
+  operationName: string;
+}
+export const createMemberRef: CreateMemberRef;
+
+export function createMember(vars: CreateMemberVariables): MutationPromise<CreateMemberData, CreateMemberVariables>;
+export function createMember(dc: DataConnect, vars: CreateMemberVariables): MutationPromise<CreateMemberData, CreateMemberVariables>;
+
+interface UpdateSystemServiceRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSystemServiceVariables): MutationRef<UpdateSystemServiceData, UpdateSystemServiceVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateSystemServiceVariables): MutationRef<UpdateSystemServiceData, UpdateSystemServiceVariables>;
+  operationName: string;
+}
+export const updateSystemServiceRef: UpdateSystemServiceRef;
+
+export function updateSystemService(vars: UpdateSystemServiceVariables): MutationPromise<UpdateSystemServiceData, UpdateSystemServiceVariables>;
+export function updateSystemService(dc: DataConnect, vars: UpdateSystemServiceVariables): MutationPromise<UpdateSystemServiceData, UpdateSystemServiceVariables>;
+
+interface CreateSurveyRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateSurveyVariables): MutationRef<CreateSurveyData, CreateSurveyVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateSurveyVariables): MutationRef<CreateSurveyData, CreateSurveyVariables>;
+  operationName: string;
+}
+export const createSurveyRef: CreateSurveyRef;
+
+export function createSurvey(vars: CreateSurveyVariables): MutationPromise<CreateSurveyData, CreateSurveyVariables>;
+export function createSurvey(dc: DataConnect, vars: CreateSurveyVariables): MutationPromise<CreateSurveyData, CreateSurveyVariables>;
+
+interface GetSurveyRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSurveyVariables): QueryRef<GetSurveyData, GetSurveyVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSurveyVariables): QueryRef<GetSurveyData, GetSurveyVariables>;
+  operationName: string;
+}
+export const getSurveyRef: GetSurveyRef;
+
+export function getSurvey(vars: GetSurveyVariables): QueryPromise<GetSurveyData, GetSurveyVariables>;
+export function getSurvey(dc: DataConnect, vars: GetSurveyVariables): QueryPromise<GetSurveyData, GetSurveyVariables>;
+
+interface SubmitSurveyResponseRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: SubmitSurveyResponseVariables): MutationRef<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: SubmitSurveyResponseVariables): MutationRef<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
+  operationName: string;
+}
+export const submitSurveyResponseRef: SubmitSurveyResponseRef;
+
+export function submitSurveyResponse(vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
+export function submitSurveyResponse(dc: DataConnect, vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
 

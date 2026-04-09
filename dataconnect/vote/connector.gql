@@ -5,8 +5,11 @@ query GetSystemSetting($id: String!) @auth(level: NO_ACCESS) {
       id
       name
     }
+    activeService
+    activeSurveyId
   }
 }
+
 
 query GetVoterByInfo($electionId: String!, $phone: String!, $birthdate: String!) @auth(level: NO_ACCESS) {
   voters(where: {
@@ -301,3 +304,62 @@ query ListAllCandidates($electionId: String!) @auth(level: NO_ACCESS) {
     voteCount
   }
 }
+
+# --- NEW: 통합 교인 명부 쿼리 및 뮤테이션 ---
+
+query GetMemberByInfo($phone: String!, $birthdate: String!) @auth(level: PUBLIC) {
+  members(where: {
+    phone: { eq: $phone },
+    birthdate: { eq: $birthdate }
+  }) {
+    id
+    name
+    phone
+    birthdate
+  }
+}
+
+mutation CreateMember($name: String!, $phone: String, $birthdate: String, $originalId: String) @auth(level: PUBLIC) {
+  member_insert(data: {
+    name: $name,
+    phone: $phone,
+    birthdate: $birthdate,
+    originalId: $originalId
+  })
+}
+
+# --- NEW: 설문 시스템 관련 ---
+
+mutation UpdateSystemService($systemId: String!, $activeService: String, $activeSurveyId: String) @auth(level: PUBLIC) {
+  systemSetting_update(id: $systemId, data: {
+    activeService: $activeService,
+    activeSurveyId: $activeSurveyId
+  })
+}
+
+mutation CreateSurvey($title: String!, $description: String) @auth(level: PUBLIC) {
+  survey_insert(data: {
+    title: $title,
+    description: $description
+  })
+}
+
+query GetSurvey($id: UUID!) @auth(level: PUBLIC) {
+  survey(id: $id) {
+    id
+    title
+    description
+    isActive
+    startDate
+    endDate
+  }
+}
+
+mutation SubmitSurveyResponse($surveyId: UUID!, $memberId: UUID!, $answers: String!) @auth(level: PUBLIC) {
+  surveyResponse_insert(data: {
+    surveyId: $surveyId,
+    memberId: $memberId,
+    answers: $answers
+  })
+}
+
