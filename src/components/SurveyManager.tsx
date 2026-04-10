@@ -26,7 +26,7 @@ import { createSurveyAction, updateSystemServiceAction, listSurveysAction, delet
 interface Survey {
     id: string;
     title: string;
-    description?: string;
+    description?: string | null;
 }
 
 interface SurveyManagerProps {

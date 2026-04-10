@@ -46,7 +46,7 @@ interface Question {
     id: string;
     text: string;
     type: string;
-    options: string | null;
+    options?: string | null;
     orderIdx: number;
 }
 
@@ -55,7 +55,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const resolvedParams = use(params);
     const surveyId = resolvedParams.id;
 
-    const [survey, setSurvey] = useState<{title: string, description?: string} | null>(null);
+    const [survey, setSurvey] = useState<any | null>(null);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -76,7 +76,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 listSurveyQuestionsAction(surveyId)
             ]);
 
-            if (surveyRes.success) setSurvey(surveyRes.data);
+            if (surveyRes.success && surveyRes.data) setSurvey(surveyRes.data);
             if (questionsRes.success) setQuestions(questionsRes.data || []);
         } catch (e) {
             console.error(e);
