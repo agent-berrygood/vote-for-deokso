@@ -42,7 +42,8 @@ import {
     listSurveySections as listSurveySectionsSDK,
     createSurveySection as createSurveySectionSDK,
     updateSurveySection as updateSurveySectionSDK,
-    deleteSurveySection as deleteSurveySectionSDK
+    deleteSurveySection as deleteSurveySectionSDK,
+    submitSurveyResponse as submitSurveyResponseSDK
 } from '@/lib/dataconnect';
 
 
@@ -400,5 +401,15 @@ export async function deleteSurveySectionAction(id: string) {
     } catch (error) {
         console.error('deleteSurveySectionAction error:', error);
         return { success: false, error: '섹션 삭제에 실패했습니다.' };
+    }
+}
+
+export async function submitSurveyResponseAction(vars: { surveyId: string, memberId: string, answers: string }) {
+    try {
+        await submitSurveyResponseSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('submitSurveyResponseAction error:', error);
+        return { success: false, error: '설문 응답 제출에 실패했습니다.' };
     }
 }

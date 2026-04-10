@@ -18,7 +18,7 @@ import {
     Divider
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
-import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction } from '@/app/actions/data';
+import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction } from '@/app/actions/data';
 
 interface Question {
     id: string;
@@ -50,14 +50,17 @@ export default function SurveyPage() {
     const [submitted, setSubmitted] = useState(false);
 
     const [memberName, setMemberName] = useState('');
+    const [memberId, setMemberId] = useState('');
 
     useEffect(() => {
         const name = sessionStorage.getItem('memberName');
-        if (!name) {
+        const id = sessionStorage.getItem('memberId');
+        if (!name || !id) {
             router.push('/');
             return;
         }
         setMemberName(name);
+        setMemberId(id);
     }, [router]);
 
     useEffect(() => {
@@ -95,16 +98,34 @@ export default function SurveyPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!activeSurveyId || !memberId) {
+            setError('제출을 위한 정보가 부족합니다. 다시 로그인해 주세요.');
+            return;
+        }
+
         setLoading(true);
+        setError('');
+
         try {
-            // [TODO] SubmitSurveyResponse action integration
-            // 현재는 UI 데모를 위해 성공 처리
-            setTimeout(() => {
+            // Check if all required questions are answered (optional, but good for UX)
+            // For now, we'll just submit whatever we have.
+
+            const res = await submitSurveyResponseAction({
+                surveyId: activeSurveyId,
+                memberId: memberId,
+                answers: JSON.stringify(answers)
+            });
+
+            if (res.success) {
                 setSubmitted(true);
-                setLoading(false);
-            }, 1000);
+            } else {
+                setError(res.error || '제출 중 오류가 발생했습니다.');
+            }
         } catch (e) {
+            console.error('Submit error:', e);
             setError('제출 중 오류가 발생했습니다.');
+        } finally {
             setLoading(false);
         }
     };

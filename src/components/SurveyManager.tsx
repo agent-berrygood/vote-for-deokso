@@ -116,84 +116,86 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
     };
 
     return (
-        <Paper sx={{ p: 4, mb: 4, bgcolor: '#fcf8ff', border: '1px solid #e1bee7' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" fontWeight="bold" color="secondary">
-                    📋 설문조사 관리
-                </Typography>
-                <Button 
-                    variant="contained" 
-                    color="secondary" 
-                    startIcon={<AddCircleOutlineIcon />}
-                    onClick={() => setCreateDialogOpen(true)}
-                >
-                    새 설문 생성
-                </Button>
-            </Box>
+        <>
+            <Paper sx={{ p: 4, mb: 4, bgcolor: '#fcf8ff', border: '1px solid #e1bee7' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" color="secondary">
+                        📋 설문조사 관리
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        color="secondary" 
+                        startIcon={<AddCircleOutlineIcon />}
+                        onClick={() => setCreateDialogOpen(true)}
+                    >
+                        새 설문 생성
+                    </Button>
+                </Box>
 
-            <Alert severity="info" sx={{ mb: 2 }}>
-                현재 활성화된 설문 ID: <strong>{activeSurveyId || '없음'}</strong>
-            </Alert>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    현재 활성화된 설문 ID: <strong>{activeSurveyId || '없음'}</strong>
+                </Alert>
 
-            <List sx={{ bgcolor: 'background.paper', borderRadius: 2, mb: 2, border: '1px solid #ddd' }}>
-                {surveys.length === 0 ? (
-                    <ListItem>
-                        <ListItemText primary="생성된 설문이 없습니다." />
-                    </ListItem>
-                ) : (
-                    surveys.map((sy) => (
-                        <ListItem 
-                            key={sy.id} 
-                            divider 
-                            sx={{ bgcolor: sy.id === activeSurveyId ? '#e8f5e9' : 'inherit' }}
-                        >
-                            <ListItemText 
-                                primary={<strong>{sy.title}</strong>} 
-                                secondary={sy.description} 
-                            />
-                            {sy.id !== activeSurveyId && (
+                <List sx={{ bgcolor: 'background.paper', borderRadius: 2, mb: 2, border: '1px solid #ddd' }}>
+                    {surveys.length === 0 ? (
+                        <ListItem>
+                            <ListItemText primary="생성된 설문이 없습니다." />
+                        </ListItem>
+                    ) : (
+                        surveys.map((sy) => (
+                            <ListItem 
+                                key={sy.id} 
+                                divider 
+                                sx={{ bgcolor: sy.id === activeSurveyId ? '#e8f5e9' : 'inherit' }}
+                            >
+                                <ListItemText 
+                                    primary={<strong>{sy.title}</strong>} 
+                                    secondary={sy.description} 
+                                />
+                                {sy.id !== activeSurveyId && (
+                                    <Button 
+                                        variant="outlined" 
+                                        color="success" 
+                                        size="small" 
+                                        onClick={() => handleSetActiveSurvey(sy.id)}
+                                        disabled={loading}
+                                    >
+                                        🟢 이 설문 활성화
+                                    </Button>
+                                )}
+                                {sy.id === activeSurveyId && (
+                                    <Chip label="✅ 활성 상태" color="success" size="small" />
+                                )}
+                                {sy.id !== activeSurveyId && (
+                                    <IconButton 
+                                        edge="end" 
+                                        aria-label="delete" 
+                                        color="error" 
+                                        onClick={() => handleDeleteSurvey(sy.id)}
+                                        disabled={loading}
+                                        sx={{ ml: 2 }}
+                                    >
+                                        <DeleteIcon />
+                                    </IconButton>
+                                )}
                                 <Button 
-                                    variant="outlined" 
-                                    color="success" 
+                                    variant="contained" 
                                     size="small" 
-                                    onClick={() => handleSetActiveSurvey(sy.id)}
-                                    disabled={loading}
-                                >
-                                    🟢 이 설문 활성화
-                                </Button>
-                            )}
-                            {sy.id === activeSurveyId && (
-                                <Chip label="✅ 활성 상태" color="success" size="small" />
-                            )}
-                            {sy.id !== activeSurveyId && (
-                                <IconButton 
-                                    edge="end" 
-                                    aria-label="delete" 
-                                    color="error" 
-                                    onClick={() => handleDeleteSurvey(sy.id)}
-                                    disabled={loading}
+                                    color="secondary" 
+                                    onClick={() => router.push(`/admin/surveys/${sy.id}`)}
                                     sx={{ ml: 2 }}
                                 >
-                                    <DeleteIcon />
-                                </IconButton>
-                            )}
-                            <Button 
-                                variant="contained" 
-                                size="small" 
-                                color="secondary" 
-                                onClick={() => router.push(`/admin/surveys/${sy.id}`)}
-                                sx={{ ml: 2 }}
-                            >
-                                문항 편집
-                            </Button>
-                        </ListItem>
-                    ))
-                )}
-            </List>
+                                    문항 편집
+                                </Button>
+                            </ListItem>
+                        ))
+                    )}
+                </List>
 
-            <Typography variant="body2" color="text.secondary">
-                * 각 설문의 &apos;문항 편집&apos; 버튼을 눌러 상세 질문을 구성할 수 있습니다.
-            </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    * 각 설문의 &apos;문항 편집&apos; 버튼을 눌러 상세 질문을 구성할 수 있습니다.
+                </Typography>
+            </Paper>
 
             {/* 설문 생성 다이얼로그 */}
             <Dialog open={isCreateDialogOpen} onClose={() => setCreateDialogOpen(false)} fullWidth maxWidth="sm">
@@ -233,6 +235,6 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Paper>
+        </>
     );
 }

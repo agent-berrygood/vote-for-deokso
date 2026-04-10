@@ -444,323 +444,328 @@ export default function AdminPage() {
     };
 
     return (
-        <Container maxWidth="md" sx={{ py: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-                어드민 대시보드 (v2)
-            </Typography>
-
-            {message && (
-                <Alert severity={message.type} sx={{ mb: 3, '.MuiAlert-message': { width: '100%' } }} onClose={() => setMessage(null)}>
-                    {message.text}
-                </Alert>
-            )}
-
-            <Paper sx={{ p: 4, mb: 4, bgcolor: '#f0f7ff' }}>
-                <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
-                    🗳 시스템 서비스 모드 설정
+        <>
+            <Container maxWidth="md" sx={{ py: 4 }}>
+                <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    어드민 대시보드 (v2)
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mb: 4, p: 2, bgcolor: '#fff', borderRadius: 2, border: '1px solid #ddd' }}>
-                    <Button 
-                        variant={activeService === 'ELECTION' ? 'contained' : 'outlined'} 
-                        color="primary" 
-                        fullWidth
-                        onClick={() => handleSwitchService('ELECTION')}
-                        disabled={loading}
-                    >
-                        선거 모드 활성화
-                    </Button>
-                    <Button 
-                        variant={activeService === 'SURVEY' ? 'contained' : 'outlined'} 
-                        color="secondary" 
-                        fullWidth
-                        onClick={() => handleSwitchService('SURVEY')}
-                        disabled={loading}
-                    >
-                        설문조사 모드 활성화
-                    </Button>
-                </Box>
 
-                <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
-                    🗳 선거 관리
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                    <TextField
-                        select
-                        label="활성 선거"
-                        value={activeElectionId || ''}
-                        onChange={(e) => switchElection(e.target.value)}
-                        size="small"
-                        SelectProps={{ native: true }}
-                        sx={{ width: 250 }}
-                        disabled={loading}
-                    >
-                        {electionList.map((id) => (
-                            <option key={id} value={id}>
-                                {id} {id === activeElectionId ? '(활성)' : ''}
-                            </option>
-                        ))}
-                    </TextField>
-                    <Typography variant="body2" color="text.secondary">
-                        현재 관리중인 선거: <strong>{activeElectionId || "없음"}</strong>
-                    </Typography>
-                </Box>
-                <Divider sx={{ my: 2 }} />
+                {message && (
+                    <Alert severity={message.type} sx={{ mb: 3, '.MuiAlert-message': { width: '100%' } }} onClose={() => setMessage(null)}>
+                        {message.text}
+                    </Alert>
+                )}
 
-                <Box sx={{ p: 3, mb: 2, border: '1px solid #4caf50', borderRadius: 1, bgcolor: '#e8f5e9' }}>
-                    <Typography variant="subtitle1" color="success.main" fontWeight="bold" gutterBottom>
-                        📊 실시간 전체 개표 종합 현황
+                <Paper sx={{ p: 4, mb: 4, bgcolor: '#f0f7ff' }}>
+                    <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
+                        🗳 시스템 서비스 모드 설정
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                        장로, 권사, 안수집사 모든 직분의 개표 현황을 한눈에 확인하고 피택 가능 인원을 실시간으로 모니터링합니다.
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<AssessmentIcon />}
-                        onClick={() => router.push('/admin/live-results')}
-                        disabled={!activeElectionId}
-                    >
-                        실시간 종합 개표현황 보러가기
-                    </Button>
-                </Box>
-
-                <Box sx={{ p: 3, mb: 2, border: '1px solid #ce93d8', borderRadius: 1, bgcolor: '#f3e5f5' }}>
-                    <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
-                        🕵️ 선관위 현장 투표 승인 내역 (Audit Logs)
-                    </Typography>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                        선관위 권한으로 문자 인증을 우회하고 통과시킨 내역을 조회합니다. 현장 투표(마스터 암호)가 오남용되었는지 기록을 투명하게 확인하세요.
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => router.push('/admin/audit-logs')}
-                        disabled={!activeElectionId}
-                    >
-                        승인 내역(Audit Logs) 확인하러 가기
-                    </Button>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    <TextField
-                        label="새 선거 ID (예: 2027-vote)"
-                        value={newElectionId}
-                        onChange={(e) => setNewElectionId(e.target.value)}
-                        size="small"
-                        sx={{ width: 250 }}
-                        placeholder="고유 ID 입력"
-                    />
-                    <Button
-                        variant="contained"
-                        onClick={handleCreateElection}
-                        disabled={!newElectionId.trim() || loading}
-                    >
-                        새 선거 생성
-                    </Button>
-                </Box>
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ p: 3, mb: 2, border: '1px solid #0288d1', borderRadius: 1, bgcolor: '#e1f5fe' }}>
-                    <Typography variant="subtitle1" color="info.main" fontWeight="bold" gutterBottom>
-                        👤 직분별 후보자 정밀 관리
-                    </Typography>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                        각 직분별(장로, 안수집사, 권사) 후보자를 개별적으로 추가하거나 삭제하고 목록을 정밀하게 관리합니다.
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Button
-                            variant="outlined"
-                            onClick={() => router.push('/admin/candidates?pos=장로')}
-                            disabled={!activeElectionId}
+                    <Box sx={{ display: 'flex', gap: 2, mb: 4, p: 2, bgcolor: '#fff', borderRadius: 2, border: '1px solid #ddd' }}>
+                        <Button 
+                            variant={activeService === 'ELECTION' ? 'contained' : 'outlined'} 
+                            color="primary" 
+                            fullWidth
+                            onClick={() => handleSwitchService('ELECTION')}
+                            disabled={loading}
                         >
-                            장로 관리
+                            선거 모드 활성화
                         </Button>
-                        <Button
-                            variant="outlined"
-                            onClick={() => router.push('/admin/candidates?pos=안수집사')}
-                            disabled={!activeElectionId}
+                        <Button 
+                            variant={activeService === 'SURVEY' ? 'contained' : 'outlined'} 
+                            color="secondary" 
+                            fullWidth
+                            onClick={() => handleSwitchService('SURVEY')}
+                            disabled={loading}
                         >
-                            안수집사 관리
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            onClick={() => router.push('/admin/candidates?pos=권사')}
-                            disabled={!activeElectionId}
-                        >
-                            권사 관리
+                            설문조사 모드 활성화
                         </Button>
                     </Box>
-                </Box>
 
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ p: 3, mb: 2, border: '1px solid #7b1fa2', borderRadius: 1, bgcolor: '#f3e5f5' }}>
-                    <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
-                        📋 선거인 명부 정밀 관리
+                    <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
+                        🗳 선거 관리
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                        선거인 명단을 개별적으로 추가, 삭제하거나 인증키를 확인하고 상태를 검색합니다.
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => router.push('/admin/voters')}
-                        disabled={!activeElectionId}
-                    >
-                        선거인 명부 관리하러 가기
-                    </Button>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ p: 2, border: '1px solid #f44336', borderRadius: 1, bgcolor: '#fff5f5' }}>
-                    <Typography variant="subtitle2" color="error" fontWeight="bold" gutterBottom>
-                        ⚠ Danger Zone
-                    </Typography>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                        This will delete ALL candidates and voters for the active election <strong>({activeElectionId})</strong>. This action cannot be undone.
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => setResetDialogOpen(true)}
-                    >
-                        Reset Election Data
-                    </Button>
-                    <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                        * Check Console (F12) for detailed logs if reset fails.
-                    </Typography>
-                </Box>
-            </Paper>
-
-            <SurveyManager 
-                systemId="system" 
-                activeSurveyId={activeSurveyId} 
-                onRefresh={refreshData} 
-            />
-
-
-            <Paper sx={{ p: 4, mb: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                    시스템 설정 ({activeElectionId || "없음"})
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    {Object.keys(maxVotesMap).map((pos) => (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                         <TextField
-                            key={`max_${pos}`}
-                            label={`${pos} 최대 투표수`}
-                            type="number"
-                            value={maxVotesMap[pos]}
-                            onChange={(e) => setMaxVotesMap({ ...maxVotesMap, [pos]: Number(e.target.value) })}
+                            select
+                            label="활성 선거"
+                            value={activeElectionId || ''}
+                            onChange={(e) => switchElection(e.target.value)}
                             size="small"
-                            sx={{ width: 140 }}
+                            SelectProps={{ native: true }}
+                            sx={{ width: 250 }}
+                            disabled={loading}
+                        >
+                            {electionList.map((id) => (
+                                <option key={id} value={id}>
+                                    {id} {id === activeElectionId ? '(활성)' : ''}
+                                </option>
+                            ))}
+                        </TextField>
+                        <Typography variant="body2" color="text.secondary">
+                            현재 관리중인 선거: <strong>{activeElectionId || "없음"}</strong>
+                        </Typography>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box sx={{ p: 3, mb: 2, border: '1px solid #4caf50', borderRadius: 1, bgcolor: '#e8f5e9' }}>
+                        <Typography variant="subtitle1" color="success.main" fontWeight="bold" gutterBottom>
+                            📊 실시간 전체 개표 종합 현황
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            장로, 권사, 안수집사 모든 직분의 개표 현황을 한눈에 확인하고 피택 가능 인원을 실시간으로 모니터링합니다.
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="success"
+                            startIcon={<AssessmentIcon />}
+                            onClick={() => router.push('/admin/live-results')}
+                            disabled={!activeElectionId}
+                        >
+                            실시간 종합 개표현황 보러가기
+                        </Button>
+                    </Box>
+
+                    <Box sx={{ p: 3, mb: 2, border: '1px solid #ce93d8', borderRadius: 1, bgcolor: '#f3e5f5' }}>
+                        <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
+                            🕵️ 선관위 현장 투표 승인 내역 (Audit Logs)
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            선관위 권한으로 문자 인증을 우회하고 통과시킨 내역을 조회합니다. 현장 투표(마스터 암호)가 오남용되었는지 기록을 투명하게 확인하세요.
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => router.push('/admin/audit-logs')}
+                            disabled={!activeElectionId}
+                        >
+                            승인 내역(Audit Logs) 확인하러 가기
+                        </Button>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <TextField
+                            label="새 선거 ID (예: 2027-vote)"
+                            value={newElectionId}
+                            onChange={(e) => setNewElectionId(e.target.value)}
+                            size="small"
+                            sx={{ width: 250 }}
+                            placeholder="고유 ID 입력"
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleCreateElection}
+                            disabled={!newElectionId.trim() || loading}
+                        >
+                            새 선거 생성
+                        </Button>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ p: 3, mb: 2, border: '1px solid #0288d1', borderRadius: 1, bgcolor: '#e1f5fe' }}>
+                        <Typography variant="subtitle1" color="info.main" fontWeight="bold" gutterBottom>
+                            👤 직분별 후보자 정밀 관리
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            각 직분별(장로, 안수집사, 권사) 후보자를 개별적으로 추가하거나 삭제하고 목록을 정밀하게 관리합니다.
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Button
+                                variant="outlined"
+                                onClick={() => router.push('/admin/candidates?pos=장로')}
+                                disabled={!activeElectionId}
+                            >
+                                장로 관리
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => router.push('/admin/candidates?pos=안수집사')}
+                                disabled={!activeElectionId}
+                            >
+                                안수집사 관리
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => router.push('/admin/candidates?pos=권사')}
+                                disabled={!activeElectionId}
+                            >
+                                권사 관리
+                            </Button>
+                        </Box>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ p: 3, mb: 2, border: '1px solid #7b1fa2', borderRadius: 1, bgcolor: '#f3e5f5' }}>
+                        <Typography variant="subtitle1" color="secondary" fontWeight="bold" gutterBottom>
+                            📋 선거인 명부 정밀 관리
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            선거인 명단을 개별적으로 추가, 삭제하거나 인증키를 확인하고 상태를 검색합니다.
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            color="secondary"
+                            onClick={() => router.push('/admin/voters')}
+                            disabled={!activeElectionId}
+                        >
+                            선거인 명부 관리하러 가기
+                        </Button>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+                    <Box sx={{ p: 2, border: '1px solid #f44336', borderRadius: 1, bgcolor: '#fff5f5' }}>
+                        <Typography variant="subtitle2" color="error" fontWeight="bold" gutterBottom>
+                            ⚠ Danger Zone
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            This will delete ALL candidates and voters for the active election <strong>({activeElectionId})</strong>. This action cannot be undone.
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => setResetDialogOpen(true)}
+                        >
+                            Reset Election Data
+                        </Button>
+                        <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                            * Check Console (F12) for detailed logs if reset fails.
+                        </Typography>
+                    </Box>
+                </Paper>
+
+                <SurveyManager 
+                    systemId="system" 
+                    activeSurveyId={activeSurveyId} 
+                    onRefresh={refreshData} 
+                />
+
+
+                <Paper sx={{ p: 4, mb: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                        시스템 설정 ({activeElectionId || "없음"})
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        {Object.keys(maxVotesMap).map((pos) => (
+                            <TextField
+                                key={`max_${pos}`}
+                                label={`${pos} 최대 투표수`}
+                                type="number"
+                                value={maxVotesMap[pos]}
+                                onChange={(e) => setMaxVotesMap({ ...maxVotesMap, [pos]: Number(e.target.value) })}
+                                size="small"
+                                sx={{ width: 140 }}
+                                disabled={!activeElectionId}
+                            />
+                        ))}
+                        {Object.keys(roundSettings).map((pos) => (
+                            <TextField
+                                key={pos}
+                                label={`${pos} 차수`}
+                                type="number"
+                                value={roundSettings[pos]}
+                                onChange={(e) => setRoundSettings({ ...roundSettings, [pos]: Number(e.target.value) })}
+                                size="small"
+                                sx={{ width: 120 }}
+                                disabled={!activeElectionId}
+                            />
+                        ))}
+                        <TextField
+                            label="투표 시작 일시"
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            size="small"
+                            sx={{ width: 220 }}
+                            InputLabelProps={{ shrink: true }}
                             disabled={!activeElectionId}
                         />
-                    ))}
-                    {Object.keys(roundSettings).map((pos) => (
                         <TextField
-                            key={pos}
-                            label={`${pos} 차수`}
-                            type="number"
-                            value={roundSettings[pos]}
-                            onChange={(e) => setRoundSettings({ ...roundSettings, [pos]: Number(e.target.value) })}
+                            label="투표 종료 일시"
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
                             size="small"
-                            sx={{ width: 120 }}
+                            sx={{ width: 220 }}
+                            InputLabelProps={{ shrink: true }}
                             disabled={!activeElectionId}
                         />
-                    ))}
-                    <TextField
-                        label="투표 시작 일시"
-                        type="datetime-local"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        size="small"
-                        sx={{ width: 220 }}
-                        InputLabelProps={{ shrink: true }}
-                        disabled={!activeElectionId}
-                    />
-                    <TextField
-                        label="투표 종료 일시"
-                        type="datetime-local"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        size="small"
-                        sx={{ width: 220 }}
-                        InputLabelProps={{ shrink: true }}
-                        disabled={!activeElectionId}
-                    />
-                    <Button
-                        variant="contained"
-                        startIcon={<SaveIcon />}
-                        onClick={handleSaveSettings}
-                        disabled={settingLoading || loading || !activeElectionId}
-                    >
-                        설정 저장
-                    </Button>
-                </Box>
-            </Paper>
+                        <Button
+                            variant="contained"
+                            startIcon={<SaveIcon />}
+                            onClick={handleSaveSettings}
+                            disabled={settingLoading || loading || !activeElectionId}
+                        >
+                            설정 저장
+                        </Button>
+                    </Box>
+                </Paper>
 
-            <Paper sx={{ p: 4, mb: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                    후보자 명부 업로드 (CSV)
-                </Typography>
-                <TextField
-                    select
-                    label="대상 차수 선택"
-                    value={uploadRound}
-                    onChange={(e) => setUploadRound(Number(e.target.value))}
-                    size="small"
-                    SelectProps={{ native: true }}
-                    sx={{ width: 200, mb: 2 }}
-                    helperText="아래에서 업로드하는 파일은 선택된 차수에 할당됩니다."
-                    disabled={!activeElectionId}
-                >
-                    {[1, 2, 3, 4, 5].map(r => <option key={r} value={r}>{r}차 후보</option>)}
-                </TextField>
-                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                    {[{ pos: '장로', color: 'primary' }, { pos: '안수집사', color: 'success' }, { pos: '권사', color: 'warning' }].map(({ pos, color }) => (
-                        <Paper key={pos} sx={{ p: 3, flex: 1, borderTop: (theme: Theme) => `4px solid ${theme.palette[color as 'primary' | 'success' | 'warning'].main}`, minWidth: 220 }}>
-                            <Typography variant="h6" gutterBottom color={color as 'primary' | 'success' | 'warning'}> {pos} 후보 업로드 </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}> {uploadRound}차 투표 대상 </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
-                                <Button component="label" variant="contained" fullWidth color={color as 'primary' | 'success' | 'warning'} startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />} disabled={loading || !activeElectionId} >
-                                    CSV/Excel 업로드
-                                    <input type="file" hidden accept=".csv, .xlsx, .xls" onChange={(e) => handleCandidateUpload(e, pos)} />
-                                </Button>
-                                <Button size="small" onClick={() => handleDownloadTemplate('candidate')}>
-                                    양식 다운로드
-                                </Button>
-                            </Box>
-                        </Paper>
-                    ))}
-                </Box>
-            </Paper>
-
-            <Paper sx={{ p: 4, mb: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                    Upload Voters
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    CSV/Excel Format: Name, Phone, Birthdate (Optional: AuthKey)
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Button
-                        component="label"
-                        variant="contained"
-                        color="secondary"
-                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
-                        disabled={loading}
+                <Paper sx={{ p: 4, mb: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                        후보자 명부 업로드 (CSV)
+                    </Typography>
+                    <TextField
+                        select
+                        label="대상 차수 선택"
+                        value={uploadRound}
+                        onChange={(e) => setUploadRound(Number(e.target.value))}
+                        size="small"
+                        SelectProps={{ native: true }}
+                        sx={{ width: 200, mb: 2 }}
+                        helperText="아래에서 업로드하는 파일은 선택된 차수에 할당됩니다."
+                        disabled={!activeElectionId}
                     >
-                        Select Voter File
-                        <input type="file" hidden accept=".csv, .xlsx, .xls" onChange={handleVoterUpload} />
-                    </Button>
-                    <Button variant="outlined" onClick={() => handleDownloadTemplate('voter')}>
-                        양식 다운로드
-                    </Button>
-                    <Button variant="outlined" color="success" onClick={handleDownloadVotersList} disabled={loading || !activeElectionId}>
-                        전체 선거인 참여 명단 다운로드
-                    </Button>
-                </Box>
-            </Paper>
+                        {[1, 2, 3, 4, 5].map(r => <option key={r} value={r}>{r}차 후보</option>)}
+                    </TextField>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                        {[{ pos: '장로', color: 'primary' }, { pos: '안수집사', color: 'success' }, { pos: '권사', color: 'warning' }].map(({ pos, color }) => (
+                            <Paper key={pos} sx={{ p: 3, flex: 1, borderTop: (theme: Theme) => `4px solid ${theme.palette[color as 'primary' | 'success' | 'warning'].main}`, minWidth: 220 }}>
+                                <Typography variant="h6" gutterBottom color={color as 'primary' | 'success' | 'warning'}> {pos} 후보 업로드 </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}> {uploadRound}차 투표 대상 </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                                    <Button component="label" variant="contained" fullWidth color={color as 'primary' | 'success' | 'warning'} startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />} disabled={loading || !activeElectionId} >
+                                        CSV/Excel 업로드
+                                        <input type="file" hidden accept=".csv, .xlsx, .xls" onChange={(e) => handleCandidateUpload(e, pos)} />
+                                    </Button>
+                                    <Button size="small" onClick={() => handleDownloadTemplate('candidate')}>
+                                        양식 다운로드
+                                    </Button>
+                                </Box>
+                            </Paper>
+                        ))}
+                    </Box>
+                </Paper>
+
+                <Paper sx={{ p: 4, mb: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                        Upload Voters
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        CSV/Excel Format: Name, Phone, Birthdate (Optional: AuthKey)
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Button
+                            component="label"
+                            variant="contained"
+                            color="secondary"
+                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
+                            disabled={loading}
+                        >
+                            Select Voter File
+                            <input type="file" hidden accept=".csv, .xlsx, .xls" onChange={handleVoterUpload} />
+                        </Button>
+                        <Button variant="outlined" onClick={() => handleDownloadTemplate('voter')}>
+                            양식 다운로드
+                        </Button>
+                        <Button variant="outlined" color="success" onClick={handleDownloadVotersList} disabled={loading || !activeElectionId}>
+                            전체 선거인 참여 명단 다운로드
+                        </Button>
+                    </Box>
+                </Paper>
+
+                <VotingResultsSection />
+                <AdminLogsSection />
+            </Container>
 
             <ConfirmDialog
                 open={resetDialogOpen}
@@ -770,10 +775,7 @@ export default function AdminPage() {
                 onCancel={() => setResetDialogOpen(false)}
                 requireReAuth
             />
-
-            <VotingResultsSection />
-            <AdminLogsSection />
-        </Container>
+        </>
     );
 }
 

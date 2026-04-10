@@ -309,149 +309,151 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     }
 
     return (
-        <Container maxWidth="md" sx={{ py: 4 }}>
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-                <Link underline="hover" color="inherit" href="/admin" onClick={(e) => { e.preventDefault(); router.push('/admin'); }} sx={{ cursor: 'pointer' }}>
-                    어드민
-                </Link>
-                <Typography color="text.primary">설문 문항 관리</Typography>
-            </Breadcrumbs>
+        <>
+            <Container maxWidth="md" sx={{ py: 4 }}>
+                <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+                    <Link underline="hover" color="inherit" href="/admin" onClick={(e) => { e.preventDefault(); router.push('/admin'); }} sx={{ cursor: 'pointer' }}>
+                        어드민
+                    </Link>
+                    <Typography color="text.primary">설문 문항 관리</Typography>
+                </Breadcrumbs>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-                <IconButton onClick={() => router.push('/admin')}>
-                    <ArrowBackIcon />
-                </IconButton>
-                <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="h4" component="h1" fontWeight="bold" color="secondary">
-                        {survey?.title || '설문조사'} 문항 편집
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                        {survey?.description}
-                    </Typography>
-                </Box>
-                <Button 
-                    variant="outlined" 
-                    color="secondary" 
-                    startIcon={<EditIcon />}
-                    onClick={() => setSurveyEditOpen(true)}
-                >
-                    설문 정보 수정
-                </Button>
-            </Box>
-
-            {msg && (
-                <Alert severity={msg.type} sx={{ mb: 3 }} onClose={() => setMsg(null)}>
-                    {msg.text}
-                </Alert>
-            )}
-
-            <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #e1bee7' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h6" fontWeight="bold">섹션 관리</Typography>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        startIcon={<AddIcon />}
-                        onClick={() => handleOpenSectionDialog()}
-                    >
-                        섹션 추가
-                    </Button>
-                </Box>
-                <List>
-                    {sections.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary" align="center">등록된 섹션이 없습니다.</Typography>
-                    ) : (
-                        sections.map((s, idx) => (
-                            <ListItem key={s.id} divider secondaryAction={
-                                <Stack direction="row" spacing={1}>
-                                    <IconButton size="small" onClick={() => handleOpenSectionDialog(s)}><EditIcon fontSize="small" color="primary" /></IconButton>
-                                    <IconButton size="small" onClick={() => handleDeleteSection(s.id)}><DeleteIcon fontSize="small" color="error" /></IconButton>
-                                </Stack>
-                            }>
-                                <ListItemText primary={`${idx + 1}. ${s.title}`} secondary={s.description} />
-                            </ListItem>
-                        ))
-                    )}
-                </List>
-            </Paper>
-
-            <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #e1bee7' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h6" fontWeight="bold">문항 목록</Typography>
-                    <Button 
-                        variant="contained" 
-                        color="secondary" 
-                        startIcon={<AddIcon />}
-                        onClick={() => handleOpenDialog()}
-                        disabled={submitting}
-                    >
-                        문항 추가
-                    </Button>
-                </Box>
-
-                <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-                    {questions.length === 0 ? (
-                        <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
-                            등록된 문항이 없습니다.
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+                    <IconButton onClick={() => router.push('/admin')}>
+                        <ArrowBackIcon />
+                    </IconButton>
+                    <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="h4" component="h1" fontWeight="bold" color="secondary">
+                            {survey?.title || '설문조사'} 문항 편집
                         </Typography>
-                    ) : (
-                        // Group questions by section
-                        [...sections, { id: '', title: '섹션 없음' }].map((section) => {
-                            const sectionQuestions = questions.filter(q => (q.sectionId || '') === section.id);
-                            if (sectionQuestions.length === 0 && section.id !== '') return null;
-                            
-                            return (
-                                <Box key={section.id || 'none'} sx={{ mb: 4 }}>
-                                    <Typography variant="subtitle1" fontWeight="bold" color="secondary" sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1, mb: 1 }}>
-                                        {section.title}
-                                    </Typography>
-                                    {sectionQuestions.map((q, idx) => (
-                                        <Box key={q.id}>
-                                            <ListItem 
-                                                alignItems="flex-start"
-                                                sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
-                                                secondaryAction={
-                                                    <Stack direction="row" spacing={1}>
-                                                        <IconButton edge="end" onClick={() => handleOpenDialog(q)}><EditIcon color="primary" /></IconButton>
-                                                        <IconButton edge="end" onClick={() => handleDeleteQuestion(q.id)}><DeleteIcon color="error" /></IconButton>
-                                                    </Stack>
-                                                }
-                                            >
-                                                <ListItemText
-                                                    primary={
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <Typography variant="subtitle1" fontWeight="bold">{idx + 1}. {q.text}</Typography>
-                                                            <Chip label={q.type === 'MULTIPLE_CHOICE' ? '객관식' : '주관식'} size="small" variant="outlined" />
-                                                            {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
-                                                        </Box>
+                        <Typography variant="body1" color="text.secondary">
+                            {survey?.description}
+                        </Typography>
+                    </Box>
+                    <Button 
+                        variant="outlined" 
+                        color="secondary" 
+                        startIcon={<EditIcon />}
+                        onClick={() => setSurveyEditOpen(true)}
+                    >
+                        설문 정보 수정
+                    </Button>
+                </Box>
+
+                {msg && (
+                    <Alert severity={msg.type} sx={{ mb: 3 }} onClose={() => setMsg(null)}>
+                        {msg.text}
+                    </Alert>
+                )}
+
+                <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #e1bee7' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h6" fontWeight="bold">섹션 관리</Typography>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            startIcon={<AddIcon />}
+                            onClick={() => handleOpenSectionDialog()}
+                        >
+                            섹션 추가
+                        </Button>
+                    </Box>
+                    <List>
+                        {sections.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary" align="center">등록된 섹션이 없습니다.</Typography>
+                        ) : (
+                            sections.map((s, idx) => (
+                                <ListItem key={s.id} divider secondaryAction={
+                                    <Stack direction="row" spacing={1}>
+                                        <IconButton size="small" onClick={() => handleOpenSectionDialog(s)}><EditIcon fontSize="small" color="primary" /></IconButton>
+                                        <IconButton size="small" onClick={() => handleDeleteSection(s.id)}><DeleteIcon fontSize="small" color="error" /></IconButton>
+                                    </Stack>
+                                }>
+                                    <ListItemText primary={`${idx + 1}. ${s.title}`} secondary={s.description} />
+                                </ListItem>
+                            ))
+                        )}
+                    </List>
+                </Paper>
+
+                <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #e1bee7' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h6" fontWeight="bold">문항 목록</Typography>
+                        <Button 
+                            variant="contained" 
+                            color="secondary" 
+                            startIcon={<AddIcon />}
+                            onClick={() => handleOpenDialog()}
+                            disabled={submitting}
+                        >
+                            문항 추가
+                        </Button>
+                    </Box>
+
+                    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+                        {questions.length === 0 ? (
+                            <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
+                                등록된 문항이 없습니다.
+                            </Typography>
+                        ) : (
+                            // Group questions by section
+                            [...sections, { id: '', title: '섹션 없음' }].map((section) => {
+                                const sectionQuestions = questions.filter(q => (q.sectionId || '') === section.id);
+                                if (sectionQuestions.length === 0 && section.id !== '') return null;
+                                
+                                return (
+                                    <Box key={section.id || 'none'} sx={{ mb: 4 }}>
+                                        <Typography variant="subtitle1" fontWeight="bold" color="secondary" sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1, mb: 1 }}>
+                                            {section.title}
+                                        </Typography>
+                                        {sectionQuestions.map((q, idx) => (
+                                            <Box key={q.id}>
+                                                <ListItem 
+                                                    alignItems="flex-start"
+                                                    sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
+                                                    secondaryAction={
+                                                        <Stack direction="row" spacing={1}>
+                                                            <IconButton edge="end" onClick={() => handleOpenDialog(q)}><EditIcon color="primary" /></IconButton>
+                                                            <IconButton edge="end" onClick={() => handleDeleteQuestion(q.id)}><DeleteIcon color="error" /></IconButton>
+                                                        </Stack>
                                                     }
-                                                    secondary={
-                                                        <Box>
-                                                            {q.type === 'MULTIPLE_CHOICE' && q.options && (
-                                                                <Box sx={{ mt: 1, pl: 2 }}>
-                                                                    {JSON.parse(q.options).map((opt: string, i: number) => (
-                                                                        <Typography key={i} variant="body2" color="text.secondary">○ {opt}</Typography>
-                                                                    ))}
-                                                                </Box>
-                                                            )}
-                                                            {q.logic && (
-                                                                <Typography variant="caption" display="block" color="warning.main" sx={{ mt: 1, fontFamily: 'monospace' }}>
-                                                                    Logic: {q.logic}
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
-                                                    }
-                                                />
-                                            </ListItem>
-                                            <Divider component="li" />
-                                        </Box>
-                                    ))}
-                                </Box>
-                            );
-                        })
-                    )}
-                </List>
-            </Paper>
+                                                >
+                                                    <ListItemText
+                                                        primary={
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <Typography variant="subtitle1" fontWeight="bold">{idx + 1}. {q.text}</Typography>
+                                                                <Chip label={q.type === 'MULTIPLE_CHOICE' ? '객관식' : '주관식'} size="small" variant="outlined" />
+                                                                {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
+                                                            </Box>
+                                                        }
+                                                        secondary={
+                                                            <Box>
+                                                                {q.type === 'MULTIPLE_CHOICE' && q.options && (
+                                                                    <Box sx={{ mt: 1, pl: 2 }}>
+                                                                        {JSON.parse(q.options).map((opt: string, i: number) => (
+                                                                            <Typography key={i} variant="body2" color="text.secondary">○ {opt}</Typography>
+                                                                        ))}
+                                                                    </Box>
+                                                                )}
+                                                                {q.logic && (
+                                                                    <Typography variant="caption" display="block" color="warning.main" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                                                                        Logic: {q.logic}
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        }
+                                                    />
+                                                </ListItem>
+                                                <Divider component="li" />
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                );
+                            })
+                        )}
+                    </List>
+                </Paper>
+            </Container>
 
             {/* 설문 정보 수정 다이얼로그 */}
             <Dialog open={isSurveyEditOpen} onClose={() => !submitting && setSurveyEditOpen(false)} fullWidth maxWidth="sm">
@@ -590,6 +592,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Container>
+        </>
     );
 }
