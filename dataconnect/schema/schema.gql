@@ -90,12 +90,22 @@ type Survey @table(key: "id") {
   isActive: Boolean @default(value: true)
 }
 
+type SurveySection @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
+  survey: Survey!
+  title: String!
+  description: String
+  orderIdx: Int!
+}
+
 type SurveyQuestion @table(key: "id") {
   id: UUID! @default(expr: "uuidV4()")
   survey: Survey!
+  section: SurveySection # Optional section
   text: String!
   type: String! # 예: "MULTIPLE_CHOICE", "TEXT"
   options: String # JSON string (객관식 보기)
+  logic: String # JSON string for branching logic
   orderIdx: Int!
 }
 

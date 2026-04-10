@@ -18,13 +18,32 @@ import {
     Divider
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
-import { getSurveyAction } from '@/app/actions/data';
+import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction } from '@/app/actions/data';
+
+interface Question {
+    id: string;
+    sectionId?: string | null;
+    text: string;
+    type: string;
+    options?: string | null;
+    logic?: string | null;
+    orderIdx: number;
+}
+
+interface Section {
+    id: string;
+    title: string;
+    description?: string | null;
+    orderIdx: number;
+}
 
 export default function SurveyPage() {
     const router = useRouter();
     const { activeSurveyId, loading: sysLoading } = useElection();
     
     const [survey, setSurvey] = useState<any>(null);
+    const [sections, setSections] = useState<Section[]>([]);
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -51,11 +70,18 @@ export default function SurveyPage() {
 
         const fetchSurvey = async () => {
             try {
-                const res = await getSurveyAction({ id: activeSurveyId });
-                if (res.success) {
-                    setSurvey(res.data);
-                } else {
-                    setError(res.error || '설문 정보를 불러오지 못했습니다.');
+                const [surveyRes, sectionsRes, questionsRes] = await Promise.all([
+                    getSurveyAction({ id: activeSurveyId }),
+                    listSurveySectionsAction(activeSurveyId),
+                    listSurveyQuestionsAction(activeSurveyId)
+                ]);
+
+                if (surveyRes.success) setSurvey(surveyRes.data);
+                if (sectionsRes.success) setSections(sectionsRes.data as any);
+                if (questionsRes.success) setQuestions(questionsRes.data as any);
+                
+                if (!surveyRes.success) {
+                    setError(surveyRes.error || '설문 정보를 불러오지 못했습니다.');
                 }
             } catch (e) {
                 setError('오류가 발생했습니다.');
@@ -136,36 +162,71 @@ export default function SurveyPage() {
                         
                         <Divider sx={{ my: 3 }} />
 
-                        {/* 예시 문항 (나중에 DB 데이터 기반으로 동적 렌더링 예정) */}
-                        <Box sx={{ mb: 4 }}>
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                1. 현재 교회 서비스에 대해 얼마나 만족하시나요?
-                            </Typography>
-                            <RadioGroup 
-                                value={answers['q1'] || ''} 
-                                onChange={(e) => setAnswers({...answers, q1: e.target.value})}
-                            >
-                                <FormControlLabel value="매우만족" control={<Radio color="secondary" />} label="매우 만족" />
-                                <FormControlLabel value="만족" control={<Radio color="secondary" />} label="만족" />
-                                <FormControlLabel value="보통" control={<Radio color="secondary" />} label="보통" />
-                                <FormControlLabel value="불만족" control={<Radio color="secondary" />} label="불만족" />
-                            </RadioGroup>
-                        </Box>
+                        {/* Dynamic Questions by Section */}
+                        {(sections.length > 0 ? sections : [{ id: '', title: '', description: '' }]).map((section, sIdx) => {
+                            const sectionQuestions = questions.filter(q => (q.sectionId || '') === section.id);
+                            if (sectionQuestions.length === 0) return null;
 
-                        <Box sx={{ mb: 4 }}>
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                2. 교회에 제안하고 싶은 점이 있다면 자유롭게 적어주세요.
-                            </Typography>
-                            <TextField
-                                fullWidth
-                                multiline
-                                rows={4}
-                                placeholder="고견을 남겨주세요..."
-                                variant="outlined"
-                                value={answers['q2'] || ''}
-                                onChange={(e) => setAnswers({...answers, q2: e.target.value})}
-                            />
-                        </Box>
+                            return (
+                                <Box key={section.id || 'none'} sx={{ mb: 6 }}>
+                                    {section.title && (
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="h6" fontWeight="bold" color="secondary">
+                                                {section.title}
+                                            </Typography>
+                                            {section.description && (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {section.description}
+                                                </Typography>
+                                            )}
+                                            <Divider sx={{ mt: 1 }} />
+                                        </Box>
+                                    )}
+
+                                    {sectionQuestions.map((q, qIdx) => {
+                                        // Branching Logic check
+                                        if (q.logic) {
+                                            try {
+                                                const logic = JSON.parse(q.logic);
+                                                if (logic.showIf) {
+                                                    const { questionId, value } = logic.showIf;
+                                                    if (answers[questionId] !== value) return null;
+                                                }
+                                            } catch (e) {}
+                                        }
+
+                                        return (
+                                            <Box key={q.id} sx={{ mb: 4 }}>
+                                                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                                    {qIdx + 1}. {q.text}
+                                                </Typography>
+                                                
+                                                {q.type === 'MULTIPLE_CHOICE' ? (
+                                                    <RadioGroup 
+                                                        value={answers[q.id] || ''} 
+                                                        onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                                                    >
+                                                        {q.options && JSON.parse(q.options).map((opt: string, i: number) => (
+                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
+                                                        ))}
+                                                    </RadioGroup>
+                                                ) : (
+                                                    <TextField
+                                                        fullWidth
+                                                        multiline
+                                                        rows={3}
+                                                        placeholder="응답을 입력하세요..."
+                                                        variant="outlined"
+                                                        value={answers[q.id] || ''}
+                                                        onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                                                    />
+                                                )}
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            );
+                        })}
                     </Paper>
 
                     <Button 

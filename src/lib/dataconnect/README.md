@@ -23,6 +23,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*ListAllCandidates*](#listallcandidates)
   - [*GetMemberByInfo*](#getmemberbyinfo)
   - [*GetSurvey*](#getsurvey)
+  - [*ListSurveySections*](#listsurveysections)
   - [*ListSurveyQuestions*](#listsurveyquestions)
 - [**Mutations**](#mutations)
   - [*SubmitVote*](#submitvote)
@@ -44,8 +45,12 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateMember*](#createmember)
   - [*UpdateSystemService*](#updatesystemservice)
   - [*CreateSurvey*](#createsurvey)
+  - [*UpdateSurvey*](#updatesurvey)
   - [*SubmitSurveyResponse*](#submitsurveyresponse)
   - [*DeleteSurvey*](#deletesurvey)
+  - [*CreateSurveySection*](#createsurveysection)
+  - [*UpdateSurveySection*](#updatesurveysection)
+  - [*DeleteSurveySection*](#deletesurveysection)
   - [*CreateSurveyQuestion*](#createsurveyquestion)
   - [*UpdateSurveyQuestion*](#updatesurveyquestion)
   - [*DeleteSurveyQuestion*](#deletesurveyquestion)
@@ -98,7 +103,7 @@ Below are examples of how to use the `vote` connector's generated functions to e
 ## GetSystemSetting
 You can execute the `GetSystemSetting` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getSystemSetting(vars: GetSystemSettingVariables, options?: ExecuteQueryOptions): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+getSystemSetting(vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
 
 interface GetSystemSettingRef {
   ...
@@ -109,7 +114,7 @@ export const getSystemSettingRef: GetSystemSettingRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getSystemSetting(dc: DataConnect, vars: GetSystemSettingVariables, options?: ExecuteQueryOptions): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+getSystemSetting(dc: DataConnect, vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
 
 interface GetSystemSettingRef {
   ...
@@ -215,7 +220,7 @@ executeQuery(ref).then((response) => {
 ## ListSurveys
 You can execute the `ListSurveys` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listSurveys(options?: ExecuteQueryOptions): QueryPromise<ListSurveysData, undefined>;
+listSurveys(): QueryPromise<ListSurveysData, undefined>;
 
 interface ListSurveysRef {
   ...
@@ -226,7 +231,7 @@ export const listSurveysRef: ListSurveysRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listSurveys(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListSurveysData, undefined>;
+listSurveys(dc: DataConnect): QueryPromise<ListSurveysData, undefined>;
 
 interface ListSurveysRef {
   ...
@@ -313,7 +318,7 @@ executeQuery(ref).then((response) => {
 ## GetVoterByInfo
 You can execute the `GetVoterByInfo` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getVoterByInfo(vars: GetVoterByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
+getVoterByInfo(vars: GetVoterByInfoVariables): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
 
 interface GetVoterByInfoRef {
   ...
@@ -324,7 +329,7 @@ export const getVoterByInfoRef: GetVoterByInfoRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getVoterByInfo(dc: DataConnect, vars: GetVoterByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
+getVoterByInfo(dc: DataConnect, vars: GetVoterByInfoVariables): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
 
 interface GetVoterByInfoRef {
   ...
@@ -433,7 +438,7 @@ executeQuery(ref).then((response) => {
 ## GetElectionSettings
 You can execute the `GetElectionSettings` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getElectionSettings(vars: GetElectionSettingsVariables, options?: ExecuteQueryOptions): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
+getElectionSettings(vars: GetElectionSettingsVariables): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
 
 interface GetElectionSettingsRef {
   ...
@@ -444,7 +449,7 @@ export const getElectionSettingsRef: GetElectionSettingsRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getElectionSettings(dc: DataConnect, vars: GetElectionSettingsVariables, options?: ExecuteQueryOptions): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
+getElectionSettings(dc: DataConnect, vars: GetElectionSettingsVariables): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
 
 interface GetElectionSettingsRef {
   ...
@@ -550,7 +555,7 @@ executeQuery(ref).then((response) => {
 ## ListCandidatesByPosition
 You can execute the `ListCandidatesByPosition` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listCandidatesByPosition(vars: ListCandidatesByPositionVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+listCandidatesByPosition(vars: ListCandidatesByPositionVariables): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
 
 interface ListCandidatesByPositionRef {
   ...
@@ -561,7 +566,7 @@ export const listCandidatesByPositionRef: ListCandidatesByPositionRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listCandidatesByPosition(dc: DataConnect, vars: ListCandidatesByPositionVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+listCandidatesByPosition(dc: DataConnect, vars: ListCandidatesByPositionVariables): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
 
 interface ListCandidatesByPositionRef {
   ...
@@ -674,7 +679,7 @@ executeQuery(ref).then((response) => {
 ## ListCandidatesByRound
 You can execute the `ListCandidatesByRound` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listCandidatesByRound(vars: ListCandidatesByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+listCandidatesByRound(vars: ListCandidatesByRoundVariables): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
 
 interface ListCandidatesByRoundRef {
   ...
@@ -685,7 +690,7 @@ export const listCandidatesByRoundRef: ListCandidatesByRoundRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listCandidatesByRound(dc: DataConnect, vars: ListCandidatesByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+listCandidatesByRound(dc: DataConnect, vars: ListCandidatesByRoundVariables): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
 
 interface ListCandidatesByRoundRef {
   ...
@@ -801,7 +806,7 @@ executeQuery(ref).then((response) => {
 ## ListVoters
 You can execute the `ListVoters` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listVoters(vars: ListVotersVariables, options?: ExecuteQueryOptions): QueryPromise<ListVotersData, ListVotersVariables>;
+listVoters(vars: ListVotersVariables): QueryPromise<ListVotersData, ListVotersVariables>;
 
 interface ListVotersRef {
   ...
@@ -812,7 +817,7 @@ export const listVotersRef: ListVotersRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listVoters(dc: DataConnect, vars: ListVotersVariables, options?: ExecuteQueryOptions): QueryPromise<ListVotersData, ListVotersVariables>;
+listVoters(dc: DataConnect, vars: ListVotersVariables): QueryPromise<ListVotersData, ListVotersVariables>;
 
 interface ListVotersRef {
   ...
@@ -916,7 +921,7 @@ executeQuery(ref).then((response) => {
 ## ListVoterParticipations
 You can execute the `ListVoterParticipations` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listVoterParticipations(vars: ListVoterParticipationsVariables, options?: ExecuteQueryOptions): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+listVoterParticipations(vars: ListVoterParticipationsVariables): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
 
 interface ListVoterParticipationsRef {
   ...
@@ -927,7 +932,7 @@ export const listVoterParticipationsRef: ListVoterParticipationsRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listVoterParticipations(dc: DataConnect, vars: ListVoterParticipationsVariables, options?: ExecuteQueryOptions): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+listVoterParticipations(dc: DataConnect, vars: ListVoterParticipationsVariables): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
 
 interface ListVoterParticipationsRef {
   ...
@@ -1030,7 +1035,7 @@ executeQuery(ref).then((response) => {
 ## ListElections
 You can execute the `ListElections` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listElections(options?: ExecuteQueryOptions): QueryPromise<ListElectionsData, undefined>;
+listElections(): QueryPromise<ListElectionsData, undefined>;
 
 interface ListElectionsRef {
   ...
@@ -1041,7 +1046,7 @@ export const listElectionsRef: ListElectionsRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listElections(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListElectionsData, undefined>;
+listElections(dc: DataConnect): QueryPromise<ListElectionsData, undefined>;
 
 interface ListElectionsRef {
   ...
@@ -1125,7 +1130,7 @@ executeQuery(ref).then((response) => {
 ## GetResultsByRound
 You can execute the `GetResultsByRound` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getResultsByRound(vars: GetResultsByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
+getResultsByRound(vars: GetResultsByRoundVariables): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
 
 interface GetResultsByRoundRef {
   ...
@@ -1136,7 +1141,7 @@ export const getResultsByRoundRef: GetResultsByRoundRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getResultsByRound(dc: DataConnect, vars: GetResultsByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
+getResultsByRound(dc: DataConnect, vars: GetResultsByRoundVariables): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
 
 interface GetResultsByRoundRef {
   ...
@@ -1251,7 +1256,7 @@ executeQuery(ref).then((response) => {
 ## ListAdminLogs
 You can execute the `ListAdminLogs` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listAdminLogs(vars: ListAdminLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
+listAdminLogs(vars: ListAdminLogsVariables): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
 
 interface ListAdminLogsRef {
   ...
@@ -1262,7 +1267,7 @@ export const listAdminLogsRef: ListAdminLogsRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listAdminLogs(dc: DataConnect, vars: ListAdminLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
+listAdminLogs(dc: DataConnect, vars: ListAdminLogsVariables): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
 
 interface ListAdminLogsRef {
   ...
@@ -1367,7 +1372,7 @@ executeQuery(ref).then((response) => {
 ## ListAuditLogs
 You can execute the `ListAuditLogs` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listAuditLogs(vars: ListAuditLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
+listAuditLogs(vars: ListAuditLogsVariables): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
 
 interface ListAuditLogsRef {
   ...
@@ -1378,7 +1383,7 @@ export const listAuditLogsRef: ListAuditLogsRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listAuditLogs(dc: DataConnect, vars: ListAuditLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
+listAuditLogs(dc: DataConnect, vars: ListAuditLogsVariables): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
 
 interface ListAuditLogsRef {
   ...
@@ -1484,7 +1489,7 @@ executeQuery(ref).then((response) => {
 ## ListAllCandidates
 You can execute the `ListAllCandidates` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listAllCandidates(vars: ListAllCandidatesVariables, options?: ExecuteQueryOptions): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+listAllCandidates(vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
 
 interface ListAllCandidatesRef {
   ...
@@ -1495,7 +1500,7 @@ export const listAllCandidatesRef: ListAllCandidatesRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listAllCandidates(dc: DataConnect, vars: ListAllCandidatesVariables, options?: ExecuteQueryOptions): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+listAllCandidates(dc: DataConnect, vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
 
 interface ListAllCandidatesRef {
   ...
@@ -1605,7 +1610,7 @@ executeQuery(ref).then((response) => {
 ## GetMemberByInfo
 You can execute the `GetMemberByInfo` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getMemberByInfo(vars: GetMemberByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
+getMemberByInfo(vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
 
 interface GetMemberByInfoRef {
   ...
@@ -1616,7 +1621,7 @@ export const getMemberByInfoRef: GetMemberByInfoRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getMemberByInfo(dc: DataConnect, vars: GetMemberByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
+getMemberByInfo(dc: DataConnect, vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
 
 interface GetMemberByInfoRef {
   ...
@@ -1722,7 +1727,7 @@ executeQuery(ref).then((response) => {
 ## GetSurvey
 You can execute the `GetSurvey` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-getSurvey(vars: GetSurveyVariables, options?: ExecuteQueryOptions): QueryPromise<GetSurveyData, GetSurveyVariables>;
+getSurvey(vars: GetSurveyVariables): QueryPromise<GetSurveyData, GetSurveyVariables>;
 
 interface GetSurveyRef {
   ...
@@ -1733,7 +1738,7 @@ export const getSurveyRef: GetSurveyRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-getSurvey(dc: DataConnect, vars: GetSurveyVariables, options?: ExecuteQueryOptions): QueryPromise<GetSurveyData, GetSurveyVariables>;
+getSurvey(dc: DataConnect, vars: GetSurveyVariables): QueryPromise<GetSurveyData, GetSurveyVariables>;
 
 interface GetSurveyRef {
   ...
@@ -1835,10 +1840,124 @@ executeQuery(ref).then((response) => {
 });
 ```
 
+## ListSurveySections
+You can execute the `ListSurveySections` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+listSurveySections(vars: ListSurveySectionsVariables): QueryPromise<ListSurveySectionsData, ListSurveySectionsVariables>;
+
+interface ListSurveySectionsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveySectionsVariables): QueryRef<ListSurveySectionsData, ListSurveySectionsVariables>;
+}
+export const listSurveySectionsRef: ListSurveySectionsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+listSurveySections(dc: DataConnect, vars: ListSurveySectionsVariables): QueryPromise<ListSurveySectionsData, ListSurveySectionsVariables>;
+
+interface ListSurveySectionsRef {
+  ...
+  (dc: DataConnect, vars: ListSurveySectionsVariables): QueryRef<ListSurveySectionsData, ListSurveySectionsVariables>;
+}
+export const listSurveySectionsRef: ListSurveySectionsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listSurveySectionsRef:
+```typescript
+const name = listSurveySectionsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ListSurveySections` query requires an argument of type `ListSurveySectionsVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface ListSurveySectionsVariables {
+  surveyId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `ListSurveySections` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ListSurveySectionsData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ListSurveySectionsData {
+  surveySections: ({
+    id: UUIDString;
+    title: string;
+    description?: string | null;
+    orderIdx: number;
+  } & SurveySection_Key)[];
+}
+```
+### Using `ListSurveySections`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, listSurveySections, ListSurveySectionsVariables } from '@vote/dataconnect';
+
+// The `ListSurveySections` query requires an argument of type `ListSurveySectionsVariables`:
+const listSurveySectionsVars: ListSurveySectionsVariables = {
+  surveyId: ..., 
+};
+
+// Call the `listSurveySections()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await listSurveySections(listSurveySectionsVars);
+// Variables can be defined inline as well.
+const { data } = await listSurveySections({ surveyId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await listSurveySections(dataConnect, listSurveySectionsVars);
+
+console.log(data.surveySections);
+
+// Or, you can use the `Promise` API.
+listSurveySections(listSurveySectionsVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveySections);
+});
+```
+
+### Using `ListSurveySections`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, listSurveySectionsRef, ListSurveySectionsVariables } from '@vote/dataconnect';
+
+// The `ListSurveySections` query requires an argument of type `ListSurveySectionsVariables`:
+const listSurveySectionsVars: ListSurveySectionsVariables = {
+  surveyId: ..., 
+};
+
+// Call the `listSurveySectionsRef()` function to get a reference to the query.
+const ref = listSurveySectionsRef(listSurveySectionsVars);
+// Variables can be defined inline as well.
+const ref = listSurveySectionsRef({ surveyId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = listSurveySectionsRef(dataConnect, listSurveySectionsVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.surveySections);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveySections);
+});
+```
+
 ## ListSurveyQuestions
 You can execute the `ListSurveyQuestions` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listSurveyQuestions(vars: ListSurveyQuestionsVariables, options?: ExecuteQueryOptions): QueryPromise<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
+listSurveyQuestions(vars: ListSurveyQuestionsVariables): QueryPromise<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
 
 interface ListSurveyQuestionsRef {
   ...
@@ -1849,7 +1968,7 @@ export const listSurveyQuestionsRef: ListSurveyQuestionsRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listSurveyQuestions(dc: DataConnect, vars: ListSurveyQuestionsVariables, options?: ExecuteQueryOptions): QueryPromise<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
+listSurveyQuestions(dc: DataConnect, vars: ListSurveyQuestionsVariables): QueryPromise<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
 
 interface ListSurveyQuestionsRef {
   ...
@@ -1880,9 +1999,11 @@ The `data` property is an object of type `ListSurveyQuestionsData`, which is def
 export interface ListSurveyQuestionsData {
   surveyQuestions: ({
     id: UUIDString;
+    sectionId?: UUIDString | null;
     text: string;
     type: string;
     options?: string | null;
+    logic?: string | null;
     orderIdx: number;
   } & SurveyQuestion_Key)[];
 }
@@ -4198,6 +4319,130 @@ executeMutation(ref).then((response) => {
 });
 ```
 
+## UpdateSurvey
+You can execute the `UpdateSurvey` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+updateSurvey(vars: UpdateSurveyVariables): MutationPromise<UpdateSurveyData, UpdateSurveyVariables>;
+
+interface UpdateSurveyRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSurveyVariables): MutationRef<UpdateSurveyData, UpdateSurveyVariables>;
+}
+export const updateSurveyRef: UpdateSurveyRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateSurvey(dc: DataConnect, vars: UpdateSurveyVariables): MutationPromise<UpdateSurveyData, UpdateSurveyVariables>;
+
+interface UpdateSurveyRef {
+  ...
+  (dc: DataConnect, vars: UpdateSurveyVariables): MutationRef<UpdateSurveyData, UpdateSurveyVariables>;
+}
+export const updateSurveyRef: UpdateSurveyRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateSurveyRef:
+```typescript
+const name = updateSurveyRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateSurvey` mutation requires an argument of type `UpdateSurveyVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateSurveyVariables {
+  id: UUIDString;
+  title?: string | null;
+  description?: string | null;
+  isActive?: boolean | null;
+  startDate?: TimestampString | null;
+  endDate?: TimestampString | null;
+}
+```
+### Return Type
+Recall that executing the `UpdateSurvey` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateSurveyData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateSurveyData {
+  survey_update?: Survey_Key | null;
+}
+```
+### Using `UpdateSurvey`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateSurvey, UpdateSurveyVariables } from '@vote/dataconnect';
+
+// The `UpdateSurvey` mutation requires an argument of type `UpdateSurveyVariables`:
+const updateSurveyVars: UpdateSurveyVariables = {
+  id: ..., 
+  title: ..., // optional
+  description: ..., // optional
+  isActive: ..., // optional
+  startDate: ..., // optional
+  endDate: ..., // optional
+};
+
+// Call the `updateSurvey()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateSurvey(updateSurveyVars);
+// Variables can be defined inline as well.
+const { data } = await updateSurvey({ id: ..., title: ..., description: ..., isActive: ..., startDate: ..., endDate: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateSurvey(dataConnect, updateSurveyVars);
+
+console.log(data.survey_update);
+
+// Or, you can use the `Promise` API.
+updateSurvey(updateSurveyVars).then((response) => {
+  const data = response.data;
+  console.log(data.survey_update);
+});
+```
+
+### Using `UpdateSurvey`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateSurveyRef, UpdateSurveyVariables } from '@vote/dataconnect';
+
+// The `UpdateSurvey` mutation requires an argument of type `UpdateSurveyVariables`:
+const updateSurveyVars: UpdateSurveyVariables = {
+  id: ..., 
+  title: ..., // optional
+  description: ..., // optional
+  isActive: ..., // optional
+  startDate: ..., // optional
+  endDate: ..., // optional
+};
+
+// Call the `updateSurveyRef()` function to get a reference to the mutation.
+const ref = updateSurveyRef(updateSurveyVars);
+// Variables can be defined inline as well.
+const ref = updateSurveyRef({ id: ..., title: ..., description: ..., isActive: ..., startDate: ..., endDate: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateSurveyRef(dataConnect, updateSurveyVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.survey_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.survey_update);
+});
+```
+
 ## SubmitSurveyResponse
 You can execute the `SubmitSurveyResponse` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
@@ -4422,6 +4667,351 @@ executeMutation(ref).then((response) => {
 });
 ```
 
+## CreateSurveySection
+You can execute the `CreateSurveySection` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+createSurveySection(vars: CreateSurveySectionVariables): MutationPromise<CreateSurveySectionData, CreateSurveySectionVariables>;
+
+interface CreateSurveySectionRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateSurveySectionVariables): MutationRef<CreateSurveySectionData, CreateSurveySectionVariables>;
+}
+export const createSurveySectionRef: CreateSurveySectionRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createSurveySection(dc: DataConnect, vars: CreateSurveySectionVariables): MutationPromise<CreateSurveySectionData, CreateSurveySectionVariables>;
+
+interface CreateSurveySectionRef {
+  ...
+  (dc: DataConnect, vars: CreateSurveySectionVariables): MutationRef<CreateSurveySectionData, CreateSurveySectionVariables>;
+}
+export const createSurveySectionRef: CreateSurveySectionRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createSurveySectionRef:
+```typescript
+const name = createSurveySectionRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreateSurveySection` mutation requires an argument of type `CreateSurveySectionVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreateSurveySectionVariables {
+  surveyId: UUIDString;
+  title: string;
+  description?: string | null;
+  orderIdx: number;
+}
+```
+### Return Type
+Recall that executing the `CreateSurveySection` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreateSurveySectionData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreateSurveySectionData {
+  surveySection_insert: SurveySection_Key;
+}
+```
+### Using `CreateSurveySection`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createSurveySection, CreateSurveySectionVariables } from '@vote/dataconnect';
+
+// The `CreateSurveySection` mutation requires an argument of type `CreateSurveySectionVariables`:
+const createSurveySectionVars: CreateSurveySectionVariables = {
+  surveyId: ..., 
+  title: ..., 
+  description: ..., // optional
+  orderIdx: ..., 
+};
+
+// Call the `createSurveySection()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createSurveySection(createSurveySectionVars);
+// Variables can be defined inline as well.
+const { data } = await createSurveySection({ surveyId: ..., title: ..., description: ..., orderIdx: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createSurveySection(dataConnect, createSurveySectionVars);
+
+console.log(data.surveySection_insert);
+
+// Or, you can use the `Promise` API.
+createSurveySection(createSurveySectionVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveySection_insert);
+});
+```
+
+### Using `CreateSurveySection`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createSurveySectionRef, CreateSurveySectionVariables } from '@vote/dataconnect';
+
+// The `CreateSurveySection` mutation requires an argument of type `CreateSurveySectionVariables`:
+const createSurveySectionVars: CreateSurveySectionVariables = {
+  surveyId: ..., 
+  title: ..., 
+  description: ..., // optional
+  orderIdx: ..., 
+};
+
+// Call the `createSurveySectionRef()` function to get a reference to the mutation.
+const ref = createSurveySectionRef(createSurveySectionVars);
+// Variables can be defined inline as well.
+const ref = createSurveySectionRef({ surveyId: ..., title: ..., description: ..., orderIdx: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createSurveySectionRef(dataConnect, createSurveySectionVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.surveySection_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveySection_insert);
+});
+```
+
+## UpdateSurveySection
+You can execute the `UpdateSurveySection` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+updateSurveySection(vars: UpdateSurveySectionVariables): MutationPromise<UpdateSurveySectionData, UpdateSurveySectionVariables>;
+
+interface UpdateSurveySectionRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSurveySectionVariables): MutationRef<UpdateSurveySectionData, UpdateSurveySectionVariables>;
+}
+export const updateSurveySectionRef: UpdateSurveySectionRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateSurveySection(dc: DataConnect, vars: UpdateSurveySectionVariables): MutationPromise<UpdateSurveySectionData, UpdateSurveySectionVariables>;
+
+interface UpdateSurveySectionRef {
+  ...
+  (dc: DataConnect, vars: UpdateSurveySectionVariables): MutationRef<UpdateSurveySectionData, UpdateSurveySectionVariables>;
+}
+export const updateSurveySectionRef: UpdateSurveySectionRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateSurveySectionRef:
+```typescript
+const name = updateSurveySectionRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateSurveySection` mutation requires an argument of type `UpdateSurveySectionVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateSurveySectionVariables {
+  id: UUIDString;
+  title?: string | null;
+  description?: string | null;
+  orderIdx?: number | null;
+}
+```
+### Return Type
+Recall that executing the `UpdateSurveySection` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateSurveySectionData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateSurveySectionData {
+  surveySection_update?: SurveySection_Key | null;
+}
+```
+### Using `UpdateSurveySection`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateSurveySection, UpdateSurveySectionVariables } from '@vote/dataconnect';
+
+// The `UpdateSurveySection` mutation requires an argument of type `UpdateSurveySectionVariables`:
+const updateSurveySectionVars: UpdateSurveySectionVariables = {
+  id: ..., 
+  title: ..., // optional
+  description: ..., // optional
+  orderIdx: ..., // optional
+};
+
+// Call the `updateSurveySection()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateSurveySection(updateSurveySectionVars);
+// Variables can be defined inline as well.
+const { data } = await updateSurveySection({ id: ..., title: ..., description: ..., orderIdx: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateSurveySection(dataConnect, updateSurveySectionVars);
+
+console.log(data.surveySection_update);
+
+// Or, you can use the `Promise` API.
+updateSurveySection(updateSurveySectionVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveySection_update);
+});
+```
+
+### Using `UpdateSurveySection`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateSurveySectionRef, UpdateSurveySectionVariables } from '@vote/dataconnect';
+
+// The `UpdateSurveySection` mutation requires an argument of type `UpdateSurveySectionVariables`:
+const updateSurveySectionVars: UpdateSurveySectionVariables = {
+  id: ..., 
+  title: ..., // optional
+  description: ..., // optional
+  orderIdx: ..., // optional
+};
+
+// Call the `updateSurveySectionRef()` function to get a reference to the mutation.
+const ref = updateSurveySectionRef(updateSurveySectionVars);
+// Variables can be defined inline as well.
+const ref = updateSurveySectionRef({ id: ..., title: ..., description: ..., orderIdx: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateSurveySectionRef(dataConnect, updateSurveySectionVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.surveySection_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveySection_update);
+});
+```
+
+## DeleteSurveySection
+You can execute the `DeleteSurveySection` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+deleteSurveySection(vars: DeleteSurveySectionVariables): MutationPromise<DeleteSurveySectionData, DeleteSurveySectionVariables>;
+
+interface DeleteSurveySectionRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSurveySectionVariables): MutationRef<DeleteSurveySectionData, DeleteSurveySectionVariables>;
+}
+export const deleteSurveySectionRef: DeleteSurveySectionRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+deleteSurveySection(dc: DataConnect, vars: DeleteSurveySectionVariables): MutationPromise<DeleteSurveySectionData, DeleteSurveySectionVariables>;
+
+interface DeleteSurveySectionRef {
+  ...
+  (dc: DataConnect, vars: DeleteSurveySectionVariables): MutationRef<DeleteSurveySectionData, DeleteSurveySectionVariables>;
+}
+export const deleteSurveySectionRef: DeleteSurveySectionRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the deleteSurveySectionRef:
+```typescript
+const name = deleteSurveySectionRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `DeleteSurveySection` mutation requires an argument of type `DeleteSurveySectionVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface DeleteSurveySectionVariables {
+  id: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `DeleteSurveySection` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `DeleteSurveySectionData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface DeleteSurveySectionData {
+  surveySection_delete?: SurveySection_Key | null;
+}
+```
+### Using `DeleteSurveySection`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, deleteSurveySection, DeleteSurveySectionVariables } from '@vote/dataconnect';
+
+// The `DeleteSurveySection` mutation requires an argument of type `DeleteSurveySectionVariables`:
+const deleteSurveySectionVars: DeleteSurveySectionVariables = {
+  id: ..., 
+};
+
+// Call the `deleteSurveySection()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await deleteSurveySection(deleteSurveySectionVars);
+// Variables can be defined inline as well.
+const { data } = await deleteSurveySection({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await deleteSurveySection(dataConnect, deleteSurveySectionVars);
+
+console.log(data.surveySection_delete);
+
+// Or, you can use the `Promise` API.
+deleteSurveySection(deleteSurveySectionVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveySection_delete);
+});
+```
+
+### Using `DeleteSurveySection`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, deleteSurveySectionRef, DeleteSurveySectionVariables } from '@vote/dataconnect';
+
+// The `DeleteSurveySection` mutation requires an argument of type `DeleteSurveySectionVariables`:
+const deleteSurveySectionVars: DeleteSurveySectionVariables = {
+  id: ..., 
+};
+
+// Call the `deleteSurveySectionRef()` function to get a reference to the mutation.
+const ref = deleteSurveySectionRef(deleteSurveySectionVars);
+// Variables can be defined inline as well.
+const ref = deleteSurveySectionRef({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = deleteSurveySectionRef(dataConnect, deleteSurveySectionVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.surveySection_delete);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveySection_delete);
+});
+```
+
 ## CreateSurveyQuestion
 You can execute the `CreateSurveyQuestion` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
@@ -4457,9 +5047,11 @@ The `CreateSurveyQuestion` mutation requires an argument of type `CreateSurveyQu
 ```typescript
 export interface CreateSurveyQuestionVariables {
   surveyId: UUIDString;
+  sectionId?: UUIDString | null;
   text: string;
   type: string;
   options?: string | null;
+  logic?: string | null;
   orderIdx: number;
 }
 ```
@@ -4481,9 +5073,11 @@ import { connectorConfig, createSurveyQuestion, CreateSurveyQuestionVariables } 
 // The `CreateSurveyQuestion` mutation requires an argument of type `CreateSurveyQuestionVariables`:
 const createSurveyQuestionVars: CreateSurveyQuestionVariables = {
   surveyId: ..., 
+  sectionId: ..., // optional
   text: ..., 
   type: ..., 
   options: ..., // optional
+  logic: ..., // optional
   orderIdx: ..., 
 };
 
@@ -4491,7 +5085,7 @@ const createSurveyQuestionVars: CreateSurveyQuestionVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await createSurveyQuestion(createSurveyQuestionVars);
 // Variables can be defined inline as well.
-const { data } = await createSurveyQuestion({ surveyId: ..., text: ..., type: ..., options: ..., orderIdx: ..., });
+const { data } = await createSurveyQuestion({ surveyId: ..., sectionId: ..., text: ..., type: ..., options: ..., logic: ..., orderIdx: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4515,16 +5109,18 @@ import { connectorConfig, createSurveyQuestionRef, CreateSurveyQuestionVariables
 // The `CreateSurveyQuestion` mutation requires an argument of type `CreateSurveyQuestionVariables`:
 const createSurveyQuestionVars: CreateSurveyQuestionVariables = {
   surveyId: ..., 
+  sectionId: ..., // optional
   text: ..., 
   type: ..., 
   options: ..., // optional
+  logic: ..., // optional
   orderIdx: ..., 
 };
 
 // Call the `createSurveyQuestionRef()` function to get a reference to the mutation.
 const ref = createSurveyQuestionRef(createSurveyQuestionVars);
 // Variables can be defined inline as well.
-const ref = createSurveyQuestionRef({ surveyId: ..., text: ..., type: ..., options: ..., orderIdx: ..., });
+const ref = createSurveyQuestionRef({ surveyId: ..., sectionId: ..., text: ..., type: ..., options: ..., logic: ..., orderIdx: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4578,9 +5174,11 @@ The `UpdateSurveyQuestion` mutation requires an argument of type `UpdateSurveyQu
 ```typescript
 export interface UpdateSurveyQuestionVariables {
   id: UUIDString;
+  sectionId?: UUIDString | null;
   text?: string | null;
   type?: string | null;
   options?: string | null;
+  logic?: string | null;
   orderIdx?: number | null;
 }
 ```
@@ -4602,9 +5200,11 @@ import { connectorConfig, updateSurveyQuestion, UpdateSurveyQuestionVariables } 
 // The `UpdateSurveyQuestion` mutation requires an argument of type `UpdateSurveyQuestionVariables`:
 const updateSurveyQuestionVars: UpdateSurveyQuestionVariables = {
   id: ..., 
+  sectionId: ..., // optional
   text: ..., // optional
   type: ..., // optional
   options: ..., // optional
+  logic: ..., // optional
   orderIdx: ..., // optional
 };
 
@@ -4612,7 +5212,7 @@ const updateSurveyQuestionVars: UpdateSurveyQuestionVariables = {
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await updateSurveyQuestion(updateSurveyQuestionVars);
 // Variables can be defined inline as well.
-const { data } = await updateSurveyQuestion({ id: ..., text: ..., type: ..., options: ..., orderIdx: ..., });
+const { data } = await updateSurveyQuestion({ id: ..., sectionId: ..., text: ..., type: ..., options: ..., logic: ..., orderIdx: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -4636,16 +5236,18 @@ import { connectorConfig, updateSurveyQuestionRef, UpdateSurveyQuestionVariables
 // The `UpdateSurveyQuestion` mutation requires an argument of type `UpdateSurveyQuestionVariables`:
 const updateSurveyQuestionVars: UpdateSurveyQuestionVariables = {
   id: ..., 
+  sectionId: ..., // optional
   text: ..., // optional
   type: ..., // optional
   options: ..., // optional
+  logic: ..., // optional
   orderIdx: ..., // optional
 };
 
 // Call the `updateSurveyQuestionRef()` function to get a reference to the mutation.
 const ref = updateSurveyQuestionRef(updateSurveyQuestionVars);
 // Variables can be defined inline as well.
-const ref = updateSurveyQuestionRef({ id: ..., text: ..., type: ..., options: ..., orderIdx: ..., });
+const ref = updateSurveyQuestionRef({ id: ..., sectionId: ..., text: ..., type: ..., options: ..., logic: ..., orderIdx: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);

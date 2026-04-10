@@ -28,6 +28,7 @@ import {
     submitVote as submitVoteSDK,
     createMember as createMemberSDK,
     createSurvey as createSurveySDK,
+    updateSurvey as updateSurveySDK,
     updateSystemService as updateSystemServiceSDK,
     getMemberByInfo as getMemberByInfoSDK,
     getSurvey as getSurveySDK,
@@ -37,7 +38,11 @@ import {
     listSurveyQuestions as listSurveyQuestionsSDK,
     createSurveyQuestion as createSurveyQuestionSDK,
     updateSurveyQuestion as updateSurveyQuestionSDK,
-    deleteSurveyQuestion as deleteSurveyQuestionSDK
+    deleteSurveyQuestion as deleteSurveyQuestionSDK,
+    listSurveySections as listSurveySectionsSDK,
+    createSurveySection as createSurveySectionSDK,
+    updateSurveySection as updateSurveySectionSDK,
+    deleteSurveySection as deleteSurveySectionSDK
 } from '@/lib/dataconnect';
 
 
@@ -307,6 +312,16 @@ export async function listSurveysAction() {
     }
 }
 
+export async function updateSurveyAction(vars: { id: string, title?: string, description?: string, isActive?: boolean, startDate?: string, endDate?: string }) {
+    try {
+        await updateSurveySDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('updateSurveyAction error:', error);
+        return { success: false, error: '설문 정보 수정에 실패했습니다.' };
+    }
+}
+
 export async function deleteSurveyAction(id: string) {
     try {
         await deleteSurveySDK({ id });
@@ -317,7 +332,7 @@ export async function deleteSurveyAction(id: string) {
     }
 }
 
-export async function createSurveyQuestionAction(vars: { surveyId: string, text: string, type: string, options?: string, orderIdx: number }) {
+export async function createSurveyQuestionAction(vars: { surveyId: string, sectionId?: string, text: string, type: string, options?: string, logic?: string, orderIdx: number }) {
     try {
         await createSurveyQuestionSDK(vars);
         return { success: true };
@@ -327,7 +342,7 @@ export async function createSurveyQuestionAction(vars: { surveyId: string, text:
     }
 }
 
-export async function updateSurveyQuestionAction(vars: { id: string, text?: string, type?: string, options?: string, orderIdx?: number }) {
+export async function updateSurveyQuestionAction(vars: { id: string, sectionId?: string | null, text?: string, type?: string, options?: string, logic?: string | null, orderIdx?: number }) {
     try {
         await updateSurveyQuestionSDK(vars);
         return { success: true };
@@ -344,5 +359,46 @@ export async function deleteSurveyQuestionAction(id: string) {
     } catch (error) {
         console.error('deleteSurveyQuestionAction error:', error);
         return { success: false, error: '문항 삭제에 실패했습니다.' };
+    }
+}
+
+// --- SurveySection Actions ---
+export async function listSurveySectionsAction(surveyId: string) {
+    try {
+        const res = await listSurveySectionsSDK({ surveyId });
+        return { success: true, data: res.data.surveySections };
+    } catch (error) {
+        console.error('listSurveySectionsAction error:', error);
+        return { success: false, error: '섹션 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function createSurveySectionAction(vars: { surveyId: string, title: string, description?: string, orderIdx: number }) {
+    try {
+        await createSurveySectionSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createSurveySectionAction error:', error);
+        return { success: false, error: '섹션 생성에 실패했습니다.' };
+    }
+}
+
+export async function updateSurveySectionAction(vars: { id: string, title?: string, description?: string, orderIdx?: number }) {
+    try {
+        await updateSurveySectionSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('updateSurveySectionAction error:', error);
+        return { success: false, error: '섹션 수정에 실패했습니다.' };
+    }
+}
+
+export async function deleteSurveySectionAction(id: string) {
+    try {
+        await deleteSurveySectionSDK({ id });
+        return { success: true };
+    } catch (error) {
+        console.error('deleteSurveySectionAction error:', error);
+        return { success: false, error: '섹션 삭제에 실패했습니다.' };
     }
 }

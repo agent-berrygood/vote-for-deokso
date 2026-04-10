@@ -364,6 +364,16 @@ query GetSurvey($id: UUID!) @auth(level: PUBLIC) {
   }
 }
 
+mutation UpdateSurvey($id: UUID!, $title: String, $description: String, $isActive: Boolean, $startDate: Timestamp, $endDate: Timestamp) @auth(level: PUBLIC) {
+  survey_update(id: $id, data: {
+    title: $title,
+    description: $description,
+    isActive: $isActive,
+    startDate: $startDate,
+    endDate: $endDate
+  })
+}
+
 mutation SubmitSurveyResponse($surveyId: UUID!, $memberId: UUID!, $answers: String!) @auth(level: PUBLIC) {
   surveyResponse_insert(data: {
     surveyId: $surveyId,
@@ -376,34 +386,73 @@ mutation DeleteSurvey($id: UUID!) @auth(level: PUBLIC) {
   survey_delete(id: $id)
 }
 
-# SurveyQuestion 관련
+# SurveySection 관련
+query ListSurveySections($surveyId: UUID!) @auth(level: PUBLIC) {
+  surveySections(where: {
+    surveyId: { eq: $surveyId }
+  }, orderBy: [{ orderIdx: ASC }]) {
+    id
+    title
+    description
+    orderIdx
+  }
+}
+
+mutation CreateSurveySection($surveyId: UUID!, $title: String!, $description: String, $orderIdx: Int!) @auth(level: PUBLIC) {
+  surveySection_insert(data: {
+    surveyId: $surveyId,
+    title: $title,
+    description: $description,
+    orderIdx: $orderIdx
+  })
+}
+
+mutation UpdateSurveySection($id: UUID!, $title: String, $description: String, $orderIdx: Int) @auth(level: PUBLIC) {
+  surveySection_update(id: $id, data: {
+    title: $title,
+    description: $description,
+    orderIdx: $orderIdx
+  })
+}
+
+mutation DeleteSurveySection($id: UUID!) @auth(level: PUBLIC) {
+  surveySection_delete(id: $id)
+}
+
+# SurveyQuestion 관련 (업데이트됨)
 query ListSurveyQuestions($surveyId: UUID!) @auth(level: PUBLIC) {
   surveyQuestions(where: {
     surveyId: { eq: $surveyId }
   }, orderBy: [{ orderIdx: ASC }]) {
     id
+    sectionId
     text
     type
     options
+    logic
     orderIdx
   }
 }
 
-mutation CreateSurveyQuestion($surveyId: UUID!, $text: String!, $type: String!, $options: String, $orderIdx: Int!) @auth(level: PUBLIC) {
+mutation CreateSurveyQuestion($surveyId: UUID!, $sectionId: UUID, $text: String!, $type: String!, $options: String, $logic: String, $orderIdx: Int!) @auth(level: PUBLIC) {
   surveyQuestion_insert(data: {
     surveyId: $surveyId,
+    sectionId: $sectionId,
     text: $text,
     type: $type,
     options: $options,
+    logic: $logic,
     orderIdx: $orderIdx
   })
 }
 
-mutation UpdateSurveyQuestion($id: UUID!, $text: String, $type: String, $options: String, $orderIdx: Int) @auth(level: PUBLIC) {
+mutation UpdateSurveyQuestion($id: UUID!, $sectionId: UUID, $text: String, $type: String, $options: String, $logic: String, $orderIdx: Int) @auth(level: PUBLIC) {
   surveyQuestion_update(id: $id, data: {
+    sectionId: $sectionId,
     text: $text,
     type: $type,
     options: $options,
+    logic: $logic,
     orderIdx: $orderIdx
   })
 }
