@@ -33,7 +33,11 @@ import {
     getSurvey as getSurveySDK,
     listSurveys as listSurveysSDK,
     deleteSurvey as deleteSurveySDK,
-    getVoterByInfo as getVoterByInfoSDK
+    getVoterByInfo as getVoterByInfoSDK,
+    listSurveyQuestions as listSurveyQuestionsSDK,
+    createSurveyQuestion as createSurveyQuestionSDK,
+    updateSurveyQuestion as updateSurveyQuestionSDK,
+    deleteSurveyQuestion as deleteSurveyQuestionSDK
 } from '@/lib/dataconnect';
 
 
@@ -146,6 +150,16 @@ export async function getSurveyAction(vars: { id: string }) {
     } catch (error) {
         console.error('getSurveyAction error:', error);
         return { success: false, error: '설문 정보를 불러오지 못했습니다.' };
+    }
+}
+
+export async function listSurveyQuestionsAction(surveyId: string) {
+    try {
+        const res = await listSurveyQuestionsSDK({ surveyId });
+        return { success: true, data: res.data.surveyQuestions };
+    } catch (error) {
+        console.error('listSurveyQuestionsAction error:', error);
+        return { success: false, error: '문항 목록을 불러오지 못했습니다.' };
     }
 }
 
@@ -300,5 +314,35 @@ export async function deleteSurveyAction(id: string) {
     } catch (error) {
         console.error('deleteSurveyAction error:', error);
         return { success: false, error: '설문을 삭제하지 못했습니다.' };
+    }
+}
+
+export async function createSurveyQuestionAction(vars: { surveyId: string, text: string, type: string, options?: string, orderIdx: number }) {
+    try {
+        await createSurveyQuestionSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('createSurveyQuestionAction error:', error);
+        return { success: false, error: '문항 생성에 실패했습니다.' };
+    }
+}
+
+export async function updateSurveyQuestionAction(vars: { id: string, text?: string, type?: string, options?: string, orderIdx?: number }) {
+    try {
+        await updateSurveyQuestionSDK(vars);
+        return { success: true };
+    } catch (error) {
+        console.error('updateSurveyQuestionAction error:', error);
+        return { success: false, error: '문항 수정에 실패했습니다.' };
+    }
+}
+
+export async function deleteSurveyQuestionAction(id: string) {
+    try {
+        await deleteSurveyQuestionSDK({ id });
+        return { success: true };
+    } catch (error) {
+        console.error('deleteSurveyQuestionAction error:', error);
+        return { success: false, error: '문항 삭제에 실패했습니다.' };
     }
 }

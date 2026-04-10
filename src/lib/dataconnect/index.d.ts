@@ -1,4 +1,4 @@
-import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, MutationRef, MutationPromise } from 'firebase/data-connect';
+import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise } from 'firebase/data-connect';
 
 export const connectorConfig: ConnectorConfig;
 
@@ -91,6 +91,18 @@ export interface CreateSurveyData {
   survey_insert: Survey_Key;
 }
 
+export interface CreateSurveyQuestionData {
+  surveyQuestion_insert: SurveyQuestion_Key;
+}
+
+export interface CreateSurveyQuestionVariables {
+  surveyId: UUIDString;
+  text: string;
+  type: string;
+  options?: string | null;
+  orderIdx: number;
+}
+
 export interface CreateSurveyVariables {
   title: string;
   description?: string | null;
@@ -144,6 +156,14 @@ export interface DeleteCandidatesByRoundVariables {
 
 export interface DeleteSurveyData {
   survey_delete?: Survey_Key | null;
+}
+
+export interface DeleteSurveyQuestionData {
+  surveyQuestion_delete?: SurveyQuestion_Key | null;
+}
+
+export interface DeleteSurveyQuestionVariables {
+  id: UUIDString;
 }
 
 export interface DeleteSurveyVariables {
@@ -362,6 +382,20 @@ export interface ListElectionsData {
   } & Election_Key)[];
 }
 
+export interface ListSurveyQuestionsData {
+  surveyQuestions: ({
+    id: UUIDString;
+    text: string;
+    type: string;
+    options?: string | null;
+    orderIdx: number;
+  } & SurveyQuestion_Key)[];
+}
+
+export interface ListSurveyQuestionsVariables {
+  surveyId: UUIDString;
+}
+
 export interface ListSurveysData {
   surveys: ({
     id: UUIDString;
@@ -495,6 +529,18 @@ export interface UpdateElectionSettingsVariables {
   endDate?: TimestampString | null;
 }
 
+export interface UpdateSurveyQuestionData {
+  surveyQuestion_update?: SurveyQuestion_Key | null;
+}
+
+export interface UpdateSurveyQuestionVariables {
+  id: UUIDString;
+  text?: string | null;
+  type?: string | null;
+  options?: string | null;
+  orderIdx?: number | null;
+}
+
 export interface UpdateSystemServiceData {
   systemSetting_update?: SystemSetting_Key | null;
 }
@@ -535,8 +581,8 @@ interface GetSystemSettingRef {
 }
 export const getSystemSettingRef: GetSystemSettingRef;
 
-export function getSystemSetting(vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
-export function getSystemSetting(dc: DataConnect, vars: GetSystemSettingVariables): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+export function getSystemSetting(vars: GetSystemSettingVariables, options?: ExecuteQueryOptions): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
+export function getSystemSetting(dc: DataConnect, vars: GetSystemSettingVariables, options?: ExecuteQueryOptions): QueryPromise<GetSystemSettingData, GetSystemSettingVariables>;
 
 interface ListSurveysRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -547,8 +593,8 @@ interface ListSurveysRef {
 }
 export const listSurveysRef: ListSurveysRef;
 
-export function listSurveys(): QueryPromise<ListSurveysData, undefined>;
-export function listSurveys(dc: DataConnect): QueryPromise<ListSurveysData, undefined>;
+export function listSurveys(options?: ExecuteQueryOptions): QueryPromise<ListSurveysData, undefined>;
+export function listSurveys(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListSurveysData, undefined>;
 
 interface GetVoterByInfoRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -559,8 +605,8 @@ interface GetVoterByInfoRef {
 }
 export const getVoterByInfoRef: GetVoterByInfoRef;
 
-export function getVoterByInfo(vars: GetVoterByInfoVariables): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
-export function getVoterByInfo(dc: DataConnect, vars: GetVoterByInfoVariables): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
+export function getVoterByInfo(vars: GetVoterByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
+export function getVoterByInfo(dc: DataConnect, vars: GetVoterByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetVoterByInfoData, GetVoterByInfoVariables>;
 
 interface GetElectionSettingsRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -571,8 +617,8 @@ interface GetElectionSettingsRef {
 }
 export const getElectionSettingsRef: GetElectionSettingsRef;
 
-export function getElectionSettings(vars: GetElectionSettingsVariables): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
-export function getElectionSettings(dc: DataConnect, vars: GetElectionSettingsVariables): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
+export function getElectionSettings(vars: GetElectionSettingsVariables, options?: ExecuteQueryOptions): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
+export function getElectionSettings(dc: DataConnect, vars: GetElectionSettingsVariables, options?: ExecuteQueryOptions): QueryPromise<GetElectionSettingsData, GetElectionSettingsVariables>;
 
 interface ListCandidatesByPositionRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -583,8 +629,8 @@ interface ListCandidatesByPositionRef {
 }
 export const listCandidatesByPositionRef: ListCandidatesByPositionRef;
 
-export function listCandidatesByPosition(vars: ListCandidatesByPositionVariables): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
-export function listCandidatesByPosition(dc: DataConnect, vars: ListCandidatesByPositionVariables): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+export function listCandidatesByPosition(vars: ListCandidatesByPositionVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
+export function listCandidatesByPosition(dc: DataConnect, vars: ListCandidatesByPositionVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByPositionData, ListCandidatesByPositionVariables>;
 
 interface ListCandidatesByRoundRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -595,8 +641,8 @@ interface ListCandidatesByRoundRef {
 }
 export const listCandidatesByRoundRef: ListCandidatesByRoundRef;
 
-export function listCandidatesByRound(vars: ListCandidatesByRoundVariables): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
-export function listCandidatesByRound(dc: DataConnect, vars: ListCandidatesByRoundVariables): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+export function listCandidatesByRound(vars: ListCandidatesByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
+export function listCandidatesByRound(dc: DataConnect, vars: ListCandidatesByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<ListCandidatesByRoundData, ListCandidatesByRoundVariables>;
 
 interface SubmitVoteRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -631,8 +677,8 @@ interface ListVotersRef {
 }
 export const listVotersRef: ListVotersRef;
 
-export function listVoters(vars: ListVotersVariables): QueryPromise<ListVotersData, ListVotersVariables>;
-export function listVoters(dc: DataConnect, vars: ListVotersVariables): QueryPromise<ListVotersData, ListVotersVariables>;
+export function listVoters(vars: ListVotersVariables, options?: ExecuteQueryOptions): QueryPromise<ListVotersData, ListVotersVariables>;
+export function listVoters(dc: DataConnect, vars: ListVotersVariables, options?: ExecuteQueryOptions): QueryPromise<ListVotersData, ListVotersVariables>;
 
 interface CreateVoterRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -679,8 +725,8 @@ interface ListVoterParticipationsRef {
 }
 export const listVoterParticipationsRef: ListVoterParticipationsRef;
 
-export function listVoterParticipations(vars: ListVoterParticipationsVariables): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
-export function listVoterParticipations(dc: DataConnect, vars: ListVoterParticipationsVariables): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+export function listVoterParticipations(vars: ListVoterParticipationsVariables, options?: ExecuteQueryOptions): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
+export function listVoterParticipations(dc: DataConnect, vars: ListVoterParticipationsVariables, options?: ExecuteQueryOptions): QueryPromise<ListVoterParticipationsData, ListVoterParticipationsVariables>;
 
 interface CreateCandidateRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -787,8 +833,8 @@ interface ListElectionsRef {
 }
 export const listElectionsRef: ListElectionsRef;
 
-export function listElections(): QueryPromise<ListElectionsData, undefined>;
-export function listElections(dc: DataConnect): QueryPromise<ListElectionsData, undefined>;
+export function listElections(options?: ExecuteQueryOptions): QueryPromise<ListElectionsData, undefined>;
+export function listElections(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListElectionsData, undefined>;
 
 interface UpdateActiveElectionRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -811,8 +857,8 @@ interface GetResultsByRoundRef {
 }
 export const getResultsByRoundRef: GetResultsByRoundRef;
 
-export function getResultsByRound(vars: GetResultsByRoundVariables): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
-export function getResultsByRound(dc: DataConnect, vars: GetResultsByRoundVariables): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
+export function getResultsByRound(vars: GetResultsByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
+export function getResultsByRound(dc: DataConnect, vars: GetResultsByRoundVariables, options?: ExecuteQueryOptions): QueryPromise<GetResultsByRoundData, GetResultsByRoundVariables>;
 
 interface ListAdminLogsRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -823,8 +869,8 @@ interface ListAdminLogsRef {
 }
 export const listAdminLogsRef: ListAdminLogsRef;
 
-export function listAdminLogs(vars: ListAdminLogsVariables): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
-export function listAdminLogs(dc: DataConnect, vars: ListAdminLogsVariables): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
+export function listAdminLogs(vars: ListAdminLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
+export function listAdminLogs(dc: DataConnect, vars: ListAdminLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAdminLogsData, ListAdminLogsVariables>;
 
 interface ListAuditLogsRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -835,8 +881,8 @@ interface ListAuditLogsRef {
 }
 export const listAuditLogsRef: ListAuditLogsRef;
 
-export function listAuditLogs(vars: ListAuditLogsVariables): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
-export function listAuditLogs(dc: DataConnect, vars: ListAuditLogsVariables): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
+export function listAuditLogs(vars: ListAuditLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
+export function listAuditLogs(dc: DataConnect, vars: ListAuditLogsVariables, options?: ExecuteQueryOptions): QueryPromise<ListAuditLogsData, ListAuditLogsVariables>;
 
 interface DeleteAllCandidatesRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -871,8 +917,8 @@ interface ListAllCandidatesRef {
 }
 export const listAllCandidatesRef: ListAllCandidatesRef;
 
-export function listAllCandidates(vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
-export function listAllCandidates(dc: DataConnect, vars: ListAllCandidatesVariables): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+export function listAllCandidates(vars: ListAllCandidatesVariables, options?: ExecuteQueryOptions): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
+export function listAllCandidates(dc: DataConnect, vars: ListAllCandidatesVariables, options?: ExecuteQueryOptions): QueryPromise<ListAllCandidatesData, ListAllCandidatesVariables>;
 
 interface GetMemberByInfoRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -883,8 +929,8 @@ interface GetMemberByInfoRef {
 }
 export const getMemberByInfoRef: GetMemberByInfoRef;
 
-export function getMemberByInfo(vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
-export function getMemberByInfo(dc: DataConnect, vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
+export function getMemberByInfo(vars: GetMemberByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
+export function getMemberByInfo(dc: DataConnect, vars: GetMemberByInfoVariables, options?: ExecuteQueryOptions): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
 
 interface CreateMemberRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -931,8 +977,8 @@ interface GetSurveyRef {
 }
 export const getSurveyRef: GetSurveyRef;
 
-export function getSurvey(vars: GetSurveyVariables): QueryPromise<GetSurveyData, GetSurveyVariables>;
-export function getSurvey(dc: DataConnect, vars: GetSurveyVariables): QueryPromise<GetSurveyData, GetSurveyVariables>;
+export function getSurvey(vars: GetSurveyVariables, options?: ExecuteQueryOptions): QueryPromise<GetSurveyData, GetSurveyVariables>;
+export function getSurvey(dc: DataConnect, vars: GetSurveyVariables, options?: ExecuteQueryOptions): QueryPromise<GetSurveyData, GetSurveyVariables>;
 
 interface SubmitSurveyResponseRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -957,4 +1003,52 @@ export const deleteSurveyRef: DeleteSurveyRef;
 
 export function deleteSurvey(vars: DeleteSurveyVariables): MutationPromise<DeleteSurveyData, DeleteSurveyVariables>;
 export function deleteSurvey(dc: DataConnect, vars: DeleteSurveyVariables): MutationPromise<DeleteSurveyData, DeleteSurveyVariables>;
+
+interface ListSurveyQuestionsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveyQuestionsVariables): QueryRef<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListSurveyQuestionsVariables): QueryRef<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
+  operationName: string;
+}
+export const listSurveyQuestionsRef: ListSurveyQuestionsRef;
+
+export function listSurveyQuestions(vars: ListSurveyQuestionsVariables, options?: ExecuteQueryOptions): QueryPromise<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
+export function listSurveyQuestions(dc: DataConnect, vars: ListSurveyQuestionsVariables, options?: ExecuteQueryOptions): QueryPromise<ListSurveyQuestionsData, ListSurveyQuestionsVariables>;
+
+interface CreateSurveyQuestionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateSurveyQuestionVariables): MutationRef<CreateSurveyQuestionData, CreateSurveyQuestionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateSurveyQuestionVariables): MutationRef<CreateSurveyQuestionData, CreateSurveyQuestionVariables>;
+  operationName: string;
+}
+export const createSurveyQuestionRef: CreateSurveyQuestionRef;
+
+export function createSurveyQuestion(vars: CreateSurveyQuestionVariables): MutationPromise<CreateSurveyQuestionData, CreateSurveyQuestionVariables>;
+export function createSurveyQuestion(dc: DataConnect, vars: CreateSurveyQuestionVariables): MutationPromise<CreateSurveyQuestionData, CreateSurveyQuestionVariables>;
+
+interface UpdateSurveyQuestionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSurveyQuestionVariables): MutationRef<UpdateSurveyQuestionData, UpdateSurveyQuestionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateSurveyQuestionVariables): MutationRef<UpdateSurveyQuestionData, UpdateSurveyQuestionVariables>;
+  operationName: string;
+}
+export const updateSurveyQuestionRef: UpdateSurveyQuestionRef;
+
+export function updateSurveyQuestion(vars: UpdateSurveyQuestionVariables): MutationPromise<UpdateSurveyQuestionData, UpdateSurveyQuestionVariables>;
+export function updateSurveyQuestion(dc: DataConnect, vars: UpdateSurveyQuestionVariables): MutationPromise<UpdateSurveyQuestionData, UpdateSurveyQuestionVariables>;
+
+interface DeleteSurveyQuestionRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSurveyQuestionVariables): MutationRef<DeleteSurveyQuestionData, DeleteSurveyQuestionVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteSurveyQuestionVariables): MutationRef<DeleteSurveyQuestionData, DeleteSurveyQuestionVariables>;
+  operationName: string;
+}
+export const deleteSurveyQuestionRef: DeleteSurveyQuestionRef;
+
+export function deleteSurveyQuestion(vars: DeleteSurveyQuestionVariables): MutationPromise<DeleteSurveyQuestionData, DeleteSurveyQuestionVariables>;
+export function deleteSurveyQuestion(dc: DataConnect, vars: DeleteSurveyQuestionVariables): MutationPromise<DeleteSurveyQuestionData, DeleteSurveyQuestionVariables>;
 

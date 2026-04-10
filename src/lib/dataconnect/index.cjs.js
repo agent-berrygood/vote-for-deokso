@@ -1,4 +1,4 @@
-const { queryRef, executeQuery, mutationRef, executeMutation, validateArgs } = require('firebase/data-connect');
+const { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } = require('firebase/data-connect');
 
 const connectorConfig = {
   connector: 'vote',
@@ -15,9 +15,12 @@ const getSystemSettingRef = (dcOrVars, vars) => {
 getSystemSettingRef.operationName = 'GetSystemSetting';
 exports.getSystemSettingRef = getSystemSettingRef;
 
-exports.getSystemSetting = function getSystemSetting(dcOrVars, vars) {
-  return executeQuery(getSystemSettingRef(dcOrVars, vars));
-};
+exports.getSystemSetting = function getSystemSetting(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getSystemSettingRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const listSurveysRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
@@ -27,9 +30,12 @@ const listSurveysRef = (dc) => {
 listSurveysRef.operationName = 'ListSurveys';
 exports.listSurveysRef = listSurveysRef;
 
-exports.listSurveys = function listSurveys(dc) {
-  return executeQuery(listSurveysRef(dc));
-};
+exports.listSurveys = function listSurveys(dcOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
+  return executeQuery(listSurveysRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const getVoterByInfoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -39,9 +45,12 @@ const getVoterByInfoRef = (dcOrVars, vars) => {
 getVoterByInfoRef.operationName = 'GetVoterByInfo';
 exports.getVoterByInfoRef = getVoterByInfoRef;
 
-exports.getVoterByInfo = function getVoterByInfo(dcOrVars, vars) {
-  return executeQuery(getVoterByInfoRef(dcOrVars, vars));
-};
+exports.getVoterByInfo = function getVoterByInfo(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getVoterByInfoRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const getElectionSettingsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -51,9 +60,12 @@ const getElectionSettingsRef = (dcOrVars, vars) => {
 getElectionSettingsRef.operationName = 'GetElectionSettings';
 exports.getElectionSettingsRef = getElectionSettingsRef;
 
-exports.getElectionSettings = function getElectionSettings(dcOrVars, vars) {
-  return executeQuery(getElectionSettingsRef(dcOrVars, vars));
-};
+exports.getElectionSettings = function getElectionSettings(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getElectionSettingsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const listCandidatesByPositionRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -63,9 +75,12 @@ const listCandidatesByPositionRef = (dcOrVars, vars) => {
 listCandidatesByPositionRef.operationName = 'ListCandidatesByPosition';
 exports.listCandidatesByPositionRef = listCandidatesByPositionRef;
 
-exports.listCandidatesByPosition = function listCandidatesByPosition(dcOrVars, vars) {
-  return executeQuery(listCandidatesByPositionRef(dcOrVars, vars));
-};
+exports.listCandidatesByPosition = function listCandidatesByPosition(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listCandidatesByPositionRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const listCandidatesByRoundRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -75,9 +90,12 @@ const listCandidatesByRoundRef = (dcOrVars, vars) => {
 listCandidatesByRoundRef.operationName = 'ListCandidatesByRound';
 exports.listCandidatesByRoundRef = listCandidatesByRoundRef;
 
-exports.listCandidatesByRound = function listCandidatesByRound(dcOrVars, vars) {
-  return executeQuery(listCandidatesByRoundRef(dcOrVars, vars));
-};
+exports.listCandidatesByRound = function listCandidatesByRound(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listCandidatesByRoundRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const submitVoteRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -88,8 +106,10 @@ submitVoteRef.operationName = 'SubmitVote';
 exports.submitVoteRef = submitVoteRef;
 
 exports.submitVote = function submitVote(dcOrVars, vars) {
-  return executeMutation(submitVoteRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(submitVoteRef(dcInstance, inputVars));
+}
+;
 
 const updateCandidateVoteRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -100,8 +120,10 @@ updateCandidateVoteRef.operationName = 'UpdateCandidateVote';
 exports.updateCandidateVoteRef = updateCandidateVoteRef;
 
 exports.updateCandidateVote = function updateCandidateVote(dcOrVars, vars) {
-  return executeMutation(updateCandidateVoteRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateCandidateVoteRef(dcInstance, inputVars));
+}
+;
 
 const listVotersRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -111,9 +133,12 @@ const listVotersRef = (dcOrVars, vars) => {
 listVotersRef.operationName = 'ListVoters';
 exports.listVotersRef = listVotersRef;
 
-exports.listVoters = function listVoters(dcOrVars, vars) {
-  return executeQuery(listVotersRef(dcOrVars, vars));
-};
+exports.listVoters = function listVoters(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listVotersRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const createVoterRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -124,8 +149,10 @@ createVoterRef.operationName = 'CreateVoter';
 exports.createVoterRef = createVoterRef;
 
 exports.createVoter = function createVoter(dcOrVars, vars) {
-  return executeMutation(createVoterRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createVoterRef(dcInstance, inputVars));
+}
+;
 
 const updateVoterRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -136,8 +163,10 @@ updateVoterRef.operationName = 'UpdateVoter';
 exports.updateVoterRef = updateVoterRef;
 
 exports.updateVoter = function updateVoter(dcOrVars, vars) {
-  return executeMutation(updateVoterRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateVoterRef(dcInstance, inputVars));
+}
+;
 
 const deleteVoterRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -148,8 +177,10 @@ deleteVoterRef.operationName = 'DeleteVoter';
 exports.deleteVoterRef = deleteVoterRef;
 
 exports.deleteVoter = function deleteVoter(dcOrVars, vars) {
-  return executeMutation(deleteVoterRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteVoterRef(dcInstance, inputVars));
+}
+;
 
 const listVoterParticipationsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -159,9 +190,12 @@ const listVoterParticipationsRef = (dcOrVars, vars) => {
 listVoterParticipationsRef.operationName = 'ListVoterParticipations';
 exports.listVoterParticipationsRef = listVoterParticipationsRef;
 
-exports.listVoterParticipations = function listVoterParticipations(dcOrVars, vars) {
-  return executeQuery(listVoterParticipationsRef(dcOrVars, vars));
-};
+exports.listVoterParticipations = function listVoterParticipations(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listVoterParticipationsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const createCandidateRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -172,8 +206,10 @@ createCandidateRef.operationName = 'CreateCandidate';
 exports.createCandidateRef = createCandidateRef;
 
 exports.createCandidate = function createCandidate(dcOrVars, vars) {
-  return executeMutation(createCandidateRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createCandidateRef(dcInstance, inputVars));
+}
+;
 
 const updateCandidateRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -184,8 +220,10 @@ updateCandidateRef.operationName = 'UpdateCandidate';
 exports.updateCandidateRef = updateCandidateRef;
 
 exports.updateCandidate = function updateCandidate(dcOrVars, vars) {
-  return executeMutation(updateCandidateRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateCandidateRef(dcInstance, inputVars));
+}
+;
 
 const deleteCandidateRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -196,8 +234,10 @@ deleteCandidateRef.operationName = 'DeleteCandidate';
 exports.deleteCandidateRef = deleteCandidateRef;
 
 exports.deleteCandidate = function deleteCandidate(dcOrVars, vars) {
-  return executeMutation(deleteCandidateRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteCandidateRef(dcInstance, inputVars));
+}
+;
 
 const deleteCandidatesByRoundRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -208,8 +248,10 @@ deleteCandidatesByRoundRef.operationName = 'DeleteCandidatesByRound';
 exports.deleteCandidatesByRoundRef = deleteCandidatesByRoundRef;
 
 exports.deleteCandidatesByRound = function deleteCandidatesByRound(dcOrVars, vars) {
-  return executeMutation(deleteCandidatesByRoundRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteCandidatesByRoundRef(dcInstance, inputVars));
+}
+;
 
 const updateElectionSettingsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -220,8 +262,10 @@ updateElectionSettingsRef.operationName = 'UpdateElectionSettings';
 exports.updateElectionSettingsRef = updateElectionSettingsRef;
 
 exports.updateElectionSettings = function updateElectionSettings(dcOrVars, vars) {
-  return executeMutation(updateElectionSettingsRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateElectionSettingsRef(dcInstance, inputVars));
+}
+;
 
 const createAdminLogRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -232,8 +276,10 @@ createAdminLogRef.operationName = 'CreateAdminLog';
 exports.createAdminLogRef = createAdminLogRef;
 
 exports.createAdminLog = function createAdminLog(dcOrVars, vars) {
-  return executeMutation(createAdminLogRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createAdminLogRef(dcInstance, inputVars));
+}
+;
 
 const createAuditLogRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -244,8 +290,10 @@ createAuditLogRef.operationName = 'CreateAuditLog';
 exports.createAuditLogRef = createAuditLogRef;
 
 exports.createAuditLog = function createAuditLog(dcOrVars, vars) {
-  return executeMutation(createAuditLogRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createAuditLogRef(dcInstance, inputVars));
+}
+;
 
 const createElectionRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -256,8 +304,10 @@ createElectionRef.operationName = 'CreateElection';
 exports.createElectionRef = createElectionRef;
 
 exports.createElection = function createElection(dcOrVars, vars) {
-  return executeMutation(createElectionRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createElectionRef(dcInstance, inputVars));
+}
+;
 
 const listElectionsRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
@@ -267,9 +317,12 @@ const listElectionsRef = (dc) => {
 listElectionsRef.operationName = 'ListElections';
 exports.listElectionsRef = listElectionsRef;
 
-exports.listElections = function listElections(dc) {
-  return executeQuery(listElectionsRef(dc));
-};
+exports.listElections = function listElections(dcOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
+  return executeQuery(listElectionsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const updateActiveElectionRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -280,8 +333,10 @@ updateActiveElectionRef.operationName = 'UpdateActiveElection';
 exports.updateActiveElectionRef = updateActiveElectionRef;
 
 exports.updateActiveElection = function updateActiveElection(dcOrVars, vars) {
-  return executeMutation(updateActiveElectionRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateActiveElectionRef(dcInstance, inputVars));
+}
+;
 
 const getResultsByRoundRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -291,9 +346,12 @@ const getResultsByRoundRef = (dcOrVars, vars) => {
 getResultsByRoundRef.operationName = 'GetResultsByRound';
 exports.getResultsByRoundRef = getResultsByRoundRef;
 
-exports.getResultsByRound = function getResultsByRound(dcOrVars, vars) {
-  return executeQuery(getResultsByRoundRef(dcOrVars, vars));
-};
+exports.getResultsByRound = function getResultsByRound(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getResultsByRoundRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const listAdminLogsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -303,9 +361,12 @@ const listAdminLogsRef = (dcOrVars, vars) => {
 listAdminLogsRef.operationName = 'ListAdminLogs';
 exports.listAdminLogsRef = listAdminLogsRef;
 
-exports.listAdminLogs = function listAdminLogs(dcOrVars, vars) {
-  return executeQuery(listAdminLogsRef(dcOrVars, vars));
-};
+exports.listAdminLogs = function listAdminLogs(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listAdminLogsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const listAuditLogsRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -315,9 +376,12 @@ const listAuditLogsRef = (dcOrVars, vars) => {
 listAuditLogsRef.operationName = 'ListAuditLogs';
 exports.listAuditLogsRef = listAuditLogsRef;
 
-exports.listAuditLogs = function listAuditLogs(dcOrVars, vars) {
-  return executeQuery(listAuditLogsRef(dcOrVars, vars));
-};
+exports.listAuditLogs = function listAuditLogs(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listAuditLogsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const deleteAllCandidatesRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -328,8 +392,10 @@ deleteAllCandidatesRef.operationName = 'DeleteAllCandidates';
 exports.deleteAllCandidatesRef = deleteAllCandidatesRef;
 
 exports.deleteAllCandidates = function deleteAllCandidates(dcOrVars, vars) {
-  return executeMutation(deleteAllCandidatesRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteAllCandidatesRef(dcInstance, inputVars));
+}
+;
 
 const deleteAllVotersRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -340,8 +406,10 @@ deleteAllVotersRef.operationName = 'DeleteAllVoters';
 exports.deleteAllVotersRef = deleteAllVotersRef;
 
 exports.deleteAllVoters = function deleteAllVoters(dcOrVars, vars) {
-  return executeMutation(deleteAllVotersRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteAllVotersRef(dcInstance, inputVars));
+}
+;
 
 const listAllCandidatesRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -351,9 +419,12 @@ const listAllCandidatesRef = (dcOrVars, vars) => {
 listAllCandidatesRef.operationName = 'ListAllCandidates';
 exports.listAllCandidatesRef = listAllCandidatesRef;
 
-exports.listAllCandidates = function listAllCandidates(dcOrVars, vars) {
-  return executeQuery(listAllCandidatesRef(dcOrVars, vars));
-};
+exports.listAllCandidates = function listAllCandidates(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listAllCandidatesRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const getMemberByInfoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -363,9 +434,12 @@ const getMemberByInfoRef = (dcOrVars, vars) => {
 getMemberByInfoRef.operationName = 'GetMemberByInfo';
 exports.getMemberByInfoRef = getMemberByInfoRef;
 
-exports.getMemberByInfo = function getMemberByInfo(dcOrVars, vars) {
-  return executeQuery(getMemberByInfoRef(dcOrVars, vars));
-};
+exports.getMemberByInfo = function getMemberByInfo(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getMemberByInfoRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const createMemberRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -376,8 +450,10 @@ createMemberRef.operationName = 'CreateMember';
 exports.createMemberRef = createMemberRef;
 
 exports.createMember = function createMember(dcOrVars, vars) {
-  return executeMutation(createMemberRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createMemberRef(dcInstance, inputVars));
+}
+;
 
 const updateSystemServiceRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -388,8 +464,10 @@ updateSystemServiceRef.operationName = 'UpdateSystemService';
 exports.updateSystemServiceRef = updateSystemServiceRef;
 
 exports.updateSystemService = function updateSystemService(dcOrVars, vars) {
-  return executeMutation(updateSystemServiceRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateSystemServiceRef(dcInstance, inputVars));
+}
+;
 
 const createSurveyRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -400,8 +478,10 @@ createSurveyRef.operationName = 'CreateSurvey';
 exports.createSurveyRef = createSurveyRef;
 
 exports.createSurvey = function createSurvey(dcOrVars, vars) {
-  return executeMutation(createSurveyRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createSurveyRef(dcInstance, inputVars));
+}
+;
 
 const getSurveyRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -411,9 +491,12 @@ const getSurveyRef = (dcOrVars, vars) => {
 getSurveyRef.operationName = 'GetSurvey';
 exports.getSurveyRef = getSurveyRef;
 
-exports.getSurvey = function getSurvey(dcOrVars, vars) {
-  return executeQuery(getSurveyRef(dcOrVars, vars));
-};
+exports.getSurvey = function getSurvey(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(getSurveyRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
 
 const submitSurveyResponseRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -424,8 +507,10 @@ submitSurveyResponseRef.operationName = 'SubmitSurveyResponse';
 exports.submitSurveyResponseRef = submitSurveyResponseRef;
 
 exports.submitSurveyResponse = function submitSurveyResponse(dcOrVars, vars) {
-  return executeMutation(submitSurveyResponseRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(submitSurveyResponseRef(dcInstance, inputVars));
+}
+;
 
 const deleteSurveyRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
@@ -436,5 +521,64 @@ deleteSurveyRef.operationName = 'DeleteSurvey';
 exports.deleteSurveyRef = deleteSurveyRef;
 
 exports.deleteSurvey = function deleteSurvey(dcOrVars, vars) {
-  return executeMutation(deleteSurveyRef(dcOrVars, vars));
-};
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteSurveyRef(dcInstance, inputVars));
+}
+;
+
+const listSurveyQuestionsRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListSurveyQuestions', inputVars);
+}
+listSurveyQuestionsRef.operationName = 'ListSurveyQuestions';
+exports.listSurveyQuestionsRef = listSurveyQuestionsRef;
+
+exports.listSurveyQuestions = function listSurveyQuestions(dcOrVars, varsOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrVars, varsOrOptions, options, true, true);
+  return executeQuery(listSurveyQuestionsRef(dcInstance, inputVars), inputOpts && inputOpts.fetchPolicy);
+}
+;
+
+const createSurveyQuestionRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateSurveyQuestion', inputVars);
+}
+createSurveyQuestionRef.operationName = 'CreateSurveyQuestion';
+exports.createSurveyQuestionRef = createSurveyQuestionRef;
+
+exports.createSurveyQuestion = function createSurveyQuestion(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createSurveyQuestionRef(dcInstance, inputVars));
+}
+;
+
+const updateSurveyQuestionRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateSurveyQuestion', inputVars);
+}
+updateSurveyQuestionRef.operationName = 'UpdateSurveyQuestion';
+exports.updateSurveyQuestionRef = updateSurveyQuestionRef;
+
+exports.updateSurveyQuestion = function updateSurveyQuestion(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateSurveyQuestionRef(dcInstance, inputVars));
+}
+;
+
+const deleteSurveyQuestionRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteSurveyQuestion', inputVars);
+}
+deleteSurveyQuestionRef.operationName = 'DeleteSurveyQuestion';
+exports.deleteSurveyQuestionRef = deleteSurveyQuestionRef;
+
+exports.deleteSurveyQuestion = function deleteSurveyQuestion(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(deleteSurveyQuestionRef(dcInstance, inputVars));
+}
+;

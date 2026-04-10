@@ -376,3 +376,39 @@ mutation DeleteSurvey($id: UUID!) @auth(level: PUBLIC) {
   survey_delete(id: $id)
 }
 
+# SurveyQuestion 관련
+query ListSurveyQuestions($surveyId: UUID!) @auth(level: PUBLIC) {
+  surveyQuestions(where: {
+    surveyId: { eq: $surveyId }
+  }, orderBy: [{ orderIdx: ASC }]) {
+    id
+    text
+    type
+    options
+    orderIdx
+  }
+}
+
+mutation CreateSurveyQuestion($surveyId: UUID!, $text: String!, $type: String!, $options: String, $orderIdx: Int!) @auth(level: PUBLIC) {
+  surveyQuestion_insert(data: {
+    surveyId: $surveyId,
+    text: $text,
+    type: $type,
+    options: $options,
+    orderIdx: $orderIdx
+  })
+}
+
+mutation UpdateSurveyQuestion($id: UUID!, $text: String, $type: String, $options: String, $orderIdx: Int) @auth(level: PUBLIC) {
+  surveyQuestion_update(id: $id, data: {
+    text: $text,
+    type: $type,
+    options: $options,
+    orderIdx: $orderIdx
+  })
+}
+
+mutation DeleteSurveyQuestion($id: UUID!) @auth(level: PUBLIC) {
+  surveyQuestion_delete(id: $id)
+}
+

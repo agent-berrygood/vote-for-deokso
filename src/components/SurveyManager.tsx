@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
     Box, 
     Typography, 
@@ -8,24 +9,25 @@ import {
     Button, 
     TextField, 
     List, 
-    ListItem, 
-    ListItemText, 
-    IconButton, 
-    Divider,
+    ListItem,
+    ListItemText,
+    IconButton,
+    Chip,
+    Alert,
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions,
-    Select,
-    MenuItem,
-    Chip,
-    Alert
+    DialogActions
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import SaveIcon from '@mui/icons-material/Save';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import { createSurveyAction, updateSystemServiceAction, listSurveysAction, deleteSurveyAction } from '@/app/actions/data';
+
+interface Survey {
+    id: string;
+    title: string;
+    description?: string;
+}
 
 interface SurveyManagerProps {
     systemId: string;
@@ -34,11 +36,12 @@ interface SurveyManagerProps {
 }
 
 export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: SurveyManagerProps) {
+    const router = useRouter();
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [loading, setLoading] = useState(false);
-    const [surveys, setSurveys] = useState<any[]>([]);
+    const [surveys, setSurveys] = useState<Survey[]>([]);
 
     const fetchSurveys = async () => {
         const res = await listSurveysAction();
@@ -174,13 +177,22 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                                     <DeleteIcon />
                                 </IconButton>
                             )}
+                            <Button 
+                                variant="contained" 
+                                size="small" 
+                                color="secondary" 
+                                onClick={() => router.push(`/admin/surveys/${sy.id}`)}
+                                sx={{ ml: 2 }}
+                            >
+                                문항 편집
+                            </Button>
                         </ListItem>
                     ))
                 )}
             </List>
 
             <Typography variant="body2" color="text.secondary">
-                * 문항 추가 및 상세 관리는 설문 생성 후 해당 항목의 '상세보기'를 통해 가능합니다 (곧 업데이트 예정).
+                * 각 설문의 &apos;문항 편집&apos; 버튼을 눌러 상세 질문을 구성할 수 있습니다.
             </Typography>
 
             {/* 설문 생성 다이얼로그 */}
