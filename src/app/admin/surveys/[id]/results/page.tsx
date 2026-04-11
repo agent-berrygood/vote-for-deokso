@@ -18,7 +18,13 @@ import {
     Stack,
     Chip,
     Breadcrumbs,
-    Link
+    Link,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { 
@@ -90,10 +96,19 @@ export default function SurveyResultsPage() {
     // 데이터 집합 생성
     const chartData = useMemo(() => {
         return questions.map((q, qIdx) => {
+            // 이중 파싱 방어 로직을 포함한 헬퍼 함수
+            const parseAnswers = (raw: string) => {
+                try {
+                    const parsed = JSON.parse(raw);
+                    // 간혹 문자열이 따옴표로 한 번 더 싸여 있는 경우 대응
+                    return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+                } catch (e) { return {}; }
+            };
+
             if (['MULTIPLE_CHOICE', 'DROPDOWN', 'SCALE', 'MULTIPLE_SELECT'].includes(q.type)) {
                 const distribution: { [key: string]: number } = {};
                 
-                // 보기 목록 가져오기
+                // 보기 목록 가져오기 (각 항목 trim 처리)
                 let options: string[] = [];
                 try {
                     if (q.type === 'SCALE') {
@@ -103,7 +118,7 @@ export default function SurveyResultsPage() {
                         for (let i = min; i <= max; i++) options.push(String(i));
                     } else if (q.options) {
                         const parsed = JSON.parse(q.options);
-                        options = Array.isArray(parsed) ? parsed : [];
+                        options = Array.isArray(parsed) ? parsed.map(o => String(o).trim()) : [];
                     }
                 } catch (e) {
                     console.error('Options parsing error:', e, q);
@@ -115,29 +130,14 @@ export default function SurveyResultsPage() {
                 // 응답 집계
                 responses.forEach(r => {
                     try {
-                        const answers = r.answers ? JSON.parse(r.answers) : {};
+                        const answers = parseAnswers(r.answers);
                         
-                        // 디버그: 첫 번째 질문에 대해서만 한 번 로그 출력 (데이터 구조 확인용)
-                        if (qIdx === 0) {
-                            console.log('Diagnostic - Answer Keys:', Object.keys(answers));
-                            console.log('Diagnostic - Current Question IDs:', questions.map(q => q.id));
-                        }
-
-                        // 1순위: UUID 매칭
+                        // 디버그: 모든 응답에 대해 매칭 시도 로그 (원인 분석용)
                         let val = answers[q.id];
-                        
-                        // 2순위: 텍스트 매칭 (UUID가 일치하지 않을 경우 백업)
-                        if (val === undefined || val === null) {
-                            val = answers[q.text];
-                        }
-                        
-                        // 3순위: 순서 매칭 (legacy 또는 외부 데이터 대응)
-                        if (val === undefined || val === null) {
-                            const entries = Object.entries(answers);
-                            if (entries[qIdx]) {
-                                // 인덱스가 일치하는 경우 (위험할 수 있으나 마지막 수단)
-                                // val = entries[qIdx][1]; 
-                            }
+                        if (val === undefined || val === null) val = answers[q.text];
+
+                        if (qIdx === 0) {
+                            console.log(`[Diagnostic] Q:${q.text.substring(0, 10)}... | Match Found: ${val !== undefined}`);
                         }
 
                         if (val !== undefined && val !== null) {
@@ -168,10 +168,34 @@ export default function SurveyResultsPage() {
                     text: q.text,
                     type: q.type,
                     totalCount: total,
-                    data: data.length > 0 ? data : null
+                    data: data.length > 0 ? data : null,
+                    textResponses: null
                 };
             }
-            return { id: q.id, text: q.text, type: q.type, totalCount: 0, data: null };
+            
+            // 주관식 답변 처리
+            const textResponses: any[] = [];
+            responses.forEach(r => {
+                const answers = parseAnswers(r.answers);
+                const val = answers[q.id] || answers[q.text];
+                if (val !== undefined && val !== null && String(val).trim() !== '') {
+                    textResponses.push({
+                        id: r.id,
+                        memberName: r.member?.name || '익명',
+                        answer: String(val).trim(),
+                        submittedAt: r.submittedAt
+                    });
+                }
+            });
+
+            return { 
+                id: q.id, 
+                text: q.text, 
+                type: q.type, 
+                totalCount: textResponses.length, 
+                data: null, 
+                textResponses: textResponses.length > 0 ? textResponses : null 
+            };
         });
     }, [questions, responses]);
 
@@ -282,23 +306,40 @@ export default function SurveyResultsPage() {
                                             )}
                                         </ResponsiveContainer>
                                     </Box>
+                                ) : qData.textResponses ? (
+                                    <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 350, borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)' }}>
+                                        <Table size="small" stickyHeader>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc', width: '100px' }}>응답자</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>답변 내용</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {qData.textResponses.map((tr: any) => (
+                                                    <TableRow key={tr.id} hover>
+                                                        <TableCell sx={{ fontSize: '0.875rem' }}>{tr.memberName}</TableCell>
+                                                        <TableCell sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.875rem' }}>{tr.answer}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
                                 ) : (
                                     <Box sx={{ py: 6, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
                                         <Typography variant="body2" color="text.secondary">
                                             {qData.type === 'TEXT_SHORT' || qData.type === 'TEXT_LONG' 
-                                                ? '주관식 답변은 통계 차트를 제공하지 않습니다.' 
+                                                ? '작성된 답변이 없습니다.' 
                                                 : '응답 데이터가 없거나 지원되지 않는 형식입니다.'}
                                         </Typography>
                                     </Box>
                                 )}
                             </CardContent>
-                            {qData.data && (
-                                <Box sx={{ px: 2, pb: 2, textAlign: 'right' }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        총 {qData.totalCount}건의 유효 응답
-                                    </Typography>
-                                </Box>
-                            )}
+                            <Box sx={{ px: 3, pb: 2, textAlign: 'right' }}>
+                                <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'bold', bgcolor: 'primary.light', px: 1, py: 0.5, borderRadius: 1, opacity: 0.8 }}>
+                                    총 {qData.totalCount}건의 응답
+                                </Typography>
+                            </Box>
                         </Card>
                     </Grid>
                 ))}
