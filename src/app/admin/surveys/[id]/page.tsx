@@ -64,6 +64,7 @@ interface Question {
     text: string;
     type: string;
     options?: string | null;
+    maxChoices?: number | null;
     logic?: string | null;
     orderIdx: number;
 }
@@ -98,6 +99,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qOptions, setQOptions] = useState<string[]>([]);
     const [qSectionId, setQSectionId] = useState<string>('');
     const [qLogic, setQLogic] = useState('');
+    const [qMaxChoices, setQMaxChoices] = useState<number>(1);
     const [logicQuestionId, setLogicQuestionId] = useState('');
     const [logicValue, setLogicValue] = useState('');
 
@@ -162,6 +164,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQOptions(q.options ? JSON.parse(q.options) : []);
             setQSectionId(q.sectionId || '');
             setQLogic(q.logic || '');
+            setQMaxChoices(q.maxChoices || 1);
             
             // Parse logic for builder
             if (q.logic) {
@@ -189,6 +192,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQOptions(['']); 
             setQSectionId('');
             setQLogic('');
+            setQMaxChoices(1);
             setLogicQuestionId('');
             setLogicValue('');
         }
@@ -302,7 +306,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const handleSaveQuestion = async () => {
         if (!qText.trim()) return;
         
-        const filteredOptions = qType === 'MULTIPLE_CHOICE' 
+        const filteredOptions = (qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT')
             ? JSON.stringify(qOptions.map(o => o.trim()).filter(o => o !== ''))
             : null;
 
@@ -315,7 +319,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     sectionId: qSectionId || null,
                     text: qText.trim(),
                     type: qType,
-                    options: filteredOptions || undefined,
+                    options: filteredOptions, // null to clear if changed to TEXT
+                    maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
                     logic: qLogic || null
                 });
                 if (res.success) {
@@ -332,6 +337,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     text: qText.trim(),
                     type: qType,
                     options: filteredOptions || undefined,
+                    maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
                     logic: qLogic || undefined,
                     orderIdx: questions.length > 0 ? Math.max(...questions.map(q => q.orderIdx)) + 1 : 1
                 });
@@ -491,13 +497,16 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                                         primary={
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                                 <Typography variant="subtitle1" fontWeight="bold">{idx + 1}. {q.text}</Typography>
-                                                                <Chip label={q.type === 'MULTIPLE_CHOICE' ? '객관식' : '주관식'} size="small" variant="outlined" />
+                                                                <Chip label={
+                                                                    q.type === 'MULTIPLE_CHOICE' ? '객관식' : 
+                                                                    q.type === 'MULTIPLE_SELECT' ? `다중 선택 (${q.maxChoices}개)` : '주관식'
+                                                                } size="small" variant="outlined" />
                                                                 {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
                                                             </Box>
                                                         }
                                                         secondary={
                                                             <Box>
-                                                                {q.type === 'MULTIPLE_CHOICE' && q.options && (
+                                                                {(q.type === 'MULTIPLE_CHOICE' || q.type === 'MULTIPLE_SELECT') && q.options && (
                                                                     <Box sx={{ mt: 1, pl: 2 }}>
                                                                         {JSON.parse(q.options).map((opt: string, i: number) => (
                                                                             <Typography key={i} variant="body2" color="text.secondary">○ {opt}</Typography>

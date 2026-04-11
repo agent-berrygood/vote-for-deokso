@@ -341,11 +341,12 @@ export async function deleteSurveyAction(id: string) {
     }
 }
 
-export async function createSurveyQuestionAction(vars: { surveyId: string, sectionId?: string, text: string, type: string, options?: string, logic?: string, orderIdx: number }) {
+export async function createSurveyQuestionAction(vars: { surveyId: string, sectionId?: string, text: string, type: string, options?: string, maxChoices?: number, logic?: string, orderIdx: number }) {
     try {
         const cleanedVars = Object.fromEntries(
             Object.entries(vars).filter(([_, v]) => v !== undefined && v !== null)
         );
+        console.log('createSurveyQuestionAction vars:', cleanedVars);
         await createSurveyQuestionSDK(cleanedVars as any);
         revalidatePath(`/admin/surveys/${vars.surveyId}`);
         return { success: true };
@@ -356,12 +357,15 @@ export async function createSurveyQuestionAction(vars: { surveyId: string, secti
     }
 }
 
-export async function updateSurveyQuestionAction(vars: { surveyId: string, id: string, sectionId?: string | null, text?: string, type?: string, options?: string, logic?: string | null, orderIdx?: number }) {
+export async function updateSurveyQuestionAction(vars: { surveyId: string, id: string, sectionId?: string | null, text?: string, type?: string, options?: string | null, maxChoices?: number | null, logic?: string | null, orderIdx?: number }) {
     try {
         const { surveyId, ...sdkVars } = vars;
+        // Keep nulls for sectionId, logic, options, maxChoices so they can be cleared/reset
         const cleanedVars = Object.fromEntries(
             Object.entries(sdkVars).filter(([_, v]) => v !== undefined)
         );
+        console.log('updateSurveyQuestionAction variables to SDK:', JSON.stringify(cleanedVars, null, 2));
+        
         await updateSurveyQuestionSDK(cleanedVars as any);
         revalidatePath(`/admin/surveys/${surveyId}`);
         return { success: true };

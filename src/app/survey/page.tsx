@@ -12,6 +12,7 @@ import {
     RadioGroup, 
     FormControlLabel, 
     Radio, 
+    Checkbox,
     CircularProgress,
     Alert,
     LinearProgress,
@@ -26,6 +27,7 @@ interface Question {
     text: string;
     type: string;
     options?: string | null;
+    maxChoices?: number | null;
     logic?: string | null;
     orderIdx: number;
 }
@@ -46,7 +48,7 @@ export default function SurveyPage() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [answers, setAnswers] = useState<Record<string, any>>({});
     const [submitted, setSubmitted] = useState(false);
 
     const [memberName, setMemberName] = useState('');
@@ -231,6 +233,40 @@ export default function SurveyPage() {
                                                             <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
                                                         ))}
                                                     </RadioGroup>
+                                                ) : q.type === 'MULTIPLE_SELECT' ? (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                                        {q.options && JSON.parse(q.options).map((opt: string, i: number) => {
+                                                            const currentAnswers = Array.isArray(answers[q.id]) ? answers[q.id] : [];
+                                                            const isChecked = currentAnswers.includes(opt);
+                                                            const maxReached = currentAnswers.length >= (q.maxChoices || 1);
+
+                                                            return (
+                                                                <FormControlLabel 
+                                                                    key={i} 
+                                                                    control={
+                                                                        <Checkbox 
+                                                                            color="secondary"
+                                                                            checked={isChecked}
+                                                                            disabled={!isChecked && maxReached}
+                                                                            onChange={(e) => {
+                                                                                let newAnswers;
+                                                                                if (e.target.checked) {
+                                                                                    newAnswers = [...currentAnswers, opt];
+                                                                                } else {
+                                                                                    newAnswers = currentAnswers.filter((a: string) => a !== opt);
+                                                                                }
+                                                                                setAnswers({...answers, [q.id]: newAnswers});
+                                                                            }}
+                                                                        />
+                                                                    } 
+                                                                    label={opt} 
+                                                                />
+                                                            );
+                                                        })}
+                                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                                                            * 최대 {q.maxChoices || 1}개까지 선택 가능합니다.
+                                                        </Typography>
+                                                    </Box>
                                                 ) : (
                                                     <TextField
                                                         fullWidth

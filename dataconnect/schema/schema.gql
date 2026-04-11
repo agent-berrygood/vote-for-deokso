@@ -103,8 +103,9 @@ type SurveyQuestion @table(key: "id") {
   survey: Survey!
   section: SurveySection # Optional section
   text: String!
-  type: String! # 예: "MULTIPLE_CHOICE", "TEXT"
+  type: String! # 예: "MULTIPLE_CHOICE", "TEXT", "MULTIPLE_SELECT"
   options: String # JSON string (객관식 보기)
+  maxChoices: Int @default(value: 1)
   logic: String # JSON string for branching logic
   orderIdx: Int!
 }

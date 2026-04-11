@@ -429,29 +429,32 @@ query ListSurveyQuestions($surveyId: UUID!) @auth(level: PUBLIC) {
     text
     type
     options
+    maxChoices
     logic
     orderIdx
   }
 }
 
-mutation CreateSurveyQuestion($surveyId: UUID!, $sectionId: UUID, $text: String!, $type: String!, $options: String, $logic: String, $orderIdx: Int!) @auth(level: PUBLIC) {
+mutation CreateSurveyQuestion($surveyId: UUID!, $sectionId: UUID, $text: String!, $type: String!, $options: String, $maxChoices: Int, $logic: String, $orderIdx: Int!) @auth(level: PUBLIC) {
   surveyQuestion_insert(data: {
     surveyId: $surveyId,
     sectionId: $sectionId,
     text: $text,
     type: $type,
     options: $options,
+    maxChoices: $maxChoices,
     logic: $logic,
     orderIdx: $orderIdx
   })
 }
 
-mutation UpdateSurveyQuestion($id: UUID!, $sectionId: UUID, $text: String, $type: String, $options: String, $logic: String, $orderIdx: Int) @auth(level: PUBLIC) {
+mutation UpdateSurveyQuestion($id: UUID!, $sectionId: UUID, $text: String, $type: String, $options: String, $maxChoices: Int, $logic: String, $orderIdx: Int) @auth(level: PUBLIC) {
   surveyQuestion_update(id: $id, data: {
     sectionId: $sectionId,
     text: $text,
     type: $type,
     options: $options,
+    maxChoices: $maxChoices,
     logic: $logic,
     orderIdx: $orderIdx
   })
