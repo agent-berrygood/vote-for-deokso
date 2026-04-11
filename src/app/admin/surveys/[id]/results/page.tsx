@@ -73,14 +73,26 @@ export default function SurveyResultsPage() {
                 listSurveyResponsesAction(surveyId)
             ]);
 
-            if (sRes.success) {
-                setSurvey(sRes.data);
-            }
-            if (qRes.success) {
-                setQuestions(qRes.data || []);
-            }
+            if (sRes.success) setSurvey(sRes.data);
+            if (qRes.success) setQuestions(qRes.data || []);
             if (rRes.success) {
-                setResponses(rRes.data || []);
+                const data = rRes.data || [];
+                setResponses(data);
+                
+                // [DIAGNOSTIC] 전체 구조 로그
+                if (data.length > 0) {
+                    console.group('📊 [Survey Debug] Data Load Summary');
+                    console.log('Total Responses:', data.length);
+                    console.log('Sample Response Keys:', Object.keys(data[0] || {}));
+                    try {
+                        const sampleAnswers = JSON.parse(data[0].answers);
+                        const finalAnswers = typeof sampleAnswers === 'string' ? JSON.parse(sampleAnswers) : sampleAnswers;
+                        console.log('Sample Answers Structure:', finalAnswers);
+                    } catch (e) {
+                        console.log('Raw Answers String Sample:', data[0].answers);
+                    }
+                    console.groupEnd();
+                }
             } else {
                 setError(rRes.error || '응답 데이터를 불러오지 못했습니다.');
             }
@@ -132,12 +144,29 @@ export default function SurveyResultsPage() {
                     try {
                         const answers = parseAnswers(r.answers);
                         
-                        // 디버그: 모든 응답에 대해 매칭 시도 로그 (원인 분석용)
+                        // [DIAGNOSTIC] 상세 매칭 시도
                         let val = answers[q.id];
-                        if (val === undefined || val === null) val = answers[q.text];
+                        let matchType = 'UUID';
 
-                        if (qIdx === 0) {
-                            console.log(`[Diagnostic] Q:${q.text.substring(0, 10)}... | Match Found: ${val !== undefined}`);
+                        if (val === undefined || val === null) {
+                            val = answers[q.text];
+                            matchType = 'TEXT';
+                        }
+                        
+                        // 백업: 질문 텍스트가 키인 경우 (공백/따옴표 미세 차이 보정)
+                        if (val === undefined || val === null) {
+                            const trimmedKey = Object.keys(answers).find(k => k.trim() === q.text.trim());
+                            if (trimmedKey) {
+                                val = answers[trimmedKey];
+                                matchType = 'TRIMMED_TEXT';
+                            }
+                        }
+
+                        if (rIdx === 0 || val !== undefined) {
+                            console.log(`[Diagnostic] Q:${q.text.substring(0, 15)}... | Match Found: ${val !== undefined} (${matchType}) | Value:`, val);
+                            if (val === undefined) {
+                                console.log(`   Available Keys in Answers:`, Object.keys(answers));
+                            }
                         }
 
                         if (val !== undefined && val !== null) {
@@ -266,7 +295,7 @@ export default function SurveyResultsPage() {
                                 <Divider sx={{ mb: 3, opacity: 0.5 }} />
 
                                 {qData.data ? (
-                                    <Box sx={{ width: '100%', height: 320, minWidth: 0, position: 'relative' }}>
+                                    <Box sx={{ height: 350, minHeight: 300, width: '100%' }}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             {chartTypes[qData.id] === 'pie' ? (
                                                 <PieChart>
