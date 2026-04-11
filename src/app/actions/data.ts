@@ -315,11 +315,16 @@ export async function listSurveysAction() {
 
 export async function updateSurveyAction(vars: { id: string, title?: string, description?: string, isActive?: boolean, startDate?: string, endDate?: string }) {
     try {
-        await updateSurveySDK(vars);
+        // Filter out undefined fields to prevent potential issues with Data Connect null handling
+        const cleanedVars = Object.fromEntries(
+            Object.entries(vars).filter(([_, v]) => v !== undefined)
+        );
+        console.log('updateSurveyAction vars:', cleanedVars);
+        await updateSurveySDK(cleanedVars as any);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('updateSurveyAction error:', error);
-        return { success: false, error: '설문 정보 수정에 실패했습니다.' };
+        return { success: false, error: error?.message || '설문 정보 수정에 실패했습니다.' };
     }
 }
 

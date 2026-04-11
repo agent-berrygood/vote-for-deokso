@@ -157,12 +157,17 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     };
 
     const handleSaveSurveyInfo = async () => {
+        if (!surveyTitle.trim()) {
+            setMsg({ type: 'error', text: '설문 제목을 입력해주세요.' });
+            return;
+        }
         setSubmitting(true);
         try {
             const res = await updateSurveyAction({
                 id: surveyId,
                 title: surveyTitle,
-                description: surveyDesc
+                description: surveyDesc,
+                isActive: survey?.isActive ?? true // Preserve current state
             });
             if (res.success) {
                 setMsg({ type: 'success', text: '설문 정보가 수정되었습니다.' });
@@ -172,6 +177,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 setMsg({ type: 'error', text: res.error || '수정 실패' });
             }
         } catch (e) {
+            console.error('handleSaveSurveyInfo error:', e);
             setMsg({ type: 'error', text: '오류가 발생했습니다.' });
         } finally {
             setSubmitting(false);
