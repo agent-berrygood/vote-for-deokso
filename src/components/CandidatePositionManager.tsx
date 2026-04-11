@@ -363,7 +363,7 @@ export default function CandidatePositionManager({ position }: Props) {
                                     <ListItemAvatar><Avatar src={c.photoUrl ?? undefined}>{c.name[0]}</Avatar></ListItemAvatar>
                                     <ListItemText primary={`${c.name} (${calculateAge(c.birthdate, 0)}세)`} secondary={`${c.district} | 기호 ${c.candidateNumber || '-'}`} />
                                     <ListItemSecondaryAction>
-                                        <IconButton onClick={() => handleEditClick(c)}><EditIcon /></IconButton>
+                                        <IconButton onClick={(e) => { e.currentTarget.blur(); handleEditClick(c); }}><EditIcon /></IconButton>
                                         <IconButton onClick={() => setDeleteTarget(c)} color="error"><DeleteIcon /></IconButton>
                                     </ListItemSecondaryAction>
                                 </ListItem>

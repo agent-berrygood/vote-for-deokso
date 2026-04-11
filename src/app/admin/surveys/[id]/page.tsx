@@ -334,7 +334,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         variant="outlined" 
                         color="secondary" 
                         startIcon={<EditIcon />}
-                        onClick={() => setSurveyEditOpen(true)}
+                        onClick={(e) => { e.currentTarget.blur(); setSurveyEditOpen(true); }}
                     >
                         설문 정보 수정
                     </Button>
@@ -353,7 +353,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             variant="contained" 
                             color="primary" 
                             startIcon={<AddIcon />}
-                            onClick={() => handleOpenSectionDialog()}
+                            onClick={(e) => { e.currentTarget.blur(); handleOpenSectionDialog(); }}
                         >
                             섹션 추가
                         </Button>
@@ -365,7 +365,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             sections.map((s, idx) => (
                                 <ListItem key={s.id} divider secondaryAction={
                                     <Stack direction="row" spacing={1}>
-                                        <IconButton size="small" onClick={() => handleOpenSectionDialog(s)}><EditIcon fontSize="small" color="primary" /></IconButton>
+                                        <IconButton size="small" onClick={(e) => { e.currentTarget.blur(); handleOpenSectionDialog(s); }}><EditIcon fontSize="small" color="primary" /></IconButton>
                                         <IconButton size="small" onClick={() => handleDeleteSection(s.id)}><DeleteIcon fontSize="small" color="error" /></IconButton>
                                     </Stack>
                                 }>
@@ -383,7 +383,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             variant="contained" 
                             color="secondary" 
                             startIcon={<AddIcon />}
-                            onClick={() => handleOpenDialog()}
+                            onClick={(e) => { e.currentTarget.blur(); handleOpenDialog(); }}
                             disabled={submitting}
                         >
                             문항 추가
@@ -413,7 +413,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                                     sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
                                                     secondaryAction={
                                                         <Stack direction="row" spacing={1}>
-                                                            <IconButton edge="end" onClick={() => handleOpenDialog(q)}><EditIcon color="primary" /></IconButton>
+                                                            <IconButton edge="end" onClick={(e) => { e.currentTarget.blur(); handleOpenDialog(q); }}><EditIcon color="primary" /></IconButton>
                                                             <IconButton edge="end" onClick={() => handleDeleteQuestion(q.id)}><DeleteIcon color="error" /></IconButton>
                                                         </Stack>
                                                     }

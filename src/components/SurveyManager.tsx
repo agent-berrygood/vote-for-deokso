@@ -126,7 +126,7 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                         variant="contained" 
                         color="secondary" 
                         startIcon={<AddCircleOutlineIcon />}
-                        onClick={() => setCreateDialogOpen(true)}
+                        onClick={(e) => { e.currentTarget.blur(); setCreateDialogOpen(true); }}
                     >
                         새 설문 생성
                     </Button>

@@ -448,7 +448,7 @@ export default function VoterManager() {
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                                                        <IconButton color="primary" size="small" onClick={() => handleEditOpen(v)}>
+                                                        <IconButton color="primary" size="small" onClick={(e) => { e.currentTarget.blur(); handleEditOpen(v); }}>
                                                             <EditIcon fontSize="small" />
                                                         </IconButton>
                                                         <IconButton color="error" size="small" onClick={() => setDeleteTarget(v)}>
