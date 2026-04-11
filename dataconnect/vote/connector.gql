@@ -20,7 +20,7 @@ query ListSurveys @auth(level: PUBLIC) {
     endDate
   }
 }
-query GetVoterByInfo($electionId: String!, $phone: String!, $birthdate: String!) @auth(level: NO_ACCESS) {
+query GetVoterByInfo($electionId: String!, $phone: String!, $birthdate: String!) @auth(level: PUBLIC) {
   voters(where: {
     electionId: { eq: $electionId },
     phone: { eq: $phone },
@@ -33,7 +33,7 @@ query GetVoterByInfo($electionId: String!, $phone: String!, $birthdate: String!)
   }
 }
 
-query GetElectionSettings($electionId: String!) @auth(level: NO_ACCESS) {
+query GetElectionSettings($electionId: String!) @auth(level: PUBLIC) {
   election(id: $electionId) {
     id
     name
@@ -45,7 +45,7 @@ query GetElectionSettings($electionId: String!) @auth(level: NO_ACCESS) {
   }
 }
 
-query ListCandidatesByPosition($electionId: String!, $position: String!) @auth(level: NO_ACCESS) {
+query ListCandidatesByPosition($electionId: String!, $position: String!) @auth(level: PUBLIC) {
   candidates(where: {
     electionId: { eq: $electionId },
     position: { eq: $position }
@@ -64,7 +64,7 @@ query ListCandidatesByPosition($electionId: String!, $position: String!) @auth(l
   }
 }
 
-query ListCandidatesByRound($electionId: String!, $position: String!, $round: Int!) @auth(level: NO_ACCESS) {
+query ListCandidatesByRound($electionId: String!, $position: String!, $round: Int!) @auth(level: PUBLIC) {
   candidates(where: {
     electionId: { eq: $electionId },
     position: { eq: $position },
@@ -84,7 +84,7 @@ query ListCandidatesByRound($electionId: String!, $position: String!, $round: In
   }
 }
 
-mutation SubmitVote($voterId: UUID!, $electionId: String!, $position: String!, $round: Int!) @auth(level: NO_ACCESS) {
+mutation SubmitVote($voterId: UUID!, $electionId: String!, $position: String!, $round: Int!) @auth(level: PUBLIC) {
   voterParticipation_insert(data: {
     voterId: $voterId,
     electionId: $electionId,
@@ -93,13 +93,13 @@ mutation SubmitVote($voterId: UUID!, $electionId: String!, $position: String!, $
   })
 }
 
-mutation UpdateCandidateVote($candidateId: UUID!, $newCount: Int!) @auth(level: NO_ACCESS) {
+mutation UpdateCandidateVote($candidateId: UUID!, $newCount: Int!) @auth(level: PUBLIC) {
   candidate_update(id: $candidateId, data: {
     voteCount: $newCount
   })
 }
 
-query ListVoters($electionId: String!) @auth(level: NO_ACCESS) {
+query ListVoters($electionId: String!) @auth(level: PUBLIC) {
   voters(where: {
     electionId: { eq: $electionId }
   }, orderBy: [{ name: ASC }]) {
@@ -111,7 +111,7 @@ query ListVoters($electionId: String!) @auth(level: NO_ACCESS) {
   }
 }
 
-mutation CreateVoter($electionId: String!, $name: String!, $phone: String, $birthdate: String, $authKey: String!) @auth(level: NO_ACCESS) {
+mutation CreateVoter($electionId: String!, $name: String!, $phone: String, $birthdate: String, $authKey: String!) @auth(level: PUBLIC) {
   voter_insert(data: {
     electionId: $electionId,
     name: $name,
@@ -121,7 +121,7 @@ mutation CreateVoter($electionId: String!, $name: String!, $phone: String, $birt
   })
 }
 
-mutation UpdateVoter($id: UUID!, $name: String!, $phone: String, $birthdate: String) @auth(level: NO_ACCESS) {
+mutation UpdateVoter($id: UUID!, $name: String!, $phone: String, $birthdate: String) @auth(level: PUBLIC) {
   voter_update(id: $id, data: {
     name: $name,
     phone: $phone,
@@ -129,11 +129,11 @@ mutation UpdateVoter($id: UUID!, $name: String!, $phone: String, $birthdate: Str
   })
 }
 
-mutation DeleteVoter($id: UUID!) @auth(level: NO_ACCESS) {
+mutation DeleteVoter($id: UUID!) @auth(level: PUBLIC) {
   voter_delete(id: $id)
 }
 
-query ListVoterParticipations($electionId: String!) @auth(level: NO_ACCESS) {
+query ListVoterParticipations($electionId: String!) @auth(level: PUBLIC) {
   voterParticipations(where: {
     voter: { electionId: { eq: $electionId } }
   }) {
@@ -144,7 +144,7 @@ query ListVoterParticipations($electionId: String!) @auth(level: NO_ACCESS) {
   }
 }
 
-mutation CreateCandidate($electionId: String!, $name: String!, $position: String!, $round: Int!, $district: String, $birthdate: String, $photoUrl: String, $profileDesc: String, $volunteerInfo: String, $candidateNumber: Int) @auth(level: NO_ACCESS) {
+mutation CreateCandidate($electionId: String!, $name: String!, $position: String!, $round: Int!, $district: String, $birthdate: String, $photoUrl: String, $profileDesc: String, $volunteerInfo: String, $candidateNumber: Int) @auth(level: PUBLIC) {
   candidate_insert(data: {
     electionId: $electionId,
     name: $name,
@@ -159,7 +159,7 @@ mutation CreateCandidate($electionId: String!, $name: String!, $position: String
   })
 }
 
-mutation UpdateCandidate($id: UUID!, $name: String!, $position: String, $round: Int, $district: String, $birthdate: String, $photoUrl: String, $profileDesc: String, $volunteerInfo: String, $candidateNumber: Int) @auth(level: NO_ACCESS) {
+mutation UpdateCandidate($id: UUID!, $name: String!, $position: String, $round: Int, $district: String, $birthdate: String, $photoUrl: String, $profileDesc: String, $volunteerInfo: String, $candidateNumber: Int) @auth(level: PUBLIC) {
   candidate_update(id: $id, data: {
     name: $name,
     position: $position,
@@ -173,11 +173,11 @@ mutation UpdateCandidate($id: UUID!, $name: String!, $position: String, $round: 
   })
 }
 
-mutation DeleteCandidate($id: UUID!) @auth(level: NO_ACCESS) {
+mutation DeleteCandidate($id: UUID!) @auth(level: PUBLIC) {
   candidate_delete(id: $id)
 }
 
-mutation DeleteCandidatesByRound($electionId: String!, $position: String!, $round: Int!) @auth(level: NO_ACCESS) {
+mutation DeleteCandidatesByRound($electionId: String!, $position: String!, $round: Int!) @auth(level: PUBLIC) {
   candidate_deleteMany(where: {
     electionId: { eq: $electionId },
     position: { eq: $position },
@@ -185,7 +185,7 @@ mutation DeleteCandidatesByRound($electionId: String!, $position: String!, $roun
   })
 }
 
-mutation UpdateElectionSettings($id: String!, $name: String, $maxVotes: Int!, $rounds: String, $roundTitle: String, $startDate: Timestamp, $endDate: Timestamp) @auth(level: NO_ACCESS) {
+mutation UpdateElectionSettings($id: String!, $name: String, $maxVotes: Int!, $rounds: String, $roundTitle: String, $startDate: Timestamp, $endDate: Timestamp) @auth(level: PUBLIC) {
   election_update(id: $id, data: {
     name: $name,
     maxVotes: $maxVotes,
@@ -196,7 +196,7 @@ mutation UpdateElectionSettings($id: String!, $name: String, $maxVotes: Int!, $r
   })
 }
 
-mutation CreateAdminLog($electionId: String!, $adminId: String, $actionType: String!, $description: String!) @auth(level: NO_ACCESS) {
+mutation CreateAdminLog($electionId: String!, $adminId: String, $actionType: String!, $description: String!) @auth(level: PUBLIC) {
   adminLog_insert(data: {
     electionId: $electionId,
     adminId: $adminId,
@@ -205,7 +205,7 @@ mutation CreateAdminLog($electionId: String!, $adminId: String, $actionType: Str
   })
 }
 
-mutation CreateAuditLog($electionId: String!, $voterId: String, $voterName: String, $actionType: String!, $approvedBy: String, $ipAddress: String) @auth(level: NO_ACCESS) {
+mutation CreateAuditLog($electionId: String!, $voterId: String, $voterName: String, $actionType: String!, $approvedBy: String, $ipAddress: String) @auth(level: PUBLIC) {
   auditLog_insert(data: {
     electionId: $electionId,
     voterId: $voterId,
@@ -238,7 +238,7 @@ mutation UpdateActiveElection($systemId: String!, $electionId: String!) @auth(le
   })
 }
 
-query GetResultsByRound($electionId: String!, $position: String!, $round: Int!) @auth(level: NO_ACCESS) {
+query GetResultsByRound($electionId: String!, $position: String!, $round: Int!) @auth(level: PUBLIC) {
   candidates(where: {
     electionId: { eq: $electionId },
     position: { eq: $position },
@@ -257,7 +257,7 @@ query GetResultsByRound($electionId: String!, $position: String!, $round: Int!) 
   }
 }
 
-query ListAdminLogs($electionId: String!) @auth(level: NO_ACCESS) {
+query ListAdminLogs($electionId: String!) @auth(level: PUBLIC) {
   adminLogs(where: {
     electionId: { eq: $electionId }
   }, orderBy: [{ timestamp: DESC }]) {
@@ -270,7 +270,7 @@ query ListAdminLogs($electionId: String!) @auth(level: NO_ACCESS) {
   }
 }
 
-query ListAuditLogs($electionId: String!) @auth(level: NO_ACCESS) {
+query ListAuditLogs($electionId: String!) @auth(level: PUBLIC) {
   auditLogs(where: {
     electionId: { eq: $electionId }
   }, orderBy: [{ timestamp: DESC }]) {
@@ -284,19 +284,19 @@ query ListAuditLogs($electionId: String!) @auth(level: NO_ACCESS) {
   }
 }
 
-mutation DeleteAllCandidates($electionId: String!) @auth(level: NO_ACCESS) {
+mutation DeleteAllCandidates($electionId: String!) @auth(level: PUBLIC) {
   candidate_deleteMany(where: {
     electionId: { eq: $electionId }
   })
 }
 
-mutation DeleteAllVoters($electionId: String!) @auth(level: NO_ACCESS) {
+mutation DeleteAllVoters($electionId: String!) @auth(level: PUBLIC) {
   voter_deleteMany(where: {
     electionId: { eq: $electionId }
   })
 }
 
-query ListAllCandidates($electionId: String!) @auth(level: NO_ACCESS) {
+query ListAllCandidates($electionId: String!) @auth(level: PUBLIC) {
   candidates(where: {
     electionId: { eq: $electionId }
   }, orderBy: [{ position: ASC }, { candidateNumber: ASC }, { name: ASC }]) {

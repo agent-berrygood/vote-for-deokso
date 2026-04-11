@@ -40,7 +40,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 
 import { useElection } from '@/hooks/useElection';
 import SurveyManager from '@/components/SurveyManager';
-import { updateSystemServiceAction } from '@/app/actions/data';
+import { updateSystemServiceAction, getElectionSettingsAction } from '@/app/actions/data';
 
 const generateAuthKey = () => Math.floor(1000000 + Math.random() * 9000000).toString();
 
@@ -78,26 +78,25 @@ export default function AdminPage() {
 
         const fetchSettings = async () => {
             try {
-                const res = await getElectionSettings({ electionId: activeElectionId });
-                const data = res.data.election;
+                const res = await getElectionSettingsAction(activeElectionId);
                 
-                if (data) {
+                if (res.success && res.data) {
+                    const data = res.data;
                     // SQL has unified maxVotes (simple Int for now as per schema)
-                    // If multi-position different votes needed, schema expansion required
                     const votes = data.maxVotes || 5;
                     setMaxVotesMap({ '장로': votes, '권사': votes, '안수집사': votes });
-                    
-                    // Round settings might need expansion in SQL schema if multi-round active simultaneously
-                    setRoundSettings({ '장로': 1, '권사': 1, '안수집사': 1 }); // Defaulting
                     
                     if (data.startDate) setStartDate(data.startDate);
                     if (data.endDate) setEndDate(data.endDate);
                 } else {
+                    if (!res.success) {
+                        console.error(res.error);
+                    }
                     setMaxVotesMap({ '장로': 5, '권사': 5, '안수집사': 5 });
                     setRoundSettings({ '장로': 1, '권사': 1, '안수집사': 1 });
                 }
             } catch (err) {
-                console.error("Error fetching settings from SQL:", err);
+                console.error("Error fetching settings via Server Action:", err);
                 setMessage({ type: 'error', text: '설정 정보를 불러오는 데 실패했습니다.' });
             }
         };

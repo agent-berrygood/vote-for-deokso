@@ -655,10 +655,16 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                     >
                                         <MenuItem value="">사용 안 함</MenuItem>
                                         {questions
-                                            .filter(oq => oq.id !== editingQuestion?.id)
-                                            .map(oq => (
+                                            .filter(oq => {
+                                                // If creating new: can select any existing question
+                                                if (!editingQuestion) return true;
+                                                // If editing: only questions with smaller orderIdx
+                                                return oq.orderIdx < editingQuestion.orderIdx;
+                                            })
+                                            .sort((a, b) => a.orderIdx - b.orderIdx)
+                                            .map((oq, idx) => (
                                                 <MenuItem key={oq.id} value={oq.id}>
-                                                    {oq.text.length > 30 ? oq.text.substring(0, 30) + '...' : oq.text}
+                                                    {idx + 1}. {oq.text.length > 30 ? oq.text.substring(0, 30) + '...' : oq.text}
                                                 </MenuItem>
                                             ))
                                         }
