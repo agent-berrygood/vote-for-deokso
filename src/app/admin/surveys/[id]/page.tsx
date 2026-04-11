@@ -176,9 +176,19 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
     const fetchResponses = useCallback(async () => {
         setResponsesLoading(true);
+        console.log('Fetching responses for survey:', surveyId);
         try {
             const res = await listSurveyResponsesAction(surveyId);
-            if (res.success) setResponses(res.data as any[]);
+            console.log('listSurveyResponsesAction result:', res);
+            if (res.success) {
+                setResponses(res.data as any[]);
+                console.log('Set responses state:', res.data);
+            } else {
+                console.error('Failed to fetch responses:', res.error);
+                setMsg({ type: 'error', text: res.error || '응답을 불러오지 못했습니다.' });
+            }
+        } catch (err) {
+            console.error('Error in fetchResponses:', err);
         } finally {
             setResponsesLoading(false);
         }
