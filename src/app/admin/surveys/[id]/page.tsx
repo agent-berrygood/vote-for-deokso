@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
 import { 
     Box, 
     Container, 
@@ -126,12 +127,13 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [logicQuestionId, setLogicQuestionId] = useState('');
     const [logicValue, setLogicValue] = useState('');
 
-    // 응답 관리 상태
     const [responses, setResponses] = useState<any[]>([]);
     const [responsesLoading, setResponsesLoading] = useState(false);
     const [searchName, setSearchName] = useState('');
     const [searchPhone, setSearchPhone] = useState('');
-    const [searchResults, setSearchResults] = useState<any[] | null>(null);
+    const [showOnlyNew, setShowOnlyNew] = useState(false);
+    const [orderBy, setOrderBy] = useState('submittedAt');
+    const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
     useEffect(() => {
         if (logicQuestionId) {
@@ -202,17 +204,78 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
-    const handleSearchByNamePhone = () => {
-        if (!searchName.trim() && !searchPhone.trim()) {
-            setMsg({ type: 'error', text: '이름이나 전화번호를 입력해주세요.' });
+    const filteredResponses = useMemo(() => {
+        let result = [...responses];
+        
+        if (searchName.trim()) {
+            result = result.filter(r => (r.member?.name || '').includes(searchName.trim()));
+        }
+        if (searchPhone.trim()) {
+            result = result.filter(r => (r.member?.phone || '').includes(searchPhone.trim()));
+        }
+        if (showOnlyNew) {
+            result = result.filter(r => r.member?.isSelfRegistered);
+        }
+
+        result.sort((a, b) => {
+            let valA: any, valB: any;
+            if (orderBy === 'name') {
+                valA = a.member?.name || '';
+                valB = b.member?.name || '';
+            } else if (orderBy === 'phone') {
+                valA = a.member?.phone || '';
+                valB = b.member?.phone || '';
+            } else {
+                valA = new Date(a.submittedAt).getTime();
+                valB = new Date(b.submittedAt).getTime();
+            }
+
+            if (valA < valB) return order === 'asc' ? -1 : 1;
+            if (valA > valB) return order === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return result;
+    }, [responses, searchName, searchPhone, showOnlyNew, orderBy, order]);
+
+    const handleRequestSort = (property: string) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
+    const handleExportExcel = () => {
+        if (filteredResponses.length === 0) {
+            setMsg({ type: 'error', text: '내보낼 데이터가 없습니다.' });
             return;
         }
-        const filtered = responses.filter(r => {
-            const nameMatch = !searchName.trim() || (r.member?.name || '').includes(searchName.trim());
-            const phoneMatch = !searchPhone.trim() || (r.member?.phone || '').includes(searchPhone.trim());
-            return nameMatch && phoneMatch;
+
+        const data = filteredResponses.map(r => {
+            const row: any = {
+                '성함': r.member?.name || '정보 없음',
+                '전화번호': r.member?.phone || '정보 없음',
+                '신규여부': r.member?.isSelfRegistered ? 'NEW' : '',
+                '제출시간': new Date(r.submittedAt).toLocaleString('ko-KR')
+            };
+
+            // 질문들 매핑
+            const answers = r.answers ? JSON.parse(r.answers) : {};
+            questions.forEach((q, idx) => {
+                const val = answers[q.id] || answers[q.text] || '';
+                row[`Q${idx + 1}. ${q.text}`] = Array.isArray(val) ? val.join(', ') : val;
+            });
+
+            return row;
         });
-        setSearchResults(filtered);
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "설문응답");
+        
+        // 열 너비 자동 조정 (기본)
+        ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 25 }];
+
+        XLSX.writeFile(wb, `설문응답_${survey?.title || 'export'}_${new Date().toISOString().slice(0,10)}.xlsx`);
     };
 
     const handleDeleteResponse = async (id: string, label: string) => {
@@ -220,28 +283,19 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         
         // Optimistic Update: 즉시 화면에서 제거
         const previousResponses = [...responses];
-        const previousSearchResults = searchResults ? [...searchResults] : null;
-        
         setResponses(prev => prev.filter(r => r.id !== id));
-        if (searchResults) {
-            setSearchResults(prev => prev ? prev.filter(r => r.id !== id) : null);
-        }
 
         try {
             const res = await deleteSurveyResponseAction(id);
             if (res.success) {
                 setMsg({ type: 'success', text: '응답이 삭제되었습니다.' });
-                // 서버 데이터와 최종 동기화 (이미 제거했으므로 백그라운드 확인용)
             } else {
                 setMsg({ type: 'error', text: res.error || '삭제 실패' });
-                // 실패 시 복구
                 setResponses(previousResponses);
-                setSearchResults(previousSearchResults);
             }
         } catch (err) {
             console.error(err);
             setResponses(previousResponses);
-            setSearchResults(previousSearchResults);
         }
     };
 
@@ -250,10 +304,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         
         const previousResponses = [...responses];
         setSubmitting(true);
-        
-        // Optimistic Update: 즉시 비움
         setResponses([]);
-        setSearchResults(null);
 
         try {
             let failCount = 0;
@@ -265,7 +316,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 setMsg({ type: 'success', text: '모든 응답이 초기화되었습니다.' });
             } else {
                 setMsg({ type: 'error', text: `${failCount}건 삭제 실패. 나머지는 삭제되었습니다.` });
-                // 일부 실패 시 재조회하여 정합성 맞춤
                 await fetchResponses();
             }
         } catch (err) {
@@ -714,33 +764,97 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         <Box>
                             <Typography variant="h6" fontWeight="bold" color="error.main">응답 관리</Typography>
                             <Typography variant="body2" color="text.secondary">
-                                총 {responsesLoading ? '...' : responses.length}건의 응답
+                                총 {responsesLoading ? '...' : responses.length}건의 응답 {filteredResponses.length !== responses.length && `(필터링됨: ${filteredResponses.length}건)`}
                             </Typography>
                         </Box>
+                        <Stack direction="row" spacing={1}>
+                            <Button 
+                                variant="contained" 
+                                color="error" 
+                                startIcon={<DeleteSweepIcon />}
+                                disabled={submitting || responses.length === 0}
+                                onClick={handleResetAllResponses}
+                            >
+                                전체 응답 초기화
+                            </Button>
+                        </Stack>
+                    </Box>
+
+                    <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', bgcolor: 'rgba(255,255,255,0.5)', p: 2, borderRadius: 2 }}>
+                        <TextField 
+                            size="small" 
+                            label="성함 검색" 
+                            value={searchName} 
+                            onChange={(e) => setSearchName(e.target.value)}
+                            InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'action.active' }} /> }}
+                            sx={{ bgcolor: 'white' }}
+                        />
+                        <TextField 
+                            size="small" 
+                            label="전화번호 검색" 
+                            value={searchPhone} 
+                            onChange={(e) => setSearchPhone(e.target.value)}
+                            sx={{ bgcolor: 'white' }}
+                        />
+                        <Chip 
+                            label="NEW만 보기" 
+                            onClick={() => setShowOnlyNew(!showOnlyNew)}
+                            color={showOnlyNew ? "primary" : "default"}
+                            variant={showOnlyNew ? "filled" : "outlined"}
+                            sx={{ fontWeight: 'bold' }}
+                        />
+                        <Box sx={{ flexGrow: 1 }} />
                         <Button
                             variant="contained"
-                            color="error"
-                            startIcon={<DeleteSweepIcon />}
-                            disabled={submitting || responses.length === 0}
-                            onClick={handleResetAllResponses}
+                            color="success"
+                            startIcon={<SaveIcon />}
+                            onClick={handleExportExcel}
+                            disabled={filteredResponses.length === 0}
                         >
-                            전체 응답 초기화
+                            📥 엑셀 다운로드
                         </Button>
                     </Box>
 
                     {/* 응답 목록 (테이블 형식) */}
-                    <TableContainer component={Paper} elevation={0} variant="outlined" sx={{ borderRadius: 2 }}>
+                    <TableContainer component={Paper} elevation={0} variant="outlined" sx={{ borderRadius: 2, bgcolor: 'white' }}>
                         <Table size="small">
                             <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>성함</TableCell>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>전화번호</TableCell>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>제출 시간</TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={orderBy === 'name'}
+                                            direction={orderBy === 'name' ? order : 'asc'}
+                                            onClick={() => handleRequestSort('name')}
+                                            sx={{ fontWeight: 'bold' }}
+                                        >
+                                            성함
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={orderBy === 'phone'}
+                                            direction={orderBy === 'phone' ? order : 'asc'}
+                                            onClick={() => handleRequestSort('phone')}
+                                            sx={{ fontWeight: 'bold' }}
+                                        >
+                                            전화번호
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={orderBy === 'submittedAt'}
+                                            direction={orderBy === 'submittedAt' ? order : 'asc'}
+                                            onClick={() => handleRequestSort('submittedAt')}
+                                            sx={{ fontWeight: 'bold' }}
+                                        >
+                                            제출 시간
+                                        </TableSortLabel>
+                                    </TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>관리</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {(searchResults || responses).map((r) => (
+                                {filteredResponses.map((r) => (
                                     <TableRow key={r.id} hover>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -779,11 +893,11 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {(searchResults || responses).length === 0 && (
+                                {filteredResponses.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
                                             <Typography variant="body2" color="text.secondary">
-                                                {responsesLoading ? '데이터를 불러오는 중입니다...' : '응답 데이터가 없습니다.'}
+                                                {responsesLoading ? '데이터를 불러오는 중입니다...' : '조건에 맞는 응답 데이터가 없습니다.'}
                                             </Typography>
                                         </TableCell>
                                     </TableRow>
