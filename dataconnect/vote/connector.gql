@@ -436,6 +436,7 @@ query ListSurveyQuestions($surveyId: UUID!) @auth(level: PUBLIC) {
 }
 
 mutation CreateSurveyQuestion($surveyId: UUID!, $sectionId: UUID, $text: String!, $type: String!, $options: String, $maxChoices: Int, $logic: String, $orderIdx: Int!) @auth(level: PUBLIC) {
+  # type: "TEXT_SHORT", "TEXT_LONG", "MULTIPLE_CHOICE", "MULTIPLE_SELECT", "DROPDOWN", "SCALE", "GRID_CHOICE", "GRID_CHECK", "DATE", "TIME"
   surveyQuestion_insert(data: {
     surveyId: $surveyId,
     sectionId: $sectionId,
@@ -449,6 +450,7 @@ mutation CreateSurveyQuestion($surveyId: UUID!, $sectionId: UUID, $text: String!
 }
 
 mutation UpdateSurveyQuestion($id: UUID!, $sectionId: UUID, $text: String, $type: String, $options: String, $maxChoices: Int, $logic: String, $orderIdx: Int) @auth(level: PUBLIC) {
+  # type: "TEXT_SHORT", "TEXT_LONG", "MULTIPLE_CHOICE", "MULTIPLE_SELECT", "DROPDOWN", "SCALE", "GRID_CHOICE", "GRID_CHECK", "DATE", "TIME"
   surveyQuestion_update(id: $id, data: {
     sectionId: $sectionId,
     text: $text,

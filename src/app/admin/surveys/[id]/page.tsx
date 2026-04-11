@@ -100,6 +100,17 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qSectionId, setQSectionId] = useState<string>('');
     const [qLogic, setQLogic] = useState('');
     const [qMaxChoices, setQMaxChoices] = useState<number>(1);
+    
+    // Scale settings
+    const [scaleMin, setScaleMin] = useState(1);
+    const [scaleMax, setScaleMax] = useState(5);
+    const [scaleMinLabel, setScaleMinLabel] = useState('');
+    const [scaleMaxLabel, setScaleMaxLabel] = useState('');
+    
+    // Grid settings
+    const [gridRows, setGridRows] = useState<string[]>(['']);
+    const [gridCols, setGridCols] = useState<string[]>(['']);
+
     const [logicQuestionId, setLogicQuestionId] = useState('');
     const [logicValue, setLogicValue] = useState('');
 
@@ -165,6 +176,22 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQSectionId(q.sectionId || '');
             setQLogic(q.logic || '');
             setQMaxChoices(q.maxChoices || 1);
+
+            // Parse scale/grid options
+            if (q.options) {
+                try {
+                    const parsed = JSON.parse(q.options);
+                    if (q.type === 'SCALE') {
+                        setScaleMin(parsed.min || 1);
+                        setScaleMax(parsed.max || 5);
+                        setScaleMinLabel(parsed.minLabel || '');
+                        setScaleMaxLabel(parsed.maxLabel || '');
+                    } else if (q.type === 'GRID_CHOICE' || q.type === 'GRID_CHECK') {
+                        setGridRows(parsed.rows || ['']);
+                        setGridCols(parsed.columns || ['']);
+                    }
+                } catch (e) {}
+            }
             
             // Parse logic for builder
             if (q.logic) {
@@ -193,6 +220,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQSectionId('');
             setQLogic('');
             setQMaxChoices(1);
+            setScaleMin(1);
+            setScaleMax(5);
+            setScaleMinLabel('');
+            setScaleMaxLabel('');
+            setGridRows(['']);
+            setGridCols(['']);
             setLogicQuestionId('');
             setLogicValue('');
         }
@@ -306,9 +339,13 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const handleSaveQuestion = async () => {
         if (!qText.trim()) return;
         
-        const filteredOptions = (qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT')
+        const filteredOptions = (qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT' || qType === 'DROPDOWN')
             ? JSON.stringify(qOptions.map(o => o.trim()).filter(o => o !== ''))
-            : null;
+            : qType === 'SCALE'
+                ? JSON.stringify({ min: scaleMin, max: scaleMax, minLabel: scaleMinLabel.trim(), maxLabel: scaleMaxLabel.trim() })
+                : (qType === 'GRID_CHOICE' || qType === 'GRID_CHECK')
+                    ? JSON.stringify({ rows: gridRows.map(r => r.trim()).filter(r => r !== ''), columns: gridCols.map(c => c.trim()).filter(c => c !== '') })
+                    : null;
 
         setSubmitting(true);
         try {
@@ -499,7 +536,15 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                                                 <Typography variant="subtitle1" fontWeight="bold">{idx + 1}. {q.text}</Typography>
                                                                 <Chip label={
                                                                     q.type === 'MULTIPLE_CHOICE' ? '객관식' : 
-                                                                    q.type === 'MULTIPLE_SELECT' ? `다중 선택 (${q.maxChoices}개)` : '주관식'
+                                                                    q.type === 'MULTIPLE_SELECT' ? `체크박스 (${q.maxChoices}개)` : 
+                                                                    q.type === 'TEXT_SHORT' ? '단답형' :
+                                                                    q.type === 'TEXT_LONG' ? '장문형' :
+                                                                    q.type === 'DROPDOWN' ? '드롭다운' :
+                                                                    q.type === 'SCALE' ? '선형 배율' :
+                                                                    q.type === 'GRID_CHOICE' ? '객관식 그리드' :
+                                                                    q.type === 'GRID_CHECK' ? '체크박스 그리드' :
+                                                                    q.type === 'DATE' ? '날짜' :
+                                                                    q.type === 'TIME' ? '시간' : '주관식'
                                                                 } size="small" variant="outlined" />
                                                                 {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
                                                             </Box>
@@ -603,12 +648,80 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 label="문항 타입"
                                 onChange={(e) => setQType(e.target.value as string)}
                             >
-                                <MenuItem value="MULTIPLE_CHOICE">객관식 (선택형)</MenuItem>
-                                <MenuItem value="TEXT">주관식 (서술형)</MenuItem>
+                                <MenuItem value="TEXT_SHORT">단답형</MenuItem>
+                                <MenuItem value="TEXT_LONG">장문형</MenuItem>
+                                <Divider />
+                                <MenuItem value="MULTIPLE_CHOICE">객관식 (단일 선택)</MenuItem>
+                                <MenuItem value="MULTIPLE_SELECT">체크박스 (복수 선택)</MenuItem>
+                                <MenuItem value="DROPDOWN">드롭다운</MenuItem>
+                                <Divider />
+                                <MenuItem value="SCALE">선형 배율</MenuItem>
+                                <MenuItem value="GRID_CHOICE">객관식 그리드</MenuItem>
+                                <MenuItem value="GRID_CHECK">체크박스 그리드</MenuItem>
+                                <Divider />
+                                <MenuItem value="DATE">날짜</MenuItem>
+                                <MenuItem value="TIME">시간</MenuItem>
                             </Select>
                         </FormControl>
 
-                        {qType === 'MULTIPLE_CHOICE' && (
+                        {qType === 'MULTIPLE_SELECT' && (
+                            <TextField
+                                label="최대 선택 가능 개수"
+                                type="number"
+                                fullWidth
+                                variant="outlined"
+                                value={qMaxChoices}
+                                onChange={(e) => setQMaxChoices(parseInt(e.target.value) || 1)}
+                                inputProps={{ min: 1 }}
+                                helperText="사용자가 몇 개의 보기까지 선택할 수 있는지 설정합니다."
+                            />
+                        )}
+
+                        {qType === 'SCALE' && (
+                            <Box sx={{ border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom color="text.secondary">배율 설정</Typography>
+                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                    <TextField label="최소값" type="number" value={scaleMin} onChange={(e) => setScaleMin(parseInt(e.target.value))} size="small" />
+                                    <TextField label="최대값" type="number" value={scaleMax} onChange={(e) => setScaleMax(parseInt(e.target.value))} size="small" />
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <TextField label="최소 라벨 (예: 전혀 아님)" fullWidth value={scaleMinLabel} onChange={(e) => setScaleMinLabel(e.target.value)} size="small" />
+                                    <TextField label="최대 라벨 (예: 매우 만족)" fullWidth value={scaleMaxLabel} onChange={(e) => setScaleMaxLabel(e.target.value)} size="small" />
+                                </Box>
+                            </Box>
+                        )}
+
+                        {(qType === 'GRID_CHOICE' || qType === 'GRID_CHECK') && (
+                            <Box sx={{ border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom color="text.secondary">그리드 설정 (행/열)</Typography>
+                                <Box sx={{ mb: 3 }}>
+                                    <Typography variant="caption" fontWeight="bold">행 (가로 문항들)</Typography>
+                                    {gridRows.map((row, idx) => (
+                                        <Box key={idx} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                            <TextField fullWidth size="small" value={row} onChange={(e) => {
+                                                const newR = [...gridRows]; newR[idx] = e.target.value; setGridRows(newR);
+                                            }} />
+                                            <IconButton size="small" onClick={() => setGridRows(gridRows.filter((_, i) => i !== idx))} disabled={gridRows.length === 1}><DeleteIcon /></IconButton>
+                                        </Box>
+                                    ))}
+                                    <Button size="small" startIcon={<AddIcon />} onClick={() => setGridRows([...gridRows, ''])}>행 추가</Button>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" fontWeight="bold">열 (세로 선택지들)</Typography>
+                                    {gridCols.map((col, idx) => (
+                                        <Box key={idx} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                            <TextField fullWidth size="small" value={col} onChange={(e) => {
+                                                const newC = [...gridCols]; newC[idx] = e.target.value; setGridCols(newC);
+                                            }} />
+                                            <IconButton size="small" onClick={() => setGridCols(gridCols.filter((_, i) => i !== idx))} disabled={gridCols.length === 1}><DeleteIcon /></IconButton>
+                                        </Box>
+                                    ))}
+                                    <Button size="small" startIcon={<AddIcon />} onClick={() => setGridCols([...gridCols, ''])}>열 추가</Button>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {(qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT' || qType === 'DROPDOWN') && (
                             <Box>
                                 <Typography variant="subtitle2" gutterBottom fontWeight="bold">
                                     보기 설정
