@@ -82,7 +82,6 @@ export default function SurveyResultsPage() {
 
                 // [WORKAROUND] 서버 쿼리 응답에 answers 필드가 누락된 경우(배포 지연 등), 각 멤버별로 상세 응답을 다시 가져옴
                 if (data.length > 0 && (data[0].answers === undefined || data[0].answers === null)) {
-                    console.log('⚠️ [Workaround] Missing answers field in ListSurveyResponses. Fetching individual details...');
                     const enrichedData = await Promise.all(
                         data.map(async (r: any) => {
                             try {
@@ -94,7 +93,7 @@ export default function SurveyResultsPage() {
                                     return { ...r, answers: detailRes.data[0].answers };
                                 }
                             } catch (e) {
-                                console.error(`Failed to enrich data for member ${r.member.id}`, e);
+                                // Silent fail for security
                             }
                             return r;
                         })
@@ -104,20 +103,6 @@ export default function SurveyResultsPage() {
 
                 setResponses(data);
 
-                // [DIAGNOSTIC] 전체 구조 로그
-                if (data.length > 0) {
-                    console.group('📊 [Survey Debug] Data Load Summary');
-                    console.log('Total Responses:', data.length);
-                    console.log('Sample Response Keys:', Object.keys(data[0] || {}));
-                    try {
-                        const sampleAnswers = JSON.parse(data[0].answers);
-                        const finalAnswers = typeof sampleAnswers === 'string' ? JSON.parse(sampleAnswers) : sampleAnswers;
-                        console.log('Sample Answers Structure:', finalAnswers);
-                    } catch (e) {
-                        console.log('Raw Answers String Sample:', data[0].answers);
-                    }
-                    console.groupEnd();
-                }
             } else {
                 setError(rRes.error || '응답 데이터를 불러오지 못했습니다.');
             }
@@ -141,10 +126,8 @@ export default function SurveyResultsPage() {
                     // 간혹 문자열이 따옴표로 한 번 더 싸여 있는 경우 대응
                     return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
                 } catch (e) {
-                    // [DEBUG] 파싱 실패 시 원본 문자열 확인 (객체 형태의 문자열일 가능성 대비)
                     if (raw && raw.startsWith && raw.startsWith('{')) {
                         try {
-                            // 특수 문자 보정 후 재시도
                             const fixedRaw = raw.replace(/\\"/g, '"').replace(/^"/, '').replace(/"$/, '');
                             return JSON.parse(fixedRaw);
                         } catch (e2) { return {}; }
@@ -169,7 +152,7 @@ export default function SurveyResultsPage() {
                         options = Array.isArray(parsed) ? parsed.map(o => String(o).trim()) : [];
                     }
                 } catch (e) {
-                    console.error('Options parsing error:', e, q);
+                    // Options parsing error
                 }
 
                 // 초기화
@@ -198,12 +181,6 @@ export default function SurveyResultsPage() {
                             }
                         }
 
-                        if (rIdx === 0 || val !== undefined) {
-                            console.log(`[Diagnostic] Q:${q.text.substring(0, 15)}... | Match Found: ${val !== undefined} (${matchType}) | Value:`, val);
-                            if (val === undefined) {
-                                console.log(`   Available Keys in Answers:`, Object.keys(answers));
-                            }
-                        }
 
                         if (val !== undefined && val !== null) {
                             if (Array.isArray(val)) {
@@ -222,7 +199,7 @@ export default function SurveyResultsPage() {
                             }
                         }
                     } catch (e) {
-                        console.error('Answer parsing error for response', r.id, e);
+                        // Answer parsing error
                     }
                 });
 
