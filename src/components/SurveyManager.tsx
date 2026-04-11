@@ -150,7 +150,6 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                             >
                                 <ListItemText 
                                     primary={<strong>{sy.title}</strong>} 
-                                    secondary={sy.description} 
                                 />
                                 {sy.id !== activeSurveyId && (
                                     <Button 

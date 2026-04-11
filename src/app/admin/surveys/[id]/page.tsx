@@ -552,6 +552,11 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         <Typography variant="h4" fontWeight="bold">
                             {survey?.title} {survey?.isActive ? <Chip label="진행중" color="success" size="small" /> : <Chip label="종료됨" color="default" size="small" />}
                         </Typography>
+                        {survey?.description && (
+                            <Typography color="text.secondary" sx={{ mt: 1 }}>
+                                {survey.description}
+                            </Typography>
+                        )}
                     </Box>
                     <Stack direction="row" spacing={1}>
                         <Button 
