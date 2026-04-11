@@ -489,7 +489,7 @@ export default function VoterManager() {
                 <DialogTitle fontWeight="bold">선거인 정보 수정 (SQL)</DialogTitle>
                 <DialogContent dividers>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-                        <TextField label="이름" value={editName} onChange={e => setEditName(e.target.value)} size="small" fullWidth required />
+                        <TextField autoFocus label="이름" value={editName} onChange={e => setEditName(e.target.value)} size="small" fullWidth required />
                         <TextField label="휴대폰" value={editPhone} onChange={e => setEditPhone(e.target.value)} size="small" fullWidth />
                         <TextField label="생년월일" value={editBirthdate} onChange={e => setEditBirthdate(e.target.value)} size="small" fullWidth />
                     </Box>

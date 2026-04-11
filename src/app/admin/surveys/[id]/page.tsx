@@ -460,7 +460,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 <DialogTitle fontWeight="bold">설문 정보 수정</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1 }}>
-                        <TextField label="제목" fullWidth value={surveyTitle} onChange={(e) => setSurveyTitle(e.target.value)} />
+                        <TextField autoFocus label="제목" fullWidth value={surveyTitle} onChange={(e) => setSurveyTitle(e.target.value)} />
                         <TextField label="설명" fullWidth multiline rows={4} value={surveyDesc} onChange={(e) => setSurveyDesc(e.target.value)} />
                     </Stack>
                 </DialogContent>
@@ -475,7 +475,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 <DialogTitle fontWeight="bold">{editingSection ? '섹션 수정' : '새 섹션 추가'}</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1 }}>
-                        <TextField label="섹션 제목" fullWidth value={sTitle} onChange={(e) => setSTitle(e.target.value)} />
+                        <TextField autoFocus label="섹션 제목" fullWidth value={sTitle} onChange={(e) => setSTitle(e.target.value)} />
                         <TextField label="섹션 설명 (선택)" fullWidth value={sDesc} onChange={(e) => setSDesc(e.target.value)} />
                     </Stack>
                 </DialogContent>
@@ -506,6 +506,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         </FormControl>
 
                         <TextField
+                            autoFocus
                             label="질문 내용"
                             fullWidth
                             variant="outlined"

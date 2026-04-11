@@ -380,7 +380,7 @@ export default function CandidatePositionManager({ position }: Props) {
                 <DialogTitle>후보 수정</DialogTitle>
                 <DialogContent dividers>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-                        <TextField label="이름" value={editName} onChange={e => setEditName(e.target.value)} size="small" fullWidth />
+                        <TextField autoFocus label="이름" value={editName} onChange={e => setEditName(e.target.value)} size="small" fullWidth />
                         <TextField label="교구" value={editDistrict} onChange={e => setEditDistrict(e.target.value)} size="small" fullWidth />
                         <TextField label="기호" type="number" value={editCandidateNumber} onChange={e => setEditCandidateNumber(e.target.value)} size="small" fullWidth />
                         <TextField label="봉사 이력" value={editProfile} onChange={e => setEditProfile(e.target.value)} size="small" fullWidth multiline rows={3} />
