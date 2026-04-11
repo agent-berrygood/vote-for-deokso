@@ -364,7 +364,9 @@ export default function SurveyResultsPage() {
                                                         cy="50%"
                                                         labelLine={true}
                                                         label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                                                        innerRadius={60}
                                                         outerRadius={100}
+                                                        paddingAngle={2}
                                                         fill="#8884d8"
                                                         dataKey="value"
                                                     >
@@ -374,18 +376,29 @@ export default function SurveyResultsPage() {
                                                     </Pie>
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
+                                                        formatter={(value: any, name: any) => [value, name]}
                                                     />
-                                                    <Legend />
+                                                    <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: '20px' }} />
                                                 </PieChart>
                                             ) : (
-                                                <BarChart data={qData.data} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                                    <XAxis dataKey="name" angle={-15} textAnchor="end" height={60} interval={0} fontSize={12} />
-                                                    <YAxis allowDecimals={false} />
+                                                <BarChart
+                                                    data={qData.data}
+                                                    layout="vertical"
+                                                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                                    <XAxis type="number" allowDecimals={false} hide />
+                                                    <YAxis
+                                                        dataKey="name"
+                                                        type="category"
+                                                        width={120}
+                                                        fontSize={12}
+                                                        tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                                                    />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                     />
-                                                    <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40}>
+                                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={25}>
                                                         {qData.data.map((entry: any, index: number) => (
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
