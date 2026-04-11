@@ -174,11 +174,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 setSurveyEditOpen(false);
                 fetchData();
             } else {
-                setMsg({ type: 'error', text: res.error || '수정 실패' });
+                console.error('Update survey failed:', res.error);
+                setMsg({ type: 'error', text: `수정 실패: ${res.error}` });
             }
         } catch (e) {
-            console.error('handleSaveSurveyInfo error:', e);
-            setMsg({ type: 'error', text: '오류가 발생했습니다.' });
+            console.error('handleSaveSurveyInfo catch error:', e);
+            setMsg({ type: 'error', text: '예상치 못한 오류가 발생했습니다.' });
         } finally {
             setSubmitting(false);
         }
