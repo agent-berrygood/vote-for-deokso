@@ -140,7 +140,7 @@ export default function SurveyResultsPage() {
                 options.forEach(opt => distribution[opt] = 0);
 
                 // 응답 집계
-                responses.forEach(r => {
+                responses.forEach((r, rIdx) => {
                     try {
                         const answers = parseAnswers(r.answers);
                         
