@@ -49,29 +49,6 @@ import {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-// 커스텀 Y축 틱: 왼쪽 정렬 및 한 줄 보장
-const CustomYAxisTick = (props: any) => {
-    const { x, y, payload } = props;
-    const value = payload.value;
-    const truncatedValue = value.length > 25 ? `${value.substring(0, 25)}...` : value;
-
-    return (
-        <g transform={`translate(${x},${y})`}>
-            <text
-                x={-175}
-                y={0}
-                dy={4}
-                textAnchor="start"
-                fill="#666"
-                fontSize={11}
-                style={{ fontWeight: 500 }}
-            >
-                {truncatedValue}
-            </text>
-        </g>
-    );
-};
-
 export default function SurveyResultsPage() {
     const params = useParams();
     const router = useRouter();
@@ -412,20 +389,22 @@ export default function SurveyResultsPage() {
                                                 <BarChart
                                                     data={qData.data}
                                                     layout="vertical"
-                                                    margin={{ top: 5, right: 30, left: 180, bottom: 5 }}
+                                                    margin={{ top: 20, right: 30, left: 220, bottom: 20 }}
                                                 >
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                                    <XAxis type="number" allowDecimals={false} hide />
+                                                    <XAxis type="number" hide />
                                                     <YAxis
                                                         dataKey="name"
                                                         type="category"
-                                                        width={0}
-                                                        tick={<CustomYAxisTick />}
+                                                        width={210}
+                                                        fontSize={11}
+                                                        tick={{ textAnchor: 'start', dx: -210 }}
+                                                        tickFormatter={(value) => value.length > 40 ? `${value.substring(0, 40)}...` : value}
                                                     />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                     />
-                                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
+                                                    <Bar name="응답 수" dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
                                                         {qData.data.map((entry: any, index: number) => (
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
