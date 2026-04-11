@@ -312,24 +312,6 @@ export interface GetSurveyResponseByMemberVariables {
   memberId: UUIDString;
 }
 
-export interface GetSurveyResponseByNamePhoneData {
-  surveyResponses: ({
-    id: UUIDString;
-    submittedAt: TimestampString;
-    member: {
-      id: UUIDString;
-      name: string;
-      phone?: string | null;
-    } & Member_Key;
-  } & SurveyResponse_Key)[];
-}
-
-export interface GetSurveyResponseByNamePhoneVariables {
-  surveyId: UUIDString;
-  name: string;
-  phone: string;
-}
-
 export interface GetSurveyVariables {
   id: UUIDString;
 }
@@ -1247,18 +1229,6 @@ export const listSurveyResponsesRef: ListSurveyResponsesRef;
 
 export function listSurveyResponses(vars: ListSurveyResponsesVariables): QueryPromise<ListSurveyResponsesData, ListSurveyResponsesVariables>;
 export function listSurveyResponses(dc: DataConnect, vars: ListSurveyResponsesVariables): QueryPromise<ListSurveyResponsesData, ListSurveyResponsesVariables>;
-
-interface GetSurveyResponseByNamePhoneRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: GetSurveyResponseByNamePhoneVariables): QueryRef<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: GetSurveyResponseByNamePhoneVariables): QueryRef<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
-  operationName: string;
-}
-export const getSurveyResponseByNamePhoneRef: GetSurveyResponseByNamePhoneRef;
-
-export function getSurveyResponseByNamePhone(vars: GetSurveyResponseByNamePhoneVariables): QueryPromise<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
-export function getSurveyResponseByNamePhone(dc: DataConnect, vars: GetSurveyResponseByNamePhoneVariables): QueryPromise<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
 
 interface DeleteSurveyResponseRef {
   /* Allow users to create refs without passing in DataConnect */

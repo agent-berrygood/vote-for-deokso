@@ -468,17 +468,6 @@ export function listSurveyResponses(dcOrVars, vars) {
   return executeQuery(listSurveyResponsesRef(dcOrVars, vars));
 }
 
-export const getSurveyResponseByNamePhoneRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'GetSurveyResponseByNamePhone', inputVars);
-}
-getSurveyResponseByNamePhoneRef.operationName = 'GetSurveyResponseByNamePhone';
-
-export function getSurveyResponseByNamePhone(dcOrVars, vars) {
-  return executeQuery(getSurveyResponseByNamePhoneRef(dcOrVars, vars));
-}
-
 export const deleteSurveyResponseRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

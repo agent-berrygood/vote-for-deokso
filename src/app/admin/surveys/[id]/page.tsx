@@ -52,7 +52,6 @@ import {
     updateSurveySectionAction,
     deleteSurveySectionAction,
     listSurveyResponsesAction,
-    getSurveyResponseByNamePhoneAction,
     deleteSurveyResponseAction
 } from '@/app/actions/data';
 
@@ -185,23 +184,17 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
-    const handleSearchByNamePhone = async () => {
-        if (!searchName.trim() || !searchPhone.trim()) {
-            setMsg({ type: 'error', text: '이름과 전화번호를 모두 입력해주세요.' });
+    const handleSearchByNamePhone = () => {
+        if (!searchName.trim() && !searchPhone.trim()) {
+            setMsg({ type: 'error', text: '이름이나 전화번호를 입력해주세요.' });
             return;
         }
-        setResponsesLoading(true);
-        try {
-            const res = await getSurveyResponseByNamePhoneAction({
-                surveyId,
-                name: searchName.trim(),
-                phone: searchPhone.trim()
-            });
-            if (res.success) setSearchResults(res.data as any[]);
-            else setMsg({ type: 'error', text: res.error || '조회 실패' });
-        } finally {
-            setResponsesLoading(false);
-        }
+        const filtered = responses.filter(r => {
+            const nameMatch = !searchName.trim() || (r.member?.name || '').includes(searchName.trim());
+            const phoneMatch = !searchPhone.trim() || (r.member?.phone || '').includes(searchPhone.trim());
+            return nameMatch && phoneMatch;
+        });
+        setSearchResults(filtered);
     };
 
     const handleDeleteResponse = async (id: string, label: string) => {

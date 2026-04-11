@@ -51,7 +51,6 @@ import {
     updateSurveySection as updateSurveySectionSDK,
     deleteSurveySection as deleteSurveySectionSDK,
     listSurveyResponses as listSurveyResponsesSDK,
-    getSurveyResponseByNamePhone as getSurveyResponseByNamePhoneSDK,
     deleteSurveyResponse as deleteSurveyResponseSDK
 } from '@/lib/dataconnect';
 
@@ -518,16 +517,6 @@ export async function listSurveyResponsesAction(surveyId: string) {
     } catch (error) {
         console.error('listSurveyResponsesAction error:', error);
         return { success: false, error: '응답 목록을 불러오지 못했습니다.' };
-    }
-}
-
-export async function getSurveyResponseByNamePhoneAction(vars: { surveyId: string; name: string; phone: string }) {
-    try {
-        const res = await getSurveyResponseByNamePhoneSDK(vars);
-        return { success: true, data: res.data.surveyResponses };
-    } catch (error) {
-        console.error('getSurveyResponseByNamePhoneAction error:', error);
-        return { success: false, error: '응답 조회에 실패했습니다.' };
     }
 }
 
