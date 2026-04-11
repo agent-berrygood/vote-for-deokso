@@ -487,6 +487,18 @@ exports.submitSurveyResponse = function submitSurveyResponse(dcOrVars, vars) {
   return executeMutation(submitSurveyResponseRef(dcOrVars, vars));
 };
 
+const updateSurveyResponseRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateSurveyResponse', inputVars);
+}
+updateSurveyResponseRef.operationName = 'UpdateSurveyResponse';
+exports.updateSurveyResponseRef = updateSurveyResponseRef;
+
+exports.updateSurveyResponse = function updateSurveyResponse(dcOrVars, vars) {
+  return executeMutation(updateSurveyResponseRef(dcOrVars, vars));
+};
+
 const getSurveyResponseByMemberRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

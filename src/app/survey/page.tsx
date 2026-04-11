@@ -29,7 +29,7 @@ import {
     Stack
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
-import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction, getSurveyResponseByMemberAction } from '@/app/actions/data';
+import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction, getSurveyResponseByMemberAction, updateSurveyResponseAction } from '@/app/actions/data';
 
 interface Question {
     id: string;
@@ -61,6 +61,8 @@ export default function SurveyPage() {
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [submitted, setSubmitted] = useState(false);
     const [currentSectionId, setCurrentSectionId] = useState<string | null>(null);
+    const [existingResponseId, setExistingResponseId] = useState<string | null>(null);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const [memberName, setMemberName] = useState('');
     const [memberId, setMemberId] = useState('');
@@ -143,6 +145,25 @@ export default function SurveyPage() {
                 if (sectionsRes.success) setSections(sectionsRes.data as any);
                 if (questionsRes.success) setQuestions(questionsRes.data as any);
                 
+                // 중복 응답 확인 및 데이터 로드
+                if (memberId) {
+                    const dupRes = await getSurveyResponseByMemberAction({
+                        surveyId: activeSurveyId,
+                        memberId: memberId
+                    });
+                    if (dupRes.success && dupRes.data && dupRes.data.length > 0) {
+                        const existing = dupRes.data[0];
+                        setExistingResponseId(existing.id);
+                        setIsEditMode(true);
+                        try {
+                            const prevAnswers = JSON.parse(existing.answers);
+                            setAnswers(prevAnswers);
+                        } catch (e) {
+                            console.error('Failed to parse existing answers:', e);
+                        }
+                    }
+                }
+
                 if (!surveyRes.success) {
                     setError(surveyRes.error || '설문 정보를 불러오지 못했습니다.');
                 }
@@ -166,24 +187,18 @@ export default function SurveyPage() {
         setError('');
 
         try {
-            // 1. 중복 참여 확인
-            const duplicateCheck = await getSurveyResponseByMemberAction({
-                surveyId: activeSurveyId,
-                memberId: memberId
-            });
-
-            if (duplicateCheck.success && duplicateCheck.data && duplicateCheck.data.length > 0) {
-                setError('이미 이 설문에 참여하셨습니다. 중복 제출은 허용되지 않습니다.');
-                setLoading(false);
-                return;
+            let res;
+            if (existingResponseId) {
+                // 수정 모드
+                res = await updateSurveyResponseAction(existingResponseId, JSON.stringify(answers));
+            } else {
+                // 신규 제출
+                res = await submitSurveyResponseAction({
+                    surveyId: activeSurveyId,
+                    memberId: memberId,
+                    answers: JSON.stringify(answers)
+                });
             }
-
-            // 2. 응답 제출
-            const res = await submitSurveyResponseAction({
-                surveyId: activeSurveyId,
-                memberId: memberId,
-                answers: JSON.stringify(answers)
-            });
 
             if (res.success) {
                 setSubmitted(true);
@@ -227,7 +242,14 @@ export default function SurveyPage() {
 
     return (
         <Container maxWidth="sm" sx={{ py: 4 }}>
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+                {isEditMode && (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        이미 참여하신 설문입니다. 기존 응답을 불러왔으며, 내용을 수정하여 다시 제출할 수 있습니다.
+                    </Alert>
+                )}
+                
+                <Box sx={{ mb: 4, textAlign: 'center' }}>
                 <Typography variant="h4" fontWeight="bold" color="secondary" gutterBottom>
                     📋 교회 설문조사
                 </Typography>
@@ -557,6 +579,7 @@ export default function SurveyPage() {
                     </Stack>
                 </Box>
             )}
+            </Paper>
         </Container>
     );
 }

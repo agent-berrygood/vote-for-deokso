@@ -19,6 +19,10 @@ import {
     listSurveys as listSurveysSDK,
     listSurveySections as listSurveySectionsSDK,
     getSurveyResponseByMember as getSurveyResponseByMemberSDK,
+    submitSurveyResponse as submitSurveyResponseSDK,
+    updateSurveyResponse as updateSurveyResponseSDK,
+    deleteSurveyResponse as deleteSurveyResponseSDK,
+    listSurveyResponses as listSurveyResponsesSDK,
     createVoter as createVoterSDK,
     updateVoter as updateVoterSDK,
     deleteVoter as deleteVoterSDK,
@@ -36,7 +40,6 @@ import {
     deleteAllCandidates as deleteAllCandidatesSDK,
     deleteAllVoters as deleteAllVotersSDK,
     submitVote as submitVoteSDK,
-    submitSurveyResponse as submitSurveyResponseSDK,
     createMember as createMemberSDK,
     updateMember as updateMemberSDK,
     deleteMember as deleteMemberSDK,
@@ -49,9 +52,7 @@ import {
     deleteSurveyQuestion as deleteSurveyQuestionSDK,
     createSurveySection as createSurveySectionSDK,
     updateSurveySection as updateSurveySectionSDK,
-    deleteSurveySection as deleteSurveySectionSDK,
-    listSurveyResponses as listSurveyResponsesSDK,
-    deleteSurveyResponse as deleteSurveyResponseSDK
+    deleteSurveySection as deleteSurveySectionSDK
 } from '@/lib/dataconnect';
 
 
@@ -531,5 +532,15 @@ export async function deleteSurveyResponseAction(id: string) {
     } catch (error) {
         console.error('deleteSurveyResponseAction error:', error);
         return { success: false, error: '응답 삭제에 실패했습니다.' };
+    }
+}
+
+export async function updateSurveyResponseAction(id: string, answers: string) {
+    try {
+        await updateSurveyResponseSDK({ id, answers });
+        return { success: true };
+    } catch (error) {
+        console.error('updateSurveyResponseAction error:', error);
+        return { success: false, error: '응답 수정에 실패했습니다.' };
     }
 }

@@ -53,6 +53,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateSurvey*](#createsurvey)
   - [*UpdateSurvey*](#updatesurvey)
   - [*SubmitSurveyResponse*](#submitsurveyresponse)
+  - [*UpdateSurveyResponse*](#updatesurveyresponse)
   - [*DeleteSurveyResponse*](#deletesurveyresponse)
   - [*DeleteSurvey*](#deletesurvey)
   - [*CreateSurveySection*](#createsurveysection)
@@ -2110,6 +2111,7 @@ The `data` property is an object of type `GetSurveyResponseByMemberData`, which 
 export interface GetSurveyResponseByMemberData {
   surveyResponses: ({
     id: UUIDString;
+    answers: string;
     submittedAt: TimestampString;
   } & SurveyResponse_Key)[];
 }
@@ -5245,6 +5247,118 @@ console.log(data.surveyResponse_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.surveyResponse_insert);
+});
+```
+
+## UpdateSurveyResponse
+You can execute the `UpdateSurveyResponse` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+updateSurveyResponse(vars: UpdateSurveyResponseVariables): MutationPromise<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+
+interface UpdateSurveyResponseRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSurveyResponseVariables): MutationRef<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+}
+export const updateSurveyResponseRef: UpdateSurveyResponseRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateSurveyResponse(dc: DataConnect, vars: UpdateSurveyResponseVariables): MutationPromise<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+
+interface UpdateSurveyResponseRef {
+  ...
+  (dc: DataConnect, vars: UpdateSurveyResponseVariables): MutationRef<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+}
+export const updateSurveyResponseRef: UpdateSurveyResponseRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateSurveyResponseRef:
+```typescript
+const name = updateSurveyResponseRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateSurveyResponse` mutation requires an argument of type `UpdateSurveyResponseVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateSurveyResponseVariables {
+  id: UUIDString;
+  answers: string;
+}
+```
+### Return Type
+Recall that executing the `UpdateSurveyResponse` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateSurveyResponseData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateSurveyResponseData {
+  surveyResponse_update?: SurveyResponse_Key | null;
+}
+```
+### Using `UpdateSurveyResponse`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateSurveyResponse, UpdateSurveyResponseVariables } from '@vote/dataconnect';
+
+// The `UpdateSurveyResponse` mutation requires an argument of type `UpdateSurveyResponseVariables`:
+const updateSurveyResponseVars: UpdateSurveyResponseVariables = {
+  id: ..., 
+  answers: ..., 
+};
+
+// Call the `updateSurveyResponse()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateSurveyResponse(updateSurveyResponseVars);
+// Variables can be defined inline as well.
+const { data } = await updateSurveyResponse({ id: ..., answers: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateSurveyResponse(dataConnect, updateSurveyResponseVars);
+
+console.log(data.surveyResponse_update);
+
+// Or, you can use the `Promise` API.
+updateSurveyResponse(updateSurveyResponseVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponse_update);
+});
+```
+
+### Using `UpdateSurveyResponse`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateSurveyResponseRef, UpdateSurveyResponseVariables } from '@vote/dataconnect';
+
+// The `UpdateSurveyResponse` mutation requires an argument of type `UpdateSurveyResponseVariables`:
+const updateSurveyResponseVars: UpdateSurveyResponseVariables = {
+  id: ..., 
+  answers: ..., 
+};
+
+// Call the `updateSurveyResponseRef()` function to get a reference to the mutation.
+const ref = updateSurveyResponseRef(updateSurveyResponseVars);
+// Variables can be defined inline as well.
+const ref = updateSurveyResponseRef({ id: ..., answers: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateSurveyResponseRef(dataConnect, updateSurveyResponseVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.surveyResponse_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponse_update);
 });
 ```
 

@@ -421,6 +421,12 @@ mutation SubmitSurveyResponse($surveyId: UUID!, $memberId: UUID!, $answers: Stri
   })
 }
 
+mutation UpdateSurveyResponse($id: UUID!, $answers: String!) @auth(level: PUBLIC) {
+  surveyResponse_update(id: $id, data: {
+    answers: $answers
+  })
+}
+
 # 중복 응답 확인 쿼리
 query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level: PUBLIC) {
   surveyResponses(where: {
@@ -428,6 +434,7 @@ query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level:
     memberId: { eq: $memberId }
   }) {
     id
+    answers
     submittedAt
   }
 }

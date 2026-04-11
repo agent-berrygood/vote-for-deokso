@@ -303,6 +303,7 @@ export interface GetSurveyData {
 export interface GetSurveyResponseByMemberData {
   surveyResponses: ({
     id: UUIDString;
+    answers: string;
     submittedAt: TimestampString;
   } & SurveyResponse_Key)[];
 }
@@ -673,6 +674,15 @@ export interface UpdateSurveyQuestionVariables {
   maxChoices?: number | null;
   logic?: string | null;
   orderIdx?: number | null;
+}
+
+export interface UpdateSurveyResponseData {
+  surveyResponse_update?: SurveyResponse_Key | null;
+}
+
+export interface UpdateSurveyResponseVariables {
+  id: UUIDString;
+  answers: string;
 }
 
 export interface UpdateSurveySectionData {
@@ -1205,6 +1215,18 @@ export const submitSurveyResponseRef: SubmitSurveyResponseRef;
 
 export function submitSurveyResponse(vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
 export function submitSurveyResponse(dc: DataConnect, vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
+
+interface UpdateSurveyResponseRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateSurveyResponseVariables): MutationRef<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateSurveyResponseVariables): MutationRef<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+  operationName: string;
+}
+export const updateSurveyResponseRef: UpdateSurveyResponseRef;
+
+export function updateSurveyResponse(vars: UpdateSurveyResponseVariables): MutationPromise<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
+export function updateSurveyResponse(dc: DataConnect, vars: UpdateSurveyResponseVariables): MutationPromise<UpdateSurveyResponseData, UpdateSurveyResponseVariables>;
 
 interface GetSurveyResponseByMemberRef {
   /* Allow users to create refs without passing in DataConnect */
