@@ -49,6 +49,29 @@ import {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
+// 커스텀 Y축 틱: 왼쪽 정렬 및 한 줄 보장
+const CustomYAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    const value = payload.value;
+    const truncatedValue = value.length > 25 ? `${value.substring(0, 25)}...` : value;
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                x={-175}
+                y={0}
+                dy={4}
+                textAnchor="start"
+                fill="#666"
+                fontSize={11}
+                style={{ fontWeight: 500 }}
+            >
+                {truncatedValue}
+            </text>
+        </g>
+    );
+};
+
 export default function SurveyResultsPage() {
     const params = useParams();
     const router = useRouter();
@@ -378,31 +401,41 @@ export default function SurveyResultsPage() {
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                         formatter={(value: any, name: any) => [value, name]}
                                                     />
-                                                    <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: '20px' }} />
+                                                    <Legend
+                                                        layout="vertical"
+                                                        verticalAlign="bottom"
+                                                        align="left"
+                                                        wrapperStyle={{ paddingTop: '20px', paddingLeft: '10px' }}
+                                                    />
                                                 </PieChart>
                                             ) : (
                                                 <BarChart
                                                     data={qData.data}
                                                     layout="vertical"
-                                                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                                    margin={{ top: 5, right: 30, left: 180, bottom: 5 }}
                                                 >
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                                     <XAxis type="number" allowDecimals={false} hide />
                                                     <YAxis
                                                         dataKey="name"
                                                         type="category"
-                                                        width={120}
-                                                        fontSize={12}
-                                                        tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                                                        width={0}
+                                                        tick={<CustomYAxisTick />}
                                                     />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                     />
-                                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={25}>
+                                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
                                                         {qData.data.map((entry: any, index: number) => (
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
                                                     </Bar>
+                                                    <Legend
+                                                        layout="vertical"
+                                                        verticalAlign="bottom"
+                                                        align="left"
+                                                        wrapperStyle={{ paddingTop: '20px' }}
+                                                    />
                                                 </BarChart>
                                             )}
                                         </ResponsiveContainer>
