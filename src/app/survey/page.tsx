@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     Box, 
@@ -25,7 +25,8 @@ import {
     CircularProgress,
     Alert,
     LinearProgress,
-    Divider
+    Divider,
+    Stack
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
 import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction } from '@/app/actions/data';
@@ -59,9 +60,29 @@ export default function SurveyPage() {
     const [error, setError] = useState('');
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [submitted, setSubmitted] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
 
     const [memberName, setMemberName] = useState('');
     const [memberId, setMemberId] = useState('');
+
+    // Calculate valid rendering groups (sections with at least one question)
+    const renderGroups = useMemo(() => {
+        const orphanedQuestions = questions.filter(q => !sections.some(s => s.id === q.sectionId));
+        
+        const initialGroups = [
+            ...(orphanedQuestions.length > 0 ? [{ id: 'none', title: '기본 정보', description: '기본적인 설문 문항입니다.' }] : []),
+            ...sections
+        ];
+
+        return initialGroups.filter(section => {
+            const sectionQuestions = questions.filter(q => 
+                section.id === 'none' 
+                    ? !sections.some(s => s.id === q.sectionId)
+                    : q.sectionId === section.id
+            );
+            return sectionQuestions.length > 0;
+        });
+    }, [questions, sections]);
 
     useEffect(() => {
         const name = sessionStorage.getItem('memberName');
@@ -188,37 +209,50 @@ export default function SurveyPage() {
                         <Typography variant="h6" fontWeight="bold" gutterBottom>
                             {survey.title}
                         </Typography>
-                        <Typography variant="body2" sx={{ mb: 3, whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
                             {survey.description}
                         </Typography>
                         
+                        {/* Progress Bar */}
+                        <Box sx={{ width: '100%', mb: 4 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    진행률: {renderGroups.length > 0 ? Math.round(((currentPage + 1) / renderGroups.length) * 100) : 0}%
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {currentPage + 1} / {renderGroups.length} 페이지
+                                </Typography>
+                            </Box>
+                            <LinearProgress 
+                                variant="determinate" 
+                                value={renderGroups.length > 0 ? ((currentPage + 1) / renderGroups.length) * 100 : 0} 
+                                color="secondary"
+                                sx={{ height: 8, borderRadius: 4 }}
+                            />
+                        </Box>
+
                         <Divider sx={{ my: 3 }} />
 
-                        {/* Dynamic Questions by Section */}
+                        {/* Dynamic Questions by Section (Paged) */}
                         {(() => {
-                            // Find questions not in any of the current sections
-                            const orphanedQuestions = questions.filter(q => !sections.some(s => s.id === q.sectionId));
-                            
-                            // Create a list of all groups to render
-                            const renderGroups = [
-                                ...sections,
-                                ...(orphanedQuestions.length > 0 ? [{ id: 'none', title: '', description: '' }] : [])
-                            ];
+                            const section = renderGroups[currentPage];
+                            if (!section) return (
+                                <Box sx={{ py: 4, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">표시할 문항이 없습니다.</Typography>
+                                </Box>
+                            );
 
-                            return renderGroups.map((section, sIdx) => {
-                                const sectionQuestions = questions.filter(q => 
-                                    section.id === 'none' 
-                                        ? !sections.some(s => s.id === q.sectionId)
-                                        : q.sectionId === section.id
-                                );
-                                
-                                if (sectionQuestions.length === 0) return null;
+                            const sectionQuestions = questions.filter(q => 
+                                section.id === 'none' 
+                                    ? !sections.some(s => s.id === q.sectionId)
+                                    : q.sectionId === section.id
+                            );
 
                             return (
-                                <Box key={section.id || 'none'} sx={{ mb: 6 }}>
+                                <Box key={section.id} sx={{ mb: 2 }}>
                                     {section.title && (
                                         <Box sx={{ mb: 3 }}>
-                                            <Typography variant="h6" fontWeight="bold" color="secondary">
+                                            <Typography variant="h5" fontWeight="bold" color="secondary">
                                                 {section.title}
                                             </Typography>
                                             {section.description && (
@@ -245,7 +279,7 @@ export default function SurveyPage() {
                                         return (
                                             <Box key={q.id} sx={{ mb: 4 }}>
                                                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                                    {qIdx + 1}. {q.text}
+                                                    {q.text}
                                                 </Typography>
                                                 
                                                 {(() => {
@@ -428,21 +462,62 @@ export default function SurveyPage() {
                                     })}
                                 </Box>
                             );
-                            });
                         })()}
                     </Paper>
 
-                    <Button 
-                        type="submit" 
-                        variant="contained" 
-                        color="secondary" 
-                        fullWidth 
-                        size="large"
-                        sx={{ py: 1.5, borderRadius: 2, fontSize: '1.1rem', fontWeight: 'bold' }}
-                        disabled={loading}
-                    >
-                        {loading ? <CircularProgress size={24} /> : '설문 제출하기'}
-                    </Button>
+                    <Stack direction="row" spacing={2} sx={{ mb: 4 }}>
+                        {currentPage > 0 && (
+                            <Button 
+                                variant="outlined" 
+                                color="secondary" 
+                                fullWidth 
+                                size="large"
+                                onClick={() => {
+                                    setCurrentPage(prev => prev - 1);
+                                    window.scrollTo(0, 0);
+                                }}
+                                sx={{ py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
+                            >
+                                이전
+                            </Button>
+                        )}
+                        
+                        {(() => {
+                            const totalPages = renderGroups.length;
+                            
+                            if (currentPage < totalPages - 1) {
+                                return (
+                                    <Button 
+                                        variant="contained" 
+                                        color="secondary" 
+                                        fullWidth 
+                                        size="large"
+                                        onClick={() => {
+                                            setCurrentPage(prev => prev + 1);
+                                            window.scrollTo(0, 0);
+                                        }}
+                                        sx={{ py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
+                                    >
+                                        다음
+                                    </Button>
+                                );
+                            } else {
+                                return (
+                                    <Button 
+                                        type="submit" 
+                                        variant="contained" 
+                                        color="secondary" 
+                                        fullWidth 
+                                        size="large"
+                                        sx={{ py: 1.5, borderRadius: 2, fontSize: '1.1rem', fontWeight: 'bold' }}
+                                        disabled={loading}
+                                    >
+                                        {loading ? <CircularProgress size={24} /> : '설문 제출하기'}
+                                    </Button>
+                                );
+                            }
+                        })()}
+                    </Stack>
                 </form>
             )}
         </Container>
