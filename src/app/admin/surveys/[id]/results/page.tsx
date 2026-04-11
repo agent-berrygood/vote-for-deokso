@@ -365,8 +365,8 @@ export default function SurveyResultsPage() {
                                                         cy="50%"
                                                         labelLine={true}
                                                         label={({ value, percent }: any) => `${value || 0}명 (${((percent || 0) * 100).toFixed(0)}%)`}
-                                                        innerRadius={60}
-                                                        outerRadius={100}
+                                                        innerRadius={55}
+                                                        outerRadius={90}
                                                         paddingAngle={2}
                                                         fill="#8884d8"
                                                         dataKey="value"
@@ -390,14 +390,15 @@ export default function SurveyResultsPage() {
                                                 <BarChart
                                                     data={qData.data}
                                                     layout="vertical"
-                                                    margin={{ top: 20, right: 80, left: 10, bottom: 20 }}
+                                                    margin={{ top: 20, right: 80, left: 40, bottom: 20 }}
                                                 >
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                                     <XAxis type="number" hide />
                                                     <YAxis
                                                         dataKey="name"
                                                         type="category"
-                                                        hide
+                                                        width={35}
+                                                        fontSize={10}
                                                     />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
