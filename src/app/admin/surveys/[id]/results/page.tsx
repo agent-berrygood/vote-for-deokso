@@ -379,27 +379,26 @@ export default function SurveyResultsPage() {
                                                         formatter={(value: any, name: any) => [value, name]}
                                                     />
                                                     <Legend
-                                                        layout="vertical"
+                                                        layout="horizontal"
                                                         verticalAlign="bottom"
-                                                        align="left"
-                                                        wrapperStyle={{ paddingTop: '20px', paddingLeft: '10px' }}
+                                                        align="center"
+                                                        wrapperStyle={{ paddingTop: '20px' }}
                                                     />
                                                 </PieChart>
                                             ) : (
                                                 <BarChart
                                                     data={qData.data}
                                                     layout="vertical"
-                                                    margin={{ top: 20, right: 30, left: 200, bottom: 20 }}
+                                                    margin={{ top: 20, right: 30, left: 120, bottom: 20 }}
                                                 >
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                                     <XAxis type="number" hide />
                                                     <YAxis
                                                         dataKey="name"
                                                         type="category"
-                                                        width={190}
+                                                        width={110}
                                                         fontSize={10}
-                                                        tick={{ textAnchor: 'start', dx: -190 }}
-                                                        tickFormatter={(value) => value.length > 35 ? `${value.substring(0, 35)}...` : value}
+                                                        tickFormatter={(value) => value.length > 25 ? `${value.substring(0, 25)}...` : value}
                                                     />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
@@ -410,9 +409,9 @@ export default function SurveyResultsPage() {
                                                         ))}
                                                     </Bar>
                                                     <Legend
-                                                        layout="vertical"
+                                                        layout="horizontal"
                                                         verticalAlign="bottom"
-                                                        align="left"
+                                                        align="center"
                                                         wrapperStyle={{ paddingTop: '20px' }}
                                                     />
                                                 </BarChart>
