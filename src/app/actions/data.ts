@@ -358,11 +358,12 @@ export async function createSurveyQuestionAction(vars: { surveyId: string, secti
 
 export async function updateSurveyQuestionAction(vars: { surveyId: string, id: string, sectionId?: string | null, text?: string, type?: string, options?: string, logic?: string | null, orderIdx?: number }) {
     try {
+        const { surveyId, ...sdkVars } = vars;
         const cleanedVars = Object.fromEntries(
-            Object.entries(vars).filter(([_, v]) => v !== undefined)
+            Object.entries(sdkVars).filter(([_, v]) => v !== undefined)
         );
         await updateSurveyQuestionSDK(cleanedVars as any);
-        revalidatePath(`/admin/surveys/${vars.surveyId}`);
+        revalidatePath(`/admin/surveys/${surveyId}`);
         return { success: true };
     } catch (error: any) {
         console.error('updateSurveyQuestionAction error:', error);
@@ -411,11 +412,12 @@ export async function createSurveySectionAction(vars: { surveyId: string, title:
 
 export async function updateSurveySectionAction(vars: { surveyId: string, id: string, title?: string, description?: string, orderIdx?: number }) {
     try {
+        const { surveyId, ...sdkVars } = vars;
         const cleanedVars = Object.fromEntries(
-            Object.entries(vars).filter(([_, v]) => v !== undefined && v !== null)
+            Object.entries(sdkVars).filter(([_, v]) => v !== undefined && v !== null)
         );
         await updateSurveySectionSDK(cleanedVars as any);
-        revalidatePath(`/admin/surveys/${vars.surveyId}`);
+        revalidatePath(`/admin/surveys/${surveyId}`);
         return { success: true };
     } catch (error: any) {
         console.error('updateSurveySectionAction error:', error);
