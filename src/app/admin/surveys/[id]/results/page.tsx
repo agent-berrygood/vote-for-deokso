@@ -38,7 +38,8 @@ import {
     ResponsiveContainer,
     PieChart,
     Pie,
-    Cell
+    Cell,
+    LabelList
 } from 'recharts';
 import {
     getSurveyAction,
@@ -389,21 +390,21 @@ export default function SurveyResultsPage() {
                                                 <BarChart
                                                     data={qData.data}
                                                     layout="vertical"
-                                                    margin={{ top: 20, right: 30, left: 120, bottom: 20 }}
+                                                    margin={{ top: 20, right: 80, left: 10, bottom: 20 }}
                                                 >
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                                     <XAxis type="number" hide />
                                                     <YAxis
                                                         dataKey="name"
                                                         type="category"
-                                                        width={110}
-                                                        fontSize={10}
-                                                        tickFormatter={(value) => value.length > 25 ? `${value.substring(0, 25)}...` : value}
+                                                        hide
                                                     />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                     />
-                                                    <Bar name="응답 수" dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
+                                                    <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={24}>
+                                                        <LabelList dataKey="name" position="top" offset={10} fontSize={11} fill="#374151" fontWeight={500} />
+                                                        <LabelList dataKey="value" position="right" offset={10} fontSize={12} fill="#6366f1" fontWeight="bold" formatter={(val: any) => `${val}명`} />
                                                         {qData.data.map((entry: any, index: number) => (
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
@@ -412,7 +413,7 @@ export default function SurveyResultsPage() {
                                                         layout="horizontal"
                                                         verticalAlign="bottom"
                                                         align="center"
-                                                        wrapperStyle={{ paddingTop: '20px' }}
+                                                        wrapperStyle={{ paddingTop: '30px' }}
                                                     />
                                                 </BarChart>
                                             )}
