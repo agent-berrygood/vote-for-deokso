@@ -60,17 +60,30 @@ export default function SurveyPage() {
     const [error, setError] = useState('');
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [submitted, setSubmitted] = useState(false);
-    const [currentPage, setCurrentPage] = useState(0);
+    const [currentSectionId, setCurrentSectionId] = useState<string | null>(null);
 
     const [memberName, setMemberName] = useState('');
     const [memberId, setMemberId] = useState('');
 
-    // Calculate valid rendering groups (sections with at least one question)
+    // Visibility Helper
+    const isQuestionVisible = (q: Question) => {
+        if (!q.logic) return true;
+        try {
+            const logic = JSON.parse(q.logic);
+            if (logic.showIf) {
+                const { questionId, value } = logic.showIf;
+                return answers[questionId] === value;
+            }
+        } catch (e) {}
+        return true;
+    };
+
+    // Calculate valid rendering groups (sections with at least one VISIBLE question)
     const renderGroups = useMemo(() => {
-        const orphanedQuestions = questions.filter(q => !sections.some(s => s.id === q.sectionId));
-        
         const initialGroups = [
-            ...(orphanedQuestions.length > 0 ? [{ id: 'none', title: '기본 정보', description: '기본적인 설문 문항입니다.' }] : []),
+            ...(questions.filter(q => !sections.some(s => s.id === q.sectionId)).length > 0 
+                ? [{ id: 'none', title: '기본 정보', description: '기본적인 설문 문항입니다.' }] 
+                : []),
             ...sections
         ];
 
@@ -80,9 +93,24 @@ export default function SurveyPage() {
                     ? !sections.some(s => s.id === q.sectionId)
                     : q.sectionId === section.id
             );
-            return sectionQuestions.length > 0;
+            // Dynamic check: Has at least one question visible under current answers
+            return sectionQuestions.some(q => isQuestionVisible(q));
         });
-    }, [questions, sections]);
+    }, [questions, sections, answers]);
+
+    // Set initial section and handle dynamic visibility changes
+    useEffect(() => {
+        if (renderGroups.length > 0 && !currentSectionId) {
+            setCurrentSectionId(renderGroups[0].id);
+        } else if (currentSectionId && !renderGroups.some(g => g.id === currentSectionId)) {
+            setCurrentSectionId(renderGroups[0]?.id || null);
+        }
+    }, [renderGroups, currentSectionId]);
+
+    const currentPageIdx = useMemo(() => {
+        const idx = renderGroups.findIndex(g => g.id === currentSectionId);
+        return idx === -1 ? 0 : idx;
+    }, [renderGroups, currentSectionId]);
 
     useEffect(() => {
         const name = sessionStorage.getItem('memberName');
@@ -217,15 +245,15 @@ export default function SurveyPage() {
                         <Box sx={{ width: '100%', mb: 4 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                 <Typography variant="caption" color="text.secondary">
-                                    진행률: {renderGroups.length > 0 ? Math.round(((currentPage + 1) / renderGroups.length) * 100) : 0}%
+                                    진행률: {renderGroups.length > 0 ? Math.round(((currentPageIdx + 1) / renderGroups.length) * 100) : 0}%
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {currentPage + 1} / {renderGroups.length} 페이지
+                                    {currentPageIdx + 1} / {renderGroups.length} 페이지
                                 </Typography>
                             </Box>
                             <LinearProgress 
                                 variant="determinate" 
-                                value={renderGroups.length > 0 ? ((currentPage + 1) / renderGroups.length) * 100 : 0} 
+                                value={renderGroups.length > 0 ? ((currentPageIdx + 1) / renderGroups.length) * 100 : 0} 
                                 color="secondary"
                                 sx={{ height: 8, borderRadius: 4 }}
                             />
@@ -235,7 +263,7 @@ export default function SurveyPage() {
 
                         {/* Dynamic Questions by Section (Paged) */}
                         {(() => {
-                            const section = renderGroups[currentPage];
+                            const section = renderGroups[currentPageIdx];
                             if (!section) return (
                                 <Box sx={{ py: 4, textAlign: 'center' }}>
                                     <Typography color="text.secondary">표시할 문항이 없습니다.</Typography>
@@ -264,17 +292,9 @@ export default function SurveyPage() {
                                         </Box>
                                     )}
 
-                                    {sectionQuestions.map((q, qIdx) => {
+                                    {sectionQuestions.map((q) => {
                                         // Branching Logic check
-                                        if (q.logic) {
-                                            try {
-                                                const logic = JSON.parse(q.logic);
-                                                if (logic.showIf) {
-                                                    const { questionId, value } = logic.showIf;
-                                                    if (answers[questionId] !== value) return null;
-                                                }
-                                            } catch (e) {}
-                                        }
+                                        if (!isQuestionVisible(q)) return null;
 
                                         return (
                                             <Box key={q.id} sx={{ mb: 4 }}>
@@ -466,15 +486,18 @@ export default function SurveyPage() {
                     </Paper>
 
                     <Stack direction="row" spacing={2} sx={{ mb: 4 }}>
-                        {currentPage > 0 && (
+                        {currentPageIdx > 0 && (
                             <Button 
                                 variant="outlined" 
                                 color="secondary" 
                                 fullWidth 
                                 size="large"
                                 onClick={() => {
-                                    setCurrentPage(prev => prev - 1);
-                                    window.scrollTo(0, 0);
+                                    const prevIdx = currentPageIdx - 1;
+                                    if (prevIdx >= 0) {
+                                        setCurrentSectionId(renderGroups[prevIdx].id);
+                                        window.scrollTo(0, 0);
+                                    }
                                 }}
                                 sx={{ py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
                             >
@@ -485,7 +508,7 @@ export default function SurveyPage() {
                         {(() => {
                             const totalPages = renderGroups.length;
                             
-                            if (currentPage < totalPages - 1) {
+                            if (currentPageIdx < totalPages - 1) {
                                 return (
                                     <Button 
                                         variant="contained" 
@@ -493,8 +516,11 @@ export default function SurveyPage() {
                                         fullWidth 
                                         size="large"
                                         onClick={() => {
-                                            setCurrentPage(prev => prev + 1);
-                                            window.scrollTo(0, 0);
+                                            const nextIdx = currentPageIdx + 1;
+                                            if (nextIdx < totalPages) {
+                                                setCurrentSectionId(renderGroups[nextIdx].id);
+                                                window.scrollTo(0, 0);
+                                            }
                                         }}
                                         sx={{ py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
                                     >
