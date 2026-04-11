@@ -640,7 +640,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             required
                         />
 
-                        <FormControl fullWidth>
+                        <FormControl fullWidth sx={{ mt: 1 }}>
                             <InputLabel id="q-type-label">문항 타입</InputLabel>
                             <Select
                                 labelId="q-type-label"
@@ -650,15 +650,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             >
                                 <MenuItem value="TEXT_SHORT">단답형</MenuItem>
                                 <MenuItem value="TEXT_LONG">장문형</MenuItem>
-                                <Divider />
                                 <MenuItem value="MULTIPLE_CHOICE">객관식 (단일 선택)</MenuItem>
-                                <MenuItem value="MULTIPLE_SELECT">체크박스 (복수 선택)</MenuItem>
+                                <MenuItem value="MULTIPLE_SELECT">다중 선택형 (체크박스)</MenuItem>
                                 <MenuItem value="DROPDOWN">드롭다운</MenuItem>
-                                <Divider />
                                 <MenuItem value="SCALE">선형 배율</MenuItem>
                                 <MenuItem value="GRID_CHOICE">객관식 그리드</MenuItem>
                                 <MenuItem value="GRID_CHECK">체크박스 그리드</MenuItem>
-                                <Divider />
                                 <MenuItem value="DATE">날짜</MenuItem>
                                 <MenuItem value="TIME">시간</MenuItem>
                             </Select>
