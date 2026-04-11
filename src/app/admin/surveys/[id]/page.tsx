@@ -110,8 +110,14 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 setSurveyTitle(surveyRes.data.title);
                 setSurveyDesc(surveyRes.data.description || '');
             }
-            if (sectionsRes.success) setSections(sectionsRes.data as any);
-            if (questionsRes.success) setQuestions(questionsRes.data as any);
+            if (sectionsRes.success) {
+                console.log('Fetched sections:', sectionsRes.data);
+                setSections(sectionsRes.data as any);
+            }
+            if (questionsRes.success) {
+                console.log('Fetched questions:', questionsRes.data);
+                setQuestions(questionsRes.data as any);
+            }
         } catch (e) {
             console.error(e);
             setMsg({ type: 'error', text: '데이터를 불러오는 중 오류가 발생했습니다.' });
@@ -191,6 +197,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         try {
             if (editingSection) {
                 const res = await updateSurveySectionAction({
+                    surveyId,
                     id: editingSection.id,
                     title: sTitle.trim(),
                     description: sDesc.trim() || undefined
@@ -203,10 +210,14 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     description: sDesc.trim() || undefined,
                     orderIdx: sections.length > 0 ? Math.max(...sections.map(s => s.orderIdx)) + 1 : 1
                 });
-                if (res.success) setMsg({ type: 'success', text: '새 섹션이 추가되었습니다.' });
+                if (res.success) {
+                    setMsg({ type: 'success', text: '새 섹션이 추가되었습니다.' });
+                    setSectionDialogOpen(false);
+                    fetchData();
+                } else {
+                    setMsg({ type: 'error', text: `섹션 추가 실패: ${res.error}` });
+                }
             }
-            setSectionDialogOpen(false);
-            fetchData();
         } catch (e) {
             setMsg({ type: 'error', text: '오류가 발생했습니다.' });
         } finally {
@@ -218,10 +229,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         if (!window.confirm('이 섹션을 삭제하시겠습니까? 섹션 내 문항들의 섹션 지정이 해제됩니다.')) return;
         setSubmitting(true);
         try {
-            const res = await deleteSurveySectionAction(id);
+            const res = await deleteSurveySectionAction(id, surveyId);
             if (res.success) {
                 setMsg({ type: 'success', text: '섹션이 삭제되었습니다.' });
                 fetchData();
+            } else {
+                setMsg({ type: 'error', text: `섹션 삭제 실패: ${res.error}` });
             }
         } catch (e) { } finally { setSubmitting(false); }
     };
@@ -251,6 +264,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         try {
             if (editingQuestion) {
                 const res = await updateSurveyQuestionAction({
+                    surveyId,
                     id: editingQuestion.id,
                     sectionId: qSectionId || null,
                     text: qText.trim(),
@@ -260,6 +274,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 });
                 if (res.success) {
                     setMsg({ type: 'success', text: '문항이 수정되었습니다.' });
+                    setDialogOpen(false);
+                    fetchData();
                 } else {
                     setMsg({ type: 'error', text: res.error || '문항 수정 실패' });
                 }
@@ -275,12 +291,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 });
                 if (res.success) {
                     setMsg({ type: 'success', text: '새 문항이 추가되었습니다.' });
+                    setDialogOpen(false);
+                    fetchData();
                 } else {
                     setMsg({ type: 'error', text: res.error || '문항 추가 실패' });
                 }
             }
-            setDialogOpen(false);
-            fetchData();
         } catch (e) {
             console.error(e);
             setMsg({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
@@ -293,7 +309,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         if (!window.confirm('이 문항을 삭제하시겠습니까?')) return;
         setSubmitting(true);
         try {
-            const res = await deleteSurveyQuestionAction(id);
+            const res = await deleteSurveyQuestionAction(id, surveyId);
             if (res.success) {
                 setMsg({ type: 'success', text: '문항이 삭제되었습니다.' });
                 fetchData();

@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import '@/lib/firebase'; // Ensure Firebase is initialized on server-side
 
 import { 
@@ -342,31 +343,43 @@ export async function deleteSurveyAction(id: string) {
 
 export async function createSurveyQuestionAction(vars: { surveyId: string, sectionId?: string, text: string, type: string, options?: string, logic?: string, orderIdx: number }) {
     try {
-        await createSurveyQuestionSDK(vars);
+        const cleanedVars = Object.fromEntries(
+            Object.entries(vars).filter(([_, v]) => v !== undefined && v !== null)
+        );
+        await createSurveyQuestionSDK(cleanedVars as any);
+        revalidatePath(`/admin/surveys/${vars.surveyId}`);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('createSurveyQuestionAction error:', error);
-        return { success: false, error: '문항 생성에 실패했습니다.' };
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        return { success: false, error: errorMessage };
     }
 }
 
-export async function updateSurveyQuestionAction(vars: { id: string, sectionId?: string | null, text?: string, type?: string, options?: string, logic?: string | null, orderIdx?: number }) {
+export async function updateSurveyQuestionAction(vars: { surveyId: string, id: string, sectionId?: string | null, text?: string, type?: string, options?: string, logic?: string | null, orderIdx?: number }) {
     try {
-        await updateSurveyQuestionSDK(vars);
+        const cleanedVars = Object.fromEntries(
+            Object.entries(vars).filter(([_, v]) => v !== undefined)
+        );
+        await updateSurveyQuestionSDK(cleanedVars as any);
+        revalidatePath(`/admin/surveys/${vars.surveyId}`);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('updateSurveyQuestionAction error:', error);
-        return { success: false, error: '문항 수정에 실패했습니다.' };
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        return { success: false, error: errorMessage };
     }
 }
 
-export async function deleteSurveyQuestionAction(id: string) {
+export async function deleteSurveyQuestionAction(id: string, surveyId: string) {
     try {
         await deleteSurveyQuestionSDK({ id });
+        revalidatePath(`/admin/surveys/${surveyId}`);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('deleteSurveyQuestionAction error:', error);
-        return { success: false, error: '문항 삭제에 실패했습니다.' };
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -383,31 +396,42 @@ export async function listSurveySectionsAction(surveyId: string) {
 
 export async function createSurveySectionAction(vars: { surveyId: string, title: string, description?: string, orderIdx: number }) {
     try {
-        await createSurveySectionSDK(vars);
+        const cleanedVars = Object.fromEntries(
+            Object.entries(vars).filter(([_, v]) => v !== undefined && v !== null)
+        );
+        await createSurveySectionSDK(cleanedVars as any);
+        revalidatePath(`/admin/surveys/${vars.surveyId}`);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('createSurveySectionAction error:', error);
-        return { success: false, error: '섹션 생성에 실패했습니다.' };
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        return { success: false, error: errorMessage };
     }
 }
 
-export async function updateSurveySectionAction(vars: { id: string, title?: string, description?: string, orderIdx?: number }) {
+export async function updateSurveySectionAction(vars: { surveyId: string, id: string, title?: string, description?: string, orderIdx?: number }) {
     try {
-        await updateSurveySectionSDK(vars);
+        const cleanedVars = Object.fromEntries(
+            Object.entries(vars).filter(([_, v]) => v !== undefined && v !== null)
+        );
+        await updateSurveySectionSDK(cleanedVars as any);
+        revalidatePath(`/admin/surveys/${vars.surveyId}`);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('updateSurveySectionAction error:', error);
-        return { success: false, error: '섹션 수정에 실패했습니다.' };
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        return { success: false, error: errorMessage };
     }
 }
 
-export async function deleteSurveySectionAction(id: string) {
+export async function deleteSurveySectionAction(id: string, surveyId: string) {
     try {
         await deleteSurveySectionSDK({ id });
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('deleteSurveySectionAction error:', error);
-        return { success: false, error: '섹션 삭제에 실패했습니다.' };
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+        return { success: false, error: errorMessage };
     }
 }
 
