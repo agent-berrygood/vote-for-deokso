@@ -140,6 +140,15 @@ export default function LoginPage() {
     checkSchedule();
   }, [activeElectionId]);
 
+  // Handle Dynamic Title
+  useEffect(() => {
+    if (activeService === 'SURVEY') {
+      document.title = '높은뜻덕소교회 전교인 설문조사';
+    } else {
+      document.title = '높은뜻덕소교회 장로, 안수집사, 권사 선거';
+    }
+  }, [activeService]);
+
   // Clear error on input change
   useEffect(() => { setError(''); }, [name, phone, birthdate, inputAuthKey, passkey]);
 
@@ -257,7 +266,7 @@ export default function LoginPage() {
 
         sessionStorage.setItem('memberId', verifyResult.memberId);
         sessionStorage.setItem('memberName', cleanName);
-        
+
         router.push('/survey');
       }
 
@@ -403,7 +412,7 @@ export default function LoginPage() {
 
 
         <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.4 }}>
-          높은뜻덕소교회 <br /> 
+          높은뜻덕소교회 <br />
           {activeService === 'ELECTION' ? '장로, 안수집사, 권사 선거' : '전교인 설문조사'}
         </Typography>
 
@@ -454,7 +463,7 @@ export default function LoginPage() {
                   inputProps={{ maxLength: 6 }}
                   value={birthdate}
                   onChange={(e) => setBirthdate(e.target.value)}
-                  helperText={activeService === 'SURVEY' ? "명부에 없는 분은 이름/번호로 자동 등록됩니다." : ""}
+                  helperText={activeService === 'SURVEY' ? "모든 설문은 익명으로 저장됩니다. 중복 투표 방지 및 답변 수정을 위해서 개인정보를 확인합니다." : ""}
                 />
                 <Button
                   type="submit"
@@ -467,17 +476,19 @@ export default function LoginPage() {
                   {loading ? <CircularProgress size={24} color="inherit" /> : '인증 확인'}
                 </Button>
 
-                <Box sx={{ mt: 1, mb: 1, textAlign: 'center' }}>
-                  <Button
-                    variant="text"
-                    size="small"
-                    color="inherit"
-                    onClick={() => setStep(3)}
-                    sx={{ textDecoration: 'underline' }}
-                  >
-                    인증 실패시 현장 투표 입장
-                  </Button>
-                </Box>
+                {activeService === 'ELECTION' && (
+                  <Box sx={{ mt: 1, mb: 1, textAlign: 'center' }}>
+                    <Button
+                      variant="text"
+                      size="small"
+                      color="inherit"
+                      onClick={() => setStep(3)}
+                      sx={{ textDecoration: 'underline' }}
+                    >
+                      인증 실패시 현장 투표 입장
+                    </Button>
+                  </Box>
+                )}
               </fieldset>
             </form>
           ) : step === 2 ? (
