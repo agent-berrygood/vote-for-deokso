@@ -27,23 +27,24 @@ import {
     TableRow
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { 
-    BarChart, 
-    Bar, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
-    Legend, 
-    ResponsiveContainer, 
-    PieChart, 
-    Pie, 
-    Cell 
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell
 } from 'recharts';
-import { 
-    getSurveyAction, 
-    listSurveyQuestionsAction, 
-    listSurveyResponsesAction 
+import {
+    getSurveyAction,
+    listSurveyQuestionsAction,
+    listSurveyResponsesAction,
+    getSurveyResponseByMemberAction
 } from '@/app/actions/data';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
@@ -76,9 +77,32 @@ export default function SurveyResultsPage() {
             if (sRes.success) setSurvey(sRes.data);
             if (qRes.success) setQuestions(qRes.data || []);
             if (rRes.success) {
-                const data = rRes.data || [];
+                let data = rRes.data || [];
+
+                // [WORKAROUND] 서버 쿼리 응답에 answers 필드가 누락된 경우(배포 지연 등), 각 멤버별로 상세 응답을 다시 가져옴
+                if (data.length > 0 && (data[0].answers === undefined || data[0].answers === null)) {
+                    console.log('⚠️ [Workaround] Missing answers field in ListSurveyResponses. Fetching individual details...');
+                    const enrichedData = await Promise.all(
+                        data.map(async (r: any) => {
+                            try {
+                                const detailRes = await getSurveyResponseByMemberAction({
+                                    surveyId: surveyId,
+                                    memberId: r.member.id
+                                });
+                                if (detailRes.success && detailRes.data && detailRes.data.length > 0) {
+                                    return { ...r, answers: detailRes.data[0].answers };
+                                }
+                            } catch (e) {
+                                console.error(`Failed to enrich data for member ${r.member.id}`, e);
+                            }
+                            return r;
+                        })
+                    );
+                    data = enrichedData;
+                }
+
                 setResponses(data);
-                
+
                 // [DIAGNOSTIC] 전체 구조 로그
                 if (data.length > 0) {
                     console.group('📊 [Survey Debug] Data Load Summary');
@@ -109,17 +133,28 @@ export default function SurveyResultsPage() {
     const chartData = useMemo(() => {
         return questions.map((q, qIdx) => {
             // 이중 파싱 방어 로직을 포함한 헬퍼 함수
-            const parseAnswers = (raw: string) => {
+            const parseAnswers = (raw: any) => {
+                if (typeof raw !== 'string') return raw || {};
                 try {
                     const parsed = JSON.parse(raw);
                     // 간혹 문자열이 따옴표로 한 번 더 싸여 있는 경우 대응
                     return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
-                } catch (e) { return {}; }
+                } catch (e) {
+                    // [DEBUG] 파싱 실패 시 원본 문자열 확인 (객체 형태의 문자열일 가능성 대비)
+                    if (raw && raw.startsWith && raw.startsWith('{')) {
+                        try {
+                            // 특수 문자 보정 후 재시도
+                            const fixedRaw = raw.replace(/\\"/g, '"').replace(/^"/, '').replace(/"$/, '');
+                            return JSON.parse(fixedRaw);
+                        } catch (e2) { return {}; }
+                    }
+                    return {};
+                }
             };
 
             if (['MULTIPLE_CHOICE', 'DROPDOWN', 'SCALE', 'MULTIPLE_SELECT'].includes(q.type)) {
                 const distribution: { [key: string]: number } = {};
-                
+
                 // 보기 목록 가져오기 (각 항목 trim 처리)
                 let options: string[] = [];
                 try {
@@ -143,7 +178,7 @@ export default function SurveyResultsPage() {
                 responses.forEach((r, rIdx) => {
                     try {
                         const answers = parseAnswers(r.answers);
-                        
+
                         // [DIAGNOSTIC] 상세 매칭 시도
                         let val = answers[q.id];
                         let matchType = 'UUID';
@@ -152,7 +187,7 @@ export default function SurveyResultsPage() {
                             val = answers[q.text];
                             matchType = 'TEXT';
                         }
-                        
+
                         // 백업: 질문 텍스트가 키인 경우 (공백/따옴표 미세 차이 보정)
                         if (val === undefined || val === null) {
                             const trimmedKey = Object.keys(answers).find(k => k.trim() === q.text.trim());
@@ -171,13 +206,18 @@ export default function SurveyResultsPage() {
 
                         if (val !== undefined && val !== null) {
                             if (Array.isArray(val)) {
-                                val.forEach(v => { 
+                                val.forEach(v => {
                                     const vStr = String(v).trim();
-                                    if (vStr) distribution[vStr] = (distribution[vStr] || 0) + 1; 
+                                    if (vStr) {
+                                        // options에 없는 값이라도 distribution에 추가하여 통계에 반영
+                                        distribution[vStr] = (distribution[vStr] || 0) + 1;
+                                    }
                                 });
                             } else {
                                 const valStr = String(val).trim();
-                                if (valStr) distribution[valStr] = (distribution[valStr] || 0) + 1;
+                                if (valStr) {
+                                    distribution[valStr] = (distribution[valStr] || 0) + 1;
+                                }
                             }
                         }
                     } catch (e) {
@@ -201,29 +241,48 @@ export default function SurveyResultsPage() {
                     textResponses: null
                 };
             }
-            
-            // 주관식 답변 처리
+
+            // 주관식 답변 및 GRID 답변 처리
             const textResponses: any[] = [];
             responses.forEach(r => {
                 const answers = parseAnswers(r.answers);
-                const val = answers[q.id] || answers[q.text];
-                if (val !== undefined && val !== null && String(val).trim() !== '') {
-                    textResponses.push({
-                        id: r.id,
-                        memberName: r.member?.name || '익명',
-                        answer: String(val).trim(),
-                        submittedAt: r.submittedAt
-                    });
+                let val = answers[q.id] || answers[q.text];
+
+                // 백업 매칭 (공백 보정)
+                if (val === undefined || val === null) {
+                    const trimmedKey = Object.keys(answers).find(k => k.trim() === q.text.trim());
+                    if (trimmedKey) val = answers[trimmedKey];
+                }
+
+                if (val !== undefined && val !== null) {
+                    let displayVal = '';
+                    if (typeof val === 'object' && !Array.isArray(val)) {
+                        // GRID_CHOICE / GRID_CHECK 처리: "행: 열, 행: 열" 형태로 변환
+                        displayVal = Object.entries(val)
+                            .map(([row, col]) => `${row}: ${Array.isArray(col) ? col.join(', ') : col}`)
+                            .join('\n');
+                    } else {
+                        displayVal = String(val).trim();
+                    }
+
+                    if (displayVal !== '') {
+                        textResponses.push({
+                            id: r.id,
+                            memberName: r.member?.name || '익명',
+                            answer: displayVal,
+                            submittedAt: r.submittedAt
+                        });
+                    }
                 }
             });
 
-            return { 
-                id: q.id, 
-                text: q.text, 
-                type: q.type, 
-                totalCount: textResponses.length, 
-                data: null, 
-                textResponses: textResponses.length > 0 ? textResponses : null 
+            return {
+                id: q.id,
+                text: q.text,
+                type: q.type,
+                totalCount: textResponses.length,
+                data: null,
+                textResponses: textResponses.length > 0 ? textResponses : null
             };
         });
     }, [questions, responses]);
@@ -247,7 +306,7 @@ export default function SurveyResultsPage() {
                         <Typography variant="body2" color="text.primary">설문 결과</Typography>
                     </Stack>
                 </Breadcrumbs>
-                
+
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                     <IconButton onClick={() => router.back()} color="primary" sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
                         <ArrowBackIcon />
@@ -270,19 +329,19 @@ export default function SurveyResultsPage() {
                                         <Chip label={`Q${idx + 1}`} size="small" color="primary" sx={{ fontWeight: 'bold', height: 24 }} />
                                         {qData.text}
                                     </Typography>
-                                    
+
                                     {qData.data && (
                                         <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'rgba(0,0,0,0.04)', p: 0.5, borderRadius: 2 }}>
-                                            <Button 
-                                                size="small" 
+                                            <Button
+                                                size="small"
                                                 variant={(!chartTypes[qData.id] || chartTypes[qData.id] === 'bar') ? 'contained' : 'text'}
                                                 onClick={() => setChartTypes(prev => ({ ...prev, [qData.id]: 'bar' }))}
                                                 sx={{ minWidth: 50, fontSize: '0.75rem', px: 1 }}
                                             >
                                                 Bar
                                             </Button>
-                                            <Button 
-                                                size="small" 
+                                            <Button
+                                                size="small"
                                                 variant={chartTypes[qData.id] === 'pie' ? 'contained' : 'text'}
                                                 onClick={() => setChartTypes(prev => ({ ...prev, [qData.id]: 'pie' }))}
                                                 sx={{ minWidth: 50, fontSize: '0.75rem', px: 1 }}
@@ -313,7 +372,7 @@ export default function SurveyResultsPage() {
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
                                                     </Pie>
-                                                    <Tooltip 
+                                                    <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                     />
                                                     <Legend />
@@ -323,7 +382,7 @@ export default function SurveyResultsPage() {
                                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                                     <XAxis dataKey="name" angle={-15} textAnchor="end" height={60} interval={0} fontSize={12} />
                                                     <YAxis allowDecimals={false} />
-                                                    <Tooltip 
+                                                    <Tooltip
                                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
                                                     />
                                                     <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40}>
@@ -357,8 +416,8 @@ export default function SurveyResultsPage() {
                                 ) : (
                                     <Box sx={{ py: 6, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
                                         <Typography variant="body2" color="text.secondary">
-                                            {qData.type === 'TEXT_SHORT' || qData.type === 'TEXT_LONG' 
-                                                ? '작성된 답변이 없습니다.' 
+                                            {qData.type === 'TEXT_SHORT' || qData.type === 'TEXT_LONG'
+                                                ? '작성된 답변이 없습니다.'
                                                 : '응답 데이터가 없거나 지원되지 않는 형식입니다.'}
                                         </Typography>
                                     </Box>
