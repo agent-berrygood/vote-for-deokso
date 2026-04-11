@@ -364,7 +364,7 @@ export default function SurveyResultsPage() {
                                                         cx="50%"
                                                         cy="50%"
                                                         labelLine={true}
-                                                        label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                                                        label={({ value, percent }: any) => `${value || 0}명 (${((percent || 0) * 100).toFixed(0)}%)`}
                                                         innerRadius={60}
                                                         outerRadius={100}
                                                         paddingAngle={2}
