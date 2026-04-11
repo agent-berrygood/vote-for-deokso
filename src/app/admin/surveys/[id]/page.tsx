@@ -27,13 +27,17 @@ import {
     Chip, 
     CircularProgress, 
     Alert,
-    Stack
+    Stack,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { 
     getSurveyAction, 
     listSurveyQuestionsAction, 
@@ -93,7 +97,27 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qType, setQType] = useState('MULTIPLE_CHOICE');
     const [qOptions, setQOptions] = useState<string[]>([]);
     const [qSectionId, setQSectionId] = useState<string>('');
-    const [qLogic, setQLogic] = useState<string>('');
+    const [qLogic, setQLogic] = useState('');
+    const [logicQuestionId, setLogicQuestionId] = useState('');
+    const [logicValue, setLogicValue] = useState('');
+
+    useEffect(() => {
+        if (logicQuestionId) {
+            const newLogic = JSON.stringify({
+                showIf: {
+                    questionId: logicQuestionId,
+                    value: logicValue
+                }
+            });
+            // Only update if actually different to avoid redundant re-renders
+            if (qLogic !== newLogic) {
+                setQLogic(newLogic);
+            }
+        } else if (logicQuestionId === '' && qLogic.includes('showIf')) {
+            // Only clear if it was previously a showIf logic
+            setQLogic('');
+        }
+    }, [logicQuestionId, logicValue]);
     const [submitting, setSubmitting] = useState(false);
 
     const fetchData = useCallback(async () => {
@@ -138,6 +162,26 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQOptions(q.options ? JSON.parse(q.options) : []);
             setQSectionId(q.sectionId || '');
             setQLogic(q.logic || '');
+            
+            // Parse logic for builder
+            if (q.logic) {
+                try {
+                    const parsed = JSON.parse(q.logic);
+                    if (parsed.showIf) {
+                        setLogicQuestionId(parsed.showIf.questionId || '');
+                        setLogicValue(parsed.showIf.value || '');
+                    } else {
+                        setLogicQuestionId('');
+                        setLogicValue('');
+                    }
+                } catch (e) {
+                    setLogicQuestionId('');
+                    setLogicValue('');
+                }
+            } else {
+                setLogicQuestionId('');
+                setLogicValue('');
+            }
         } else {
             setEditingQuestion(null);
             setQText('');
@@ -145,6 +189,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQOptions(['']); 
             setQSectionId('');
             setQLogic('');
+            setLogicQuestionId('');
+            setLogicValue('');
         }
         setDialogOpen(true);
     };
@@ -591,16 +637,93 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             </Box>
                         )}
 
-                        <TextField
-                            label="분기 로직 (JSON)"
-                            fullWidth
-                            placeholder='{"showIf": {"questionId": "...", "value": "..."}}'
-                            multiline
-                            rows={2}
-                            value={qLogic}
-                            onChange={(e) => setQLogic(e.target.value)}
-                            helperText="조건부 노출 로직을 JSON 형식으로 입력하세요."
-                        />
+                        <Box sx={{ mt: 1, p: 2, bgcolor: 'rgba(0,0,0,0.03)', borderRadius: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="secondary">
+                                🔀 조건부 노출 (분기 로직)
+                            </Typography>
+                            <Stack spacing={2}>
+                                <FormControl fullWidth size="small">
+                                    <InputLabel id="logic-q-label">기준 질문 선택</InputLabel>
+                                    <Select
+                                        labelId="logic-q-label"
+                                        value={logicQuestionId}
+                                        label="기준 질문 선택"
+                                        onChange={(e) => {
+                                            setLogicQuestionId(e.target.value as string);
+                                            setLogicValue(''); // Reset value when question changes
+                                        }}
+                                    >
+                                        <MenuItem value="">사용 안 함</MenuItem>
+                                        {questions
+                                            .filter(oq => oq.id !== editingQuestion?.id)
+                                            .map(oq => (
+                                                <MenuItem key={oq.id} value={oq.id}>
+                                                    {oq.text.length > 30 ? oq.text.substring(0, 30) + '...' : oq.text}
+                                                </MenuItem>
+                                            ))
+                                        }
+                                    </Select>
+                                </FormControl>
+
+                                {logicQuestionId && (
+                                    <>
+                                        {(() => {
+                                            const sourceQ = questions.find(q => q.id === logicQuestionId);
+                                            if (sourceQ?.type === 'MULTIPLE_CHOICE') {
+                                                const opts = sourceQ.options ? JSON.parse(sourceQ.options) : [];
+                                                return (
+                                                    <FormControl fullWidth size="small">
+                                                        <InputLabel id="logic-v-label">선택될 답변 값</InputLabel>
+                                                        <Select
+                                                            labelId="logic-v-label"
+                                                            value={logicValue}
+                                                            label="선택될 답변 값"
+                                                            onChange={(e) => setLogicValue(e.target.value as string)}
+                                                        >
+                                                            {opts.map((opt: string, i: number) => (
+                                                                <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                );
+                                            } else {
+                                                return (
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        label="입력될 답변 값 (정확히 일치해야 함)"
+                                                        value={logicValue}
+                                                        onChange={(e) => setLogicValue(e.target.value)}
+                                                    />
+                                                );
+                                            }
+                                        })()}
+                                        <Typography variant="caption" color="text.secondary">
+                                            위 질문에서 해당 답변이 선택된 경우에만 이 문항이 노출됩니다.
+                                        </Typography>
+                                    </>
+                                )}
+                            </Stack>
+                        </Box>
+
+                        <Accordion elevation={0} sx={{ '&:before': { display: 'none' }, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 1 }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Typography variant="caption" color="text.secondary">고급 설정 (JSON 상세 로직)</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <TextField
+                                    label="로직 코드"
+                                    fullWidth
+                                    variant="outlined"
+                                    multiline
+                                    rows={2}
+                                    value={qLogic}
+                                    onChange={(e) => setQLogic(e.target.value)}
+                                    helperText="비주얼 빌더 사용 시 자동으로 생성되지만, 직접 수정도 가능합니다."
+                                    sx={{ mt: 1 }}
+                                />
+                            </AccordionDetails>
+                        </Accordion>
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ p: 3 }}>
