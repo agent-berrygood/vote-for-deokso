@@ -233,68 +233,78 @@ export default function SurveyPage() {
                                                     {qIdx + 1}. {q.text}
                                                 </Typography>
                                                 
-                                                {q.type === 'MULTIPLE_CHOICE' ? (
-                                                    <RadioGroup 
-                                                        value={answers[q.id] || ''} 
-                                                        onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
-                                                    >
-                                                        {q.options && JSON.parse(q.options).map((opt: string, i: number) => (
-                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
-                                                        ))}
-                                                    </RadioGroup>
-                                                ) : q.type === 'MULTIPLE_SELECT' ? (
-                                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                                        {q.options && JSON.parse(q.options).map((opt: string, i: number) => {
-                                                            const currentAnswers = Array.isArray(answers[q.id]) ? answers[q.id] : [];
-                                                            const isChecked = currentAnswers.includes(opt);
-                                                            const maxReached = currentAnswers.length >= (q.maxChoices || 1);
-
+                                                {(() => {
+                                                    const options = q.options ? JSON.parse(q.options) : null;
+                                                    
+                                                    switch (q.type) {
+                                                        case 'MULTIPLE_CHOICE':
                                                             return (
-                                                                <FormControlLabel 
-                                                                    key={i} 
-                                                                    control={
-                                                                        <Checkbox 
-                                                                            color="secondary"
-                                                                            checked={isChecked}
-                                                                            disabled={!isChecked && maxReached}
-                                                                            onChange={(e) => {
-                                                                                let newAnswers;
-                                                                                if (e.target.checked) {
-                                                                                    newAnswers = [...currentAnswers, opt];
-                                                                                } else {
-                                                                                    newAnswers = currentAnswers.filter((a: string) => a !== opt);
-                                                                                }
-                                                                                setAnswers({...answers, [q.id]: newAnswers});
-                                                                            }}
-                                                                        />
-                                                                    } 
-                                                                    label={opt} 
-                                                                />
+                                                                <RadioGroup 
+                                                                    value={answers[q.id] || ''} 
+                                                                    onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                                                                >
+                                                                    {(options || []).map((opt: string, i: number) => (
+                                                                        <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
+                                                                    ))}
+                                                                </RadioGroup>
                                                             );
-                                                        })}
-                                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                                                            * 최대 {q.maxChoices || 1}개까지 선택 가능합니다.
-                                                        </Typography>
-                                                    </Box>
-                                                ) : q.type === 'DROPDOWN' ? (
-                                                    <FormControl fullWidth>
-                                                        <Select
-                                                            value={answers[q.id] || ''}
-                                                            onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
-                                                            displayEmpty
-                                                        >
-                                                            <MenuItem value="" disabled>선택해 주세요</MenuItem>
-                                                            {q.options && JSON.parse(q.options).map((opt: string, i: number) => (
-                                                                <MenuItem key={i} value={opt}>{opt}</MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                ) : q.type === 'SCALE' ? (
-                                                    <Box>
-                                                        {(() => {
-                                                            const scale = q.options ? JSON.parse(q.options) : { min: 1, max: 5 };
-                                                            const items = [];
-                                                            for (let i = scale.min; i <= scale.max; i++) items.push(i);
+                                                        
+                                                        case 'MULTIPLE_SELECT':
+                                                            const currentAnswers = Array.isArray(answers[q.id]) ? answers[q.id] : [];
+                                                            const maxReached = currentAnswers.length >= (q.maxChoices || 1);
+                                                            return (
+                                                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                                                    {(options || []).map((opt: string, i: number) => {
+                                                                        const isChecked = currentAnswers.includes(opt);
+                                                                        return (
+                                                                            <FormControlLabel 
+                                                                                key={i} 
+                                                                                control={
+                                                                                    <Checkbox 
+                                                                                        color="secondary"
+                                                                                        checked={isChecked}
+                                                                                        disabled={!isChecked && maxReached}
+                                                                                        onChange={(e) => {
+                                                                                            let newAnswers;
+                                                                                            if (e.target.checked) {
+                                                                                                newAnswers = [...currentAnswers, opt];
+                                                                                            } else {
+                                                                                                newAnswers = currentAnswers.filter((a: string) => a !== opt);
+                                                                                            }
+                                                                                            setAnswers({...answers, [q.id]: newAnswers});
+                                                                                        }}
+                                                                                    />
+                                                                                } 
+                                                                                label={opt} 
+                                                                            />
+                                                                        );
+                                                                    })}
+                                                                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                                                                        * 최대 {q.maxChoices || 1}개까지 선택 가능합니다.
+                                                                    </Typography>
+                                                                </Box>
+                                                            );
+
+                                                        case 'DROPDOWN':
+                                                            return (
+                                                                <FormControl fullWidth>
+                                                                    <Select
+                                                                        value={answers[q.id] || ''}
+                                                                        onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                                                                        displayEmpty
+                                                                    >
+                                                                        <MenuItem value="" disabled>선택해 주세요</MenuItem>
+                                                                        {(options || []).map((opt: string, i: number) => (
+                                                                            <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                                                        ))}
+                                                                    </Select>
+                                                                </FormControl>
+                                                            );
+
+                                                        case 'SCALE':
+                                                            const scale = options || { min: 1, max: 5 };
+                                                            const scaleItems = [];
+                                                            for (let i = scale.min; i <= scale.max; i++) scaleItems.push(i);
                                                             return (
                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                                                                     {scale.minLabel && <Typography variant="body2" color="text.secondary">{scale.minLabel}</Typography>}
@@ -303,7 +313,7 @@ export default function SurveyPage() {
                                                                         value={answers[q.id]?.toString() || ''}
                                                                         onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
                                                                     >
-                                                                        {items.map(val => (
+                                                                        {scaleItems.map(val => (
                                                                             <FormControlLabel 
                                                                                 key={val} 
                                                                                 value={val.toString()} 
@@ -316,79 +326,88 @@ export default function SurveyPage() {
                                                                     {scale.maxLabel && <Typography variant="body2" color="text.secondary">{scale.maxLabel}</Typography>}
                                                                 </Box>
                                                             );
-                                                        })()}
-                                                    </Box>
-                                                ) : (q.type === 'GRID_CHOICE' || q.type === 'GRID_CHECK') ? (
-                                                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-                                                        <Table size="small">
-                                                            <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
-                                                                <TableRow>
-                                                                    <TableCell />
-                                                                    {q.options && JSON.parse(q.options).columns.map((col: string, i: number) => (
-                                                                        <TableCell key={i} align="center" sx={{ fontWeight: 'bold' }}>{col}</TableCell>
-                                                                    ))}
-                                                                </TableRow>
-                                                            </TableHead>
-                                                            <TableBody>
-                                                                {q.options && JSON.parse(q.options).rows.map((row: string, i: number) => (
-                                                                    <TableRow key={i}>
-                                                                        <TableCell sx={{ fontWeight: 'bold' }}>{row}</TableCell>
-                                                                        {JSON.parse(q.options).columns.map((col: string, j: number) => {
-                                                                            const gridAnswers = answers[q.id] || {};
-                                                                            const isChecked = q.type === 'GRID_CHOICE' 
-                                                                                ? gridAnswers[row] === col
-                                                                                : Array.isArray(gridAnswers[row]) && gridAnswers[row].includes(col);
-                                                                            
-                                                                            return (
-                                                                                <TableCell key={j} align="center">
-                                                                                    {q.type === 'GRID_CHOICE' ? (
-                                                                                        <Radio 
-                                                                                            size="small"
-                                                                                            color="secondary"
-                                                                                            checked={isChecked}
-                                                                                            onChange={() => setAnswers({
-                                                                                                ...answers, 
-                                                                                                [q.id]: { ...gridAnswers, [row]: col }
-                                                                                            })}
-                                                                                        />
-                                                                                    ) : (
-                                                                                        <Checkbox 
-                                                                                            size="small"
-                                                                                            color="secondary"
-                                                                                            checked={isChecked}
-                                                                                            onChange={(e) => {
-                                                                                                const rowAnswers = Array.isArray(gridAnswers[row]) ? gridAnswers[row] : [];
-                                                                                                const newRowAnswers = e.target.checked 
-                                                                                                    ? [...rowAnswers, col]
-                                                                                                    : rowAnswers.filter((a: string) => a !== col);
-                                                                                                setAnswers({
-                                                                                                    ...answers,
-                                                                                                    [q.id]: { ...gridAnswers, [row]: newRowAnswers }
-                                                                                                });
-                                                                                            }}
-                                                                                        />
-                                                                                    )}
-                                                                                </TableCell>
-                                                                            );
-                                                                        })}
-                                                                    </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-                                                    </TableContainer>
-                                                ) : (
-                                                    <TextField
-                                                        fullWidth
-                                                        multiline={q.type === 'TEXT_LONG'}
-                                                        rows={q.type === 'TEXT_LONG' ? 4 : 1}
-                                                        type={q.type === 'DATE' ? 'date' : q.type === 'TIME' ? 'time' : 'text'}
-                                                        placeholder={q.type === 'DATE' ? '' : q.type === 'TIME' ? '' : "응답을 입력하세요..."}
-                                                        variant="outlined"
-                                                        value={answers[q.id] || ''}
-                                                        onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
-                                                        InputLabelProps={{ shrink: true }}
-                                                    />
-                                                )}
+
+                                                        case 'GRID_CHOICE':
+                                                        case 'GRID_CHECK':
+                                                            const gridOptions = options || { rows: [], columns: [] };
+                                                            const columns = gridOptions.columns || [];
+                                                            const rows = gridOptions.rows || [];
+                                                            return (
+                                                                <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                                                                    <Table size="small">
+                                                                        <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                                                                            <TableRow>
+                                                                                <TableCell />
+                                                                                {columns.map((col: string, i: number) => (
+                                                                                    <TableCell key={i} align="center" sx={{ fontWeight: 'bold' }}>{col}</TableCell>
+                                                                                ))}
+                                                                            </TableRow>
+                                                                        </TableHead>
+                                                                        <TableBody>
+                                                                            {rows.map((row: string, i: number) => (
+                                                                                <TableRow key={i}>
+                                                                                    <TableCell sx={{ fontWeight: 'bold' }}>{row}</TableCell>
+                                                                                    {columns.map((col: string, j: number) => {
+                                                                                        const gridAnswers = answers[q.id] || {};
+                                                                                        const isChecked = q.type === 'GRID_CHOICE' 
+                                                                                            ? gridAnswers[row] === col
+                                                                                            : Array.isArray(gridAnswers[row]) && gridAnswers[row].includes(col);
+                                                                                        
+                                                                                        return (
+                                                                                            <TableCell key={j} align="center">
+                                                                                                {q.type === 'GRID_CHOICE' ? (
+                                                                                                    <Radio 
+                                                                                                        size="small"
+                                                                                                        color="secondary"
+                                                                                                        checked={isChecked}
+                                                                                                        onChange={() => setAnswers({
+                                                                                                            ...answers, 
+                                                                                                            [q.id]: { ...gridAnswers, [row]: col }
+                                                                                                        })}
+                                                                                                    />
+                                                                                                ) : (
+                                                                                                    <Checkbox 
+                                                                                                        size="small"
+                                                                                                        color="secondary"
+                                                                                                        checked={isChecked}
+                                                                                                        onChange={(e) => {
+                                                                                                            const rowAnswers = Array.isArray(gridAnswers[row]) ? gridAnswers[row] : [];
+                                                                                                            const newRowAnswers = e.target.checked 
+                                                                                                                ? [...rowAnswers, col]
+                                                                                                                : rowAnswers.filter((a: string) => a !== col);
+                                                                                                            setAnswers({
+                                                                                                                ...answers,
+                                                                                                                [q.id]: { ...gridAnswers, [row]: newRowAnswers }
+                                                                                                            });
+                                                                                                        }}
+                                                                                                    />
+                                                                                                )}
+                                                                                            </TableCell>
+                                                                                        );
+                                                                                    })}
+                                                                                </TableRow>
+                                                                            ))}
+                                                                        </TableBody>
+                                                                    </Table>
+                                                                </TableContainer>
+                                                            );
+
+                                                        default:
+                                                            return (
+                                                                <TextField
+                                                                    fullWidth
+                                                                    multiline={q.type === 'TEXT_LONG'}
+                                                                    rows={q.type === 'TEXT_LONG' ? 4 : 1}
+                                                                    type={q.type === 'DATE' ? 'date' : q.type === 'TIME' ? 'time' : 'text'}
+                                                                    placeholder={q.type === 'DATE' ? '' : q.type === 'TIME' ? '' : "응답을 입력하세요..."}
+                                                                    variant="outlined"
+                                                                    value={answers[q.id] || ''}
+                                                                    onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                                                                    InputLabelProps={{ shrink: true }}
+                                                                />
+                                                            );
+                                                    }
+                                                })()}
                                             </Box>
                                         );
                                     })}
