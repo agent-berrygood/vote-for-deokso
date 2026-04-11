@@ -26,6 +26,8 @@ This README will guide you through the process of using the generated JavaScript
   - [*ListMembers*](#listmembers)
   - [*GetSurvey*](#getsurvey)
   - [*GetSurveyResponseByMember*](#getsurveyresponsebymember)
+  - [*ListSurveyResponses*](#listsurveyresponses)
+  - [*GetSurveyResponseByNamePhone*](#getsurveyresponsebynamephone)
   - [*ListSurveySections*](#listsurveysections)
   - [*ListSurveyQuestions*](#listsurveyquestions)
 - [**Mutations**](#mutations)
@@ -52,6 +54,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateSurvey*](#createsurvey)
   - [*UpdateSurvey*](#updatesurvey)
   - [*SubmitSurveyResponse*](#submitsurveyresponse)
+  - [*DeleteSurveyResponse*](#deletesurveyresponse)
   - [*DeleteSurvey*](#deletesurvey)
   - [*CreateSurveySection*](#createsurveysection)
   - [*UpdateSurveySection*](#updatesurveysection)
@@ -2163,6 +2166,246 @@ const ref = getSurveyResponseByMemberRef({ surveyId: ..., memberId: ..., });
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
 const ref = getSurveyResponseByMemberRef(dataConnect, getSurveyResponseByMemberVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.surveyResponses);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponses);
+});
+```
+
+## ListSurveyResponses
+You can execute the `ListSurveyResponses` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+listSurveyResponses(vars: ListSurveyResponsesVariables): QueryPromise<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+
+interface ListSurveyResponsesRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveyResponsesVariables): QueryRef<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+}
+export const listSurveyResponsesRef: ListSurveyResponsesRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+listSurveyResponses(dc: DataConnect, vars: ListSurveyResponsesVariables): QueryPromise<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+
+interface ListSurveyResponsesRef {
+  ...
+  (dc: DataConnect, vars: ListSurveyResponsesVariables): QueryRef<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+}
+export const listSurveyResponsesRef: ListSurveyResponsesRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listSurveyResponsesRef:
+```typescript
+const name = listSurveyResponsesRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ListSurveyResponses` query requires an argument of type `ListSurveyResponsesVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface ListSurveyResponsesVariables {
+  surveyId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `ListSurveyResponses` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ListSurveyResponsesData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ListSurveyResponsesData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    member: {
+      id: UUIDString;
+      name: string;
+      phone?: string | null;
+    } & Member_Key;
+  } & SurveyResponse_Key)[];
+}
+```
+### Using `ListSurveyResponses`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, listSurveyResponses, ListSurveyResponsesVariables } from '@vote/dataconnect';
+
+// The `ListSurveyResponses` query requires an argument of type `ListSurveyResponsesVariables`:
+const listSurveyResponsesVars: ListSurveyResponsesVariables = {
+  surveyId: ..., 
+};
+
+// Call the `listSurveyResponses()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await listSurveyResponses(listSurveyResponsesVars);
+// Variables can be defined inline as well.
+const { data } = await listSurveyResponses({ surveyId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await listSurveyResponses(dataConnect, listSurveyResponsesVars);
+
+console.log(data.surveyResponses);
+
+// Or, you can use the `Promise` API.
+listSurveyResponses(listSurveyResponsesVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponses);
+});
+```
+
+### Using `ListSurveyResponses`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, listSurveyResponsesRef, ListSurveyResponsesVariables } from '@vote/dataconnect';
+
+// The `ListSurveyResponses` query requires an argument of type `ListSurveyResponsesVariables`:
+const listSurveyResponsesVars: ListSurveyResponsesVariables = {
+  surveyId: ..., 
+};
+
+// Call the `listSurveyResponsesRef()` function to get a reference to the query.
+const ref = listSurveyResponsesRef(listSurveyResponsesVars);
+// Variables can be defined inline as well.
+const ref = listSurveyResponsesRef({ surveyId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = listSurveyResponsesRef(dataConnect, listSurveyResponsesVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.surveyResponses);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponses);
+});
+```
+
+## GetSurveyResponseByNamePhone
+You can execute the `GetSurveyResponseByNamePhone` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+getSurveyResponseByNamePhone(vars: GetSurveyResponseByNamePhoneVariables): QueryPromise<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+
+interface GetSurveyResponseByNamePhoneRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSurveyResponseByNamePhoneVariables): QueryRef<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+}
+export const getSurveyResponseByNamePhoneRef: GetSurveyResponseByNamePhoneRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+getSurveyResponseByNamePhone(dc: DataConnect, vars: GetSurveyResponseByNamePhoneVariables): QueryPromise<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+
+interface GetSurveyResponseByNamePhoneRef {
+  ...
+  (dc: DataConnect, vars: GetSurveyResponseByNamePhoneVariables): QueryRef<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+}
+export const getSurveyResponseByNamePhoneRef: GetSurveyResponseByNamePhoneRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the getSurveyResponseByNamePhoneRef:
+```typescript
+const name = getSurveyResponseByNamePhoneRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `GetSurveyResponseByNamePhone` query requires an argument of type `GetSurveyResponseByNamePhoneVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface GetSurveyResponseByNamePhoneVariables {
+  surveyId: UUIDString;
+  name: string;
+  phone: string;
+}
+```
+### Return Type
+Recall that executing the `GetSurveyResponseByNamePhone` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `GetSurveyResponseByNamePhoneData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface GetSurveyResponseByNamePhoneData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    member: {
+      id: UUIDString;
+      name: string;
+      phone?: string | null;
+    } & Member_Key;
+  } & SurveyResponse_Key)[];
+}
+```
+### Using `GetSurveyResponseByNamePhone`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, getSurveyResponseByNamePhone, GetSurveyResponseByNamePhoneVariables } from '@vote/dataconnect';
+
+// The `GetSurveyResponseByNamePhone` query requires an argument of type `GetSurveyResponseByNamePhoneVariables`:
+const getSurveyResponseByNamePhoneVars: GetSurveyResponseByNamePhoneVariables = {
+  surveyId: ..., 
+  name: ..., 
+  phone: ..., 
+};
+
+// Call the `getSurveyResponseByNamePhone()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await getSurveyResponseByNamePhone(getSurveyResponseByNamePhoneVars);
+// Variables can be defined inline as well.
+const { data } = await getSurveyResponseByNamePhone({ surveyId: ..., name: ..., phone: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await getSurveyResponseByNamePhone(dataConnect, getSurveyResponseByNamePhoneVars);
+
+console.log(data.surveyResponses);
+
+// Or, you can use the `Promise` API.
+getSurveyResponseByNamePhone(getSurveyResponseByNamePhoneVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponses);
+});
+```
+
+### Using `GetSurveyResponseByNamePhone`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, getSurveyResponseByNamePhoneRef, GetSurveyResponseByNamePhoneVariables } from '@vote/dataconnect';
+
+// The `GetSurveyResponseByNamePhone` query requires an argument of type `GetSurveyResponseByNamePhoneVariables`:
+const getSurveyResponseByNamePhoneVars: GetSurveyResponseByNamePhoneVariables = {
+  surveyId: ..., 
+  name: ..., 
+  phone: ..., 
+};
+
+// Call the `getSurveyResponseByNamePhoneRef()` function to get a reference to the query.
+const ref = getSurveyResponseByNamePhoneRef(getSurveyResponseByNamePhoneVars);
+// Variables can be defined inline as well.
+const ref = getSurveyResponseByNamePhoneRef({ surveyId: ..., name: ..., phone: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = getSurveyResponseByNamePhoneRef(dataConnect, getSurveyResponseByNamePhoneVars);
 
 // Call `executeQuery()` on the reference to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
@@ -5126,6 +5369,115 @@ console.log(data.surveyResponse_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.surveyResponse_insert);
+});
+```
+
+## DeleteSurveyResponse
+You can execute the `DeleteSurveyResponse` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+deleteSurveyResponse(vars: DeleteSurveyResponseVariables): MutationPromise<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+
+interface DeleteSurveyResponseRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSurveyResponseVariables): MutationRef<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+}
+export const deleteSurveyResponseRef: DeleteSurveyResponseRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+deleteSurveyResponse(dc: DataConnect, vars: DeleteSurveyResponseVariables): MutationPromise<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+
+interface DeleteSurveyResponseRef {
+  ...
+  (dc: DataConnect, vars: DeleteSurveyResponseVariables): MutationRef<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+}
+export const deleteSurveyResponseRef: DeleteSurveyResponseRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the deleteSurveyResponseRef:
+```typescript
+const name = deleteSurveyResponseRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `DeleteSurveyResponse` mutation requires an argument of type `DeleteSurveyResponseVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface DeleteSurveyResponseVariables {
+  id: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `DeleteSurveyResponse` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `DeleteSurveyResponseData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface DeleteSurveyResponseData {
+  surveyResponse_delete?: SurveyResponse_Key | null;
+}
+```
+### Using `DeleteSurveyResponse`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, deleteSurveyResponse, DeleteSurveyResponseVariables } from '@vote/dataconnect';
+
+// The `DeleteSurveyResponse` mutation requires an argument of type `DeleteSurveyResponseVariables`:
+const deleteSurveyResponseVars: DeleteSurveyResponseVariables = {
+  id: ..., 
+};
+
+// Call the `deleteSurveyResponse()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await deleteSurveyResponse(deleteSurveyResponseVars);
+// Variables can be defined inline as well.
+const { data } = await deleteSurveyResponse({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await deleteSurveyResponse(dataConnect, deleteSurveyResponseVars);
+
+console.log(data.surveyResponse_delete);
+
+// Or, you can use the `Promise` API.
+deleteSurveyResponse(deleteSurveyResponseVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponse_delete);
+});
+```
+
+### Using `DeleteSurveyResponse`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, deleteSurveyResponseRef, DeleteSurveyResponseVariables } from '@vote/dataconnect';
+
+// The `DeleteSurveyResponse` mutation requires an argument of type `DeleteSurveyResponseVariables`:
+const deleteSurveyResponseVars: DeleteSurveyResponseVariables = {
+  id: ..., 
+};
+
+// Call the `deleteSurveyResponseRef()` function to get a reference to the mutation.
+const ref = deleteSurveyResponseRef(deleteSurveyResponseVars);
+// Variables can be defined inline as well.
+const ref = deleteSurveyResponseRef({ id: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = deleteSurveyResponseRef(dataConnect, deleteSurveyResponseVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.surveyResponse_delete);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponse_delete);
 });
 ```
 

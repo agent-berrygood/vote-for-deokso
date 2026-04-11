@@ -189,6 +189,14 @@ export interface DeleteSurveyQuestionVariables {
   id: UUIDString;
 }
 
+export interface DeleteSurveyResponseData {
+  surveyResponse_delete?: SurveyResponse_Key | null;
+}
+
+export interface DeleteSurveyResponseVariables {
+  id: UUIDString;
+}
+
 export interface DeleteSurveySectionData {
   surveySection_delete?: SurveySection_Key | null;
 }
@@ -302,6 +310,24 @@ export interface GetSurveyResponseByMemberData {
 export interface GetSurveyResponseByMemberVariables {
   surveyId: UUIDString;
   memberId: UUIDString;
+}
+
+export interface GetSurveyResponseByNamePhoneData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    member: {
+      id: UUIDString;
+      name: string;
+      phone?: string | null;
+    } & Member_Key;
+  } & SurveyResponse_Key)[];
+}
+
+export interface GetSurveyResponseByNamePhoneVariables {
+  surveyId: UUIDString;
+  name: string;
+  phone: string;
 }
 
 export interface GetSurveyVariables {
@@ -466,6 +492,22 @@ export interface ListSurveyQuestionsData {
 }
 
 export interface ListSurveyQuestionsVariables {
+  surveyId: UUIDString;
+}
+
+export interface ListSurveyResponsesData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    member: {
+      id: UUIDString;
+      name: string;
+      phone?: string | null;
+    } & Member_Key;
+  } & SurveyResponse_Key)[];
+}
+
+export interface ListSurveyResponsesVariables {
   surveyId: UUIDString;
 }
 
@@ -1193,6 +1235,42 @@ export const getSurveyResponseByMemberRef: GetSurveyResponseByMemberRef;
 
 export function getSurveyResponseByMember(vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
 export function getSurveyResponseByMember(dc: DataConnect, vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
+
+interface ListSurveyResponsesRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveyResponsesVariables): QueryRef<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListSurveyResponsesVariables): QueryRef<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+  operationName: string;
+}
+export const listSurveyResponsesRef: ListSurveyResponsesRef;
+
+export function listSurveyResponses(vars: ListSurveyResponsesVariables): QueryPromise<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+export function listSurveyResponses(dc: DataConnect, vars: ListSurveyResponsesVariables): QueryPromise<ListSurveyResponsesData, ListSurveyResponsesVariables>;
+
+interface GetSurveyResponseByNamePhoneRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSurveyResponseByNamePhoneVariables): QueryRef<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSurveyResponseByNamePhoneVariables): QueryRef<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+  operationName: string;
+}
+export const getSurveyResponseByNamePhoneRef: GetSurveyResponseByNamePhoneRef;
+
+export function getSurveyResponseByNamePhone(vars: GetSurveyResponseByNamePhoneVariables): QueryPromise<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+export function getSurveyResponseByNamePhone(dc: DataConnect, vars: GetSurveyResponseByNamePhoneVariables): QueryPromise<GetSurveyResponseByNamePhoneData, GetSurveyResponseByNamePhoneVariables>;
+
+interface DeleteSurveyResponseRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteSurveyResponseVariables): MutationRef<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteSurveyResponseVariables): MutationRef<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+  operationName: string;
+}
+export const deleteSurveyResponseRef: DeleteSurveyResponseRef;
+
+export function deleteSurveyResponse(vars: DeleteSurveyResponseVariables): MutationPromise<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
+export function deleteSurveyResponse(dc: DataConnect, vars: DeleteSurveyResponseVariables): MutationPromise<DeleteSurveyResponseData, DeleteSurveyResponseVariables>;
 
 interface DeleteSurveyRef {
   /* Allow users to create refs without passing in DataConnect */

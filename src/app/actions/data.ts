@@ -49,7 +49,10 @@ import {
     deleteSurveyQuestion as deleteSurveyQuestionSDK,
     createSurveySection as createSurveySectionSDK,
     updateSurveySection as updateSurveySectionSDK,
-    deleteSurveySection as deleteSurveySectionSDK
+    deleteSurveySection as deleteSurveySectionSDK,
+    listSurveyResponses as listSurveyResponsesSDK,
+    getSurveyResponseByNamePhone as getSurveyResponseByNamePhoneSDK,
+    deleteSurveyResponse as deleteSurveyResponseSDK
 } from '@/lib/dataconnect';
 
 
@@ -503,5 +506,37 @@ export async function getSurveyResponseByMemberAction(vars: { surveyId: string, 
     } catch (error) {
         console.error('getSurveyResponseByMemberAction error:', error);
         return { success: false, error: '응답 조회에 실패했습니다.' };
+    }
+}
+
+// 설문 응답 관리 액션
+
+export async function listSurveyResponsesAction(surveyId: string) {
+    try {
+        const res = await listSurveyResponsesSDK({ surveyId });
+        return { success: true, data: res.data.surveyResponses };
+    } catch (error) {
+        console.error('listSurveyResponsesAction error:', error);
+        return { success: false, error: '응답 목록을 불러오지 못했습니다.' };
+    }
+}
+
+export async function getSurveyResponseByNamePhoneAction(vars: { surveyId: string; name: string; phone: string }) {
+    try {
+        const res = await getSurveyResponseByNamePhoneSDK(vars);
+        return { success: true, data: res.data.surveyResponses };
+    } catch (error) {
+        console.error('getSurveyResponseByNamePhoneAction error:', error);
+        return { success: false, error: '응답 조회에 실패했습니다.' };
+    }
+}
+
+export async function deleteSurveyResponseAction(id: string) {
+    try {
+        await deleteSurveyResponseSDK({ id });
+        return { success: true };
+    } catch (error) {
+        console.error('deleteSurveyResponseAction error:', error);
+        return { success: false, error: '응답 삭제에 실패했습니다.' };
     }
 }

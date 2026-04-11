@@ -432,6 +432,45 @@ query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level:
   }
 }
 
+# 설문 응답 관리 쿼리
+query ListSurveyResponses($surveyId: UUID!) @auth(level: PUBLIC) {
+  surveyResponses(where: {
+    surveyId: { eq: $surveyId }
+  }, orderBy: [{ submittedAt: DESC }]) {
+    id
+    submittedAt
+    member {
+      id
+      name
+      phone
+    }
+  }
+}
+
+# 특정 이름+전화번호로 응답 조회
+query GetSurveyResponseByNamePhone($surveyId: UUID!, $name: String!, $phone: String!) @auth(level: PUBLIC) {
+  surveyResponses(where: {
+    surveyId: { eq: $surveyId },
+    member: {
+      name: { eq: $name },
+      phone: { eq: $phone }
+    }
+  }) {
+    id
+    submittedAt
+    member {
+      id
+      name
+      phone
+    }
+  }
+}
+
+# 단건 응답 삭제
+mutation DeleteSurveyResponse($id: UUID!) @auth(level: PUBLIC) {
+  surveyResponse_delete(id: $id)
+}
+
 mutation DeleteSurvey($id: UUID!) @auth(level: PUBLIC) {
   survey_delete(id: $id)
 }

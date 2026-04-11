@@ -457,6 +457,39 @@ export function getSurveyResponseByMember(dcOrVars, vars) {
   return executeQuery(getSurveyResponseByMemberRef(dcOrVars, vars));
 }
 
+export const listSurveyResponsesRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListSurveyResponses', inputVars);
+}
+listSurveyResponsesRef.operationName = 'ListSurveyResponses';
+
+export function listSurveyResponses(dcOrVars, vars) {
+  return executeQuery(listSurveyResponsesRef(dcOrVars, vars));
+}
+
+export const getSurveyResponseByNamePhoneRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetSurveyResponseByNamePhone', inputVars);
+}
+getSurveyResponseByNamePhoneRef.operationName = 'GetSurveyResponseByNamePhone';
+
+export function getSurveyResponseByNamePhone(dcOrVars, vars) {
+  return executeQuery(getSurveyResponseByNamePhoneRef(dcOrVars, vars));
+}
+
+export const deleteSurveyResponseRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteSurveyResponse', inputVars);
+}
+deleteSurveyResponseRef.operationName = 'DeleteSurveyResponse';
+
+export function deleteSurveyResponse(dcOrVars, vars) {
+  return executeMutation(deleteSurveyResponseRef(dcOrVars, vars));
+}
+
 export const deleteSurveyRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

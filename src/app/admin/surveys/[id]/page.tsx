@@ -36,8 +36,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import SaveIcon from '@mui/icons-material/Save';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SearchIcon from '@mui/icons-material/Search';
 import { 
     getSurveyAction, 
     listSurveyQuestionsAction, 
@@ -48,7 +50,10 @@ import {
     listSurveySectionsAction,
     createSurveySectionAction,
     updateSurveySectionAction,
-    deleteSurveySectionAction
+    deleteSurveySectionAction,
+    listSurveyResponsesAction,
+    getSurveyResponseByNamePhoneAction,
+    deleteSurveyResponseAction
 } from '@/app/actions/data';
 
 interface Section {
@@ -114,6 +119,13 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [logicQuestionId, setLogicQuestionId] = useState('');
     const [logicValue, setLogicValue] = useState('');
 
+    // 응답 관리 상태
+    const [responses, setResponses] = useState<any[]>([]);
+    const [responsesLoading, setResponsesLoading] = useState(false);
+    const [searchName, setSearchName] = useState('');
+    const [searchPhone, setSearchPhone] = useState('');
+    const [searchResults, setSearchResults] = useState<any[] | null>(null);
+
     useEffect(() => {
         if (logicQuestionId) {
             const newLogic = JSON.stringify({
@@ -163,9 +175,77 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
+    const fetchResponses = useCallback(async () => {
+        setResponsesLoading(true);
+        try {
+            const res = await listSurveyResponsesAction(surveyId);
+            if (res.success) setResponses(res.data as any[]);
+        } finally {
+            setResponsesLoading(false);
+        }
+    }, [surveyId]);
+
+    const handleSearchByNamePhone = async () => {
+        if (!searchName.trim() || !searchPhone.trim()) {
+            setMsg({ type: 'error', text: '이름과 전화번호를 모두 입력해주세요.' });
+            return;
+        }
+        setResponsesLoading(true);
+        try {
+            const res = await getSurveyResponseByNamePhoneAction({
+                surveyId,
+                name: searchName.trim(),
+                phone: searchPhone.trim()
+            });
+            if (res.success) setSearchResults(res.data as any[]);
+            else setMsg({ type: 'error', text: res.error || '조회 실패' });
+        } finally {
+            setResponsesLoading(false);
+        }
+    };
+
+    const handleDeleteResponse = async (id: string, label: string) => {
+        if (!window.confirm(`${label}의 응답을 삭제하시겠습니까?`)) return;
+        setSubmitting(true);
+        try {
+            const res = await deleteSurveyResponseAction(id);
+            if (res.success) {
+                setMsg({ type: 'success', text: '응답이 삭제되었습니다.' });
+                await fetchResponses();
+                setSearchResults(prev => prev ? prev.filter(r => r.id !== id) : null);
+            } else {
+                setMsg({ type: 'error', text: res.error || '삭제 실패' });
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleResetAllResponses = async () => {
+        if (!window.confirm(`이 설문의 응답 ${responses.length}건을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+        setSubmitting(true);
+        try {
+            let failCount = 0;
+            for (const r of responses) {
+                const res = await deleteSurveyResponseAction(r.id);
+                if (!res.success) failCount++;
+            }
+            if (failCount === 0) {
+                setMsg({ type: 'success', text: '모든 응답이 초기화되었습니다.' });
+            } else {
+                setMsg({ type: 'error', text: `${failCount}건 삭제 실패. 나머지는 삭제되었습니다.` });
+            }
+            await fetchResponses();
+            setSearchResults(null);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+        fetchResponses();
+    }, [fetchData, fetchResponses]);
 
     const handleOpenDialog = (q: Question | null = null) => {
         if (q) {
@@ -579,6 +659,116 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             })
                         )}
                     </List>
+                </Paper>
+
+                {/* 응답 관리 패널 */}
+                <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #ffcdd2', bgcolor: '#fff8f8' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Box>
+                            <Typography variant="h6" fontWeight="bold" color="error.main">응답 관리</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                총 {responsesLoading ? '...' : responses.length}건의 응답
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<DeleteSweepIcon />}
+                            disabled={submitting || responses.length === 0}
+                            onClick={handleResetAllResponses}
+                        >
+                            전체 응답 초기화
+                        </Button>
+                    </Box>
+
+                    {/* 이름+전화 검색 삭제 */}
+                    <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #eee', mb: 3 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>🔍 특정 응답 찾아 삭제</Typography>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
+                            <TextField
+                                size="small"
+                                label="이름"
+                                value={searchName}
+                                onChange={e => setSearchName(e.target.value)}
+                                sx={{ minWidth: 120 }}
+                            />
+                            <TextField
+                                size="small"
+                                label="전화번호"
+                                placeholder="010-0000-0000"
+                                value={searchPhone}
+                                onChange={e => setSearchPhone(e.target.value)}
+                                sx={{ minWidth: 160 }}
+                            />
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                startIcon={<SearchIcon />}
+                                onClick={handleSearchByNamePhone}
+                                disabled={responsesLoading}
+                            >
+                                검색
+                            </Button>
+                        </Stack>
+
+                        {searchResults !== null && (
+                            <Box sx={{ mt: 2 }}>
+                                {searchResults.length === 0 ? (
+                                    <Typography variant="body2" color="text.secondary">해당 조건의 응답이 없습니다.</Typography>
+                                ) : (
+                                    <List dense>
+                                        {searchResults.map(r => (
+                                            <ListItem key={r.id} divider secondaryAction={
+                                                <Button
+                                                    size="small"
+                                                    color="error"
+                                                    variant="outlined"
+                                                    startIcon={<DeleteIcon />}
+                                                    onClick={() => handleDeleteResponse(r.id, r.member?.name || '응답')}
+                                                    disabled={submitting}
+                                                >
+                                                    삭제
+                                                </Button>
+                                            }>
+                                                <ListItemText
+                                                    primary={`${r.member?.name || '이름 없음'} (${r.member?.phone || ''})`}
+                                                    secondary={`제출: ${new Date(r.submittedAt).toLocaleString('ko-KR')}`}
+                                                />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+
+                    {/* 전체 응답 목록 */}
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>전체 응답 목록</Typography>
+                    {responsesLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={24} /></Box>
+                    ) : responses.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>제출된 응답이 없습니다.</Typography>
+                    ) : (
+                        <List dense>
+                            {responses.map((r, idx) => (
+                                <ListItem key={r.id} divider secondaryAction={
+                                    <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleDeleteResponse(r.id, r.member?.name || '응답')}
+                                        disabled={submitting}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                }>
+                                    <ListItemText
+                                        primary={`${idx + 1}. ${r.member?.name || '이름 없음'} (${r.member?.phone || ''})`}
+                                        secondary={new Date(r.submittedAt).toLocaleString('ko-KR')}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    )}
                 </Paper>
             </Container>
 
