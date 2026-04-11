@@ -446,10 +446,12 @@ query ListSurveyResponses($surveyId: UUID!) @auth(level: PUBLIC) {
   }, orderBy: [{ submittedAt: DESC }]) {
     id
     submittedAt
+    answers
     member {
       id
       name
       phone
+      isSelfRegistered
     }
   }
 }

@@ -30,7 +30,14 @@ import {
     Stack,
     Accordion,
     AccordionSummary,
-    AccordionDetails
+    AccordionDetails,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TableSortLabel
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
@@ -40,6 +47,7 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import SaveIcon from '@mui/icons-material/Save';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SearchIcon from '@mui/icons-material/Search';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { 
     getSurveyAction, 
     listSurveyQuestionsAction, 
@@ -541,22 +549,30 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         <ArrowBackIcon />
                     </IconButton>
                     <Box sx={{ flexGrow: 1 }}>
-                        <Typography variant="h4" component="h1" fontWeight="bold" color="secondary">
-                            {survey?.title || '설문조사'} 문항 편집
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            {survey?.description}
+                        <Typography variant="h4" fontWeight="bold">
+                            {survey?.title} {survey?.isActive ? <Chip label="진행중" color="success" size="small" /> : <Chip label="종료됨" color="default" size="small" />}
                         </Typography>
                     </Box>
-                    <Button 
-                        variant="outlined" 
-                        color="secondary" 
-                        startIcon={<EditIcon />}
-                        onClick={(e) => { e.currentTarget.blur(); setSurveyEditOpen(true); }}
-                    >
-                        설문 정보 수정
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                        <Button 
+                            startIcon={<BarChartIcon />}
+                            variant="contained" 
+                            color="info"
+                            onClick={() => router.push(`/admin/surveys/${surveyId}/results`)}
+                        >
+                            설문 결과
+                        </Button>
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<EditIcon />}
+                            onClick={() => setSurveyEditOpen(true)}
+                        >
+                            설문 정보 수정
+                        </Button>
+                    </Stack>
                 </Box>
+
+                <Divider sx={{ mb: 4 }} />
 
                 {msg && (
                     <Alert severity={msg.type} sx={{ mb: 3 }} onClose={() => setMsg(null)}>
@@ -707,94 +723,69 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         </Button>
                     </Box>
 
-                    {/* 이름+전화 검색 삭제 */}
-                    <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: '1px solid #eee', mb: 3 }}>
-                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>🔍 특정 응답 찾아 삭제</Typography>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
-                            <TextField
-                                size="small"
-                                label="이름"
-                                value={searchName}
-                                onChange={e => setSearchName(e.target.value)}
-                                sx={{ minWidth: 120 }}
-                            />
-                            <TextField
-                                size="small"
-                                label="전화번호"
-                                placeholder="010-0000-0000"
-                                value={searchPhone}
-                                onChange={e => setSearchPhone(e.target.value)}
-                                sx={{ minWidth: 160 }}
-                            />
-                            <Button
-                                variant="outlined"
-                                color="primary"
-                                startIcon={<SearchIcon />}
-                                onClick={handleSearchByNamePhone}
-                                disabled={responsesLoading}
-                            >
-                                검색
-                            </Button>
-                        </Stack>
-
-                        {searchResults !== null && (
-                            <Box sx={{ mt: 2 }}>
-                                {searchResults.length === 0 ? (
-                                    <Typography variant="body2" color="text.secondary">해당 조건의 응답이 없습니다.</Typography>
-                                ) : (
-                                    <List dense>
-                                        {searchResults.map(r => (
-                                            <ListItem key={r.id} divider secondaryAction={
-                                                <Button
-                                                    size="small"
-                                                    color="error"
-                                                    variant="outlined"
-                                                    startIcon={<DeleteIcon />}
-                                                    onClick={() => handleDeleteResponse(r.id, r.member?.name || '응답')}
-                                                    disabled={submitting}
-                                                >
-                                                    삭제
-                                                </Button>
-                                            }>
-                                                <ListItemText
-                                                    primary={`${r.member?.name || '이름 없음'} (${r.member?.phone || ''})`}
-                                                    secondary={`제출: ${new Date(r.submittedAt).toLocaleString('ko-KR')}`}
-                                                />
-                                            </ListItem>
-                                        ))}
-                                    </List>
+                    {/* 응답 목록 (테이블 형식) */}
+                    <TableContainer component={Paper} elevation={0} variant="outlined" sx={{ borderRadius: 2 }}>
+                        <Table size="small">
+                            <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>성함</TableCell>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>전화번호</TableCell>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>제출 시간</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>관리</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {(searchResults || responses).map((r) => (
+                                    <TableRow key={r.id} hover>
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="body2" fontWeight="medium">
+                                                    {r.member?.name || '이름 없음'}
+                                                </Typography>
+                                                {r.member?.isSelfRegistered && (
+                                                    <Chip 
+                                                        label="NEW" 
+                                                        size="small" 
+                                                        color="primary" 
+                                                        sx={{ height: 18, fontSize: '0.65rem', fontWeight: 'bold' }} 
+                                                    />
+                                                )}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {r.member?.phone || '미등록'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {new Date(r.submittedAt).toLocaleString('ko-KR')}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <IconButton 
+                                                size="small" 
+                                                color="error" 
+                                                onClick={() => handleDeleteResponse(r.id, r.member?.name || '응답')}
+                                                disabled={submitting}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {(searchResults || responses).length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {responsesLoading ? '데이터를 불러오는 중입니다...' : '응답 데이터가 없습니다.'}
+                                            </Typography>
+                                        </TableCell>
+                                    </TableRow>
                                 )}
-                            </Box>
-                        )}
-                    </Box>
-
-                    {/* 전체 응답 목록 */}
-                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>전체 응답 목록</Typography>
-                    {responsesLoading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={24} /></Box>
-                    ) : responses.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>제출된 응답이 없습니다.</Typography>
-                    ) : (
-                        <List dense>
-                            {responses.map((r, idx) => (
-                                <ListItem key={r.id} divider secondaryAction={
-                                    <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={() => handleDeleteResponse(r.id, r.member?.name || '응답')}
-                                        disabled={submitting}
-                                    >
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                }>
-                                    <ListItemText
-                                        primary={`${idx + 1}. ${r.member?.name || '이름 없음'} (${r.member?.phone || ''})`}
-                                        secondary={new Date(r.submittedAt).toLocaleString('ko-KR')}
-                                    />
-                                </ListItem>
-                            ))}
-                        </List>
-                    )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Paper>
             </Container>
 

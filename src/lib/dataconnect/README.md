@@ -2227,10 +2227,12 @@ export interface ListSurveyResponsesData {
   surveyResponses: ({
     id: UUIDString;
     submittedAt: TimestampString;
+    answers: string;
     member: {
       id: UUIDString;
       name: string;
       phone?: string | null;
+      isSelfRegistered?: boolean | null;
     } & Member_Key;
   } & SurveyResponse_Key)[];
 }
