@@ -435,7 +435,7 @@ query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level:
 # 설문 응답 관리 쿼리
 query ListSurveyResponses($surveyId: UUID!) @auth(level: PUBLIC) {
   surveyResponses(where: {
-    survey: { id: { eq: $surveyId } }
+    surveyId: { eq: $surveyId }
   }, orderBy: [{ submittedAt: DESC }]) {
     id
     submittedAt

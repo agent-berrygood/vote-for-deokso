@@ -514,9 +514,12 @@ export async function listSurveyResponsesAction(surveyId: string) {
     try {
         const res = await listSurveyResponsesSDK({ surveyId });
         return { success: true, data: res.data.surveyResponses };
-    } catch (error) {
+    } catch (error: any) {
         console.error('listSurveyResponsesAction error:', error);
-        return { success: false, error: '응답 목록을 불러오지 못했습니다.' };
+        return { 
+            success: false, 
+            error: error.message || '응답 목록을 불러오지 못했습니다. (서버 에러)' 
+        };
     }
 }
 
