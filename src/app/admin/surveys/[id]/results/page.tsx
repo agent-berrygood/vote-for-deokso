@@ -89,7 +89,7 @@ export default function SurveyResultsPage() {
 
     // 데이터 집합 생성
     const chartData = useMemo(() => {
-        return questions.map(q => {
+        return questions.map((q, qIdx) => {
             if (['MULTIPLE_CHOICE', 'DROPDOWN', 'SCALE', 'MULTIPLE_SELECT'].includes(q.type)) {
                 const distribution: { [key: string]: number } = {};
                 
@@ -116,16 +116,39 @@ export default function SurveyResultsPage() {
                 responses.forEach(r => {
                     try {
                         const answers = r.answers ? JSON.parse(r.answers) : {};
-                        const val = answers[q.id];
+                        
+                        // 디버그: 첫 번째 질문에 대해서만 한 번 로그 출력 (데이터 구조 확인용)
+                        if (qIdx === 0) {
+                            console.log('Diagnostic - Answer Keys:', Object.keys(answers));
+                            console.log('Diagnostic - Current Question IDs:', questions.map(q => q.id));
+                        }
+
+                        // 1순위: UUID 매칭
+                        let val = answers[q.id];
+                        
+                        // 2순위: 텍스트 매칭 (UUID가 일치하지 않을 경우 백업)
+                        if (val === undefined || val === null) {
+                            val = answers[q.text];
+                        }
+                        
+                        // 3순위: 순서 매칭 (legacy 또는 외부 데이터 대응)
+                        if (val === undefined || val === null) {
+                            const entries = Object.entries(answers);
+                            if (entries[qIdx]) {
+                                // 인덱스가 일치하는 경우 (위험할 수 있으나 마지막 수단)
+                                // val = entries[qIdx][1]; 
+                            }
+                        }
+
                         if (val !== undefined && val !== null) {
                             if (Array.isArray(val)) {
                                 val.forEach(v => { 
-                                    const vStr = String(v);
-                                    distribution[vStr] = (distribution[vStr] || 0) + 1; 
+                                    const vStr = String(v).trim();
+                                    if (vStr) distribution[vStr] = (distribution[vStr] || 0) + 1; 
                                 });
                             } else {
-                                const valStr = String(val);
-                                distribution[valStr] = (distribution[valStr] || 0) + 1;
+                                const valStr = String(val).trim();
+                                if (valStr) distribution[valStr] = (distribution[valStr] || 0) + 1;
                             }
                         }
                     } catch (e) {
@@ -219,8 +242,8 @@ export default function SurveyResultsPage() {
                                 <Divider sx={{ mb: 3, opacity: 0.5 }} />
 
                                 {qData.data ? (
-                                    <Box sx={{ width: '100%', height: 320 }}>
-                                        <ResponsiveContainer>
+                                    <Box sx={{ width: '100%', height: 320, minWidth: 0, position: 'relative' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
                                             {chartTypes[qData.id] === 'pie' ? (
                                                 <PieChart>
                                                     <Pie
