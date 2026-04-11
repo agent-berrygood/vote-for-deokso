@@ -509,9 +509,13 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             </Typography>
                         ) : (
                             // Group questions by section
-                            [...sections, { id: '', title: '섹션 없음' }].map((section) => {
-                                const sectionQuestions = questions.filter(q => (q.sectionId || '') === section.id);
-                                if (sectionQuestions.length === 0 && section.id !== '') return null;
+                            [...sections, { id: 'none', title: '섹션 없음' }].map((section) => {
+                                const sectionQuestions = questions.filter(q => 
+                                    section.id === 'none'
+                                        ? !sections.some(s => s.id === q.sectionId)
+                                        : q.sectionId === section.id
+                                );
+                                if (sectionQuestions.length === 0 && section.id !== 'none') return null;
                                 
                                 return (
                                     <Box key={section.id || 'none'} sx={{ mb: 4 }}>

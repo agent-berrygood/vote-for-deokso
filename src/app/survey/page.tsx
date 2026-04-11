@@ -195,9 +195,24 @@ export default function SurveyPage() {
                         <Divider sx={{ my: 3 }} />
 
                         {/* Dynamic Questions by Section */}
-                        {(sections.length > 0 ? sections : [{ id: '', title: '', description: '' }]).map((section, sIdx) => {
-                            const sectionQuestions = questions.filter(q => (q.sectionId || '') === section.id);
-                            if (sectionQuestions.length === 0) return null;
+                        {(() => {
+                            // Find questions not in any of the current sections
+                            const orphanedQuestions = questions.filter(q => !sections.some(s => s.id === q.sectionId));
+                            
+                            // Create a list of all groups to render
+                            const renderGroups = [
+                                ...sections,
+                                ...(orphanedQuestions.length > 0 ? [{ id: 'none', title: '', description: '' }] : [])
+                            ];
+
+                            return renderGroups.map((section, sIdx) => {
+                                const sectionQuestions = questions.filter(q => 
+                                    section.id === 'none' 
+                                        ? !sections.some(s => s.id === q.sectionId)
+                                        : q.sectionId === section.id
+                                );
+                                
+                                if (sectionQuestions.length === 0) return null;
 
                             return (
                                 <Box key={section.id || 'none'} sx={{ mb: 6 }}>
@@ -413,7 +428,8 @@ export default function SurveyPage() {
                                     })}
                                 </Box>
                             );
-                        })}
+                            });
+                        })()}
                     </Paper>
 
                     <Button 
