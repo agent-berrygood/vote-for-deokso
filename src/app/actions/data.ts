@@ -526,6 +526,7 @@ export async function listSurveyResponsesAction(surveyId: string) {
 export async function deleteSurveyResponseAction(id: string) {
     try {
         await deleteSurveyResponseSDK({ id });
+        revalidatePath('/admin/surveys/[id]');
         return { success: true };
     } catch (error) {
         console.error('deleteSurveyResponseAction error:', error);

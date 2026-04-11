@@ -209,27 +209,47 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
     const handleDeleteResponse = async (id: string, label: string) => {
         if (!window.confirm(`${label}의 응답을 삭제하시겠습니까?`)) return;
-        setSubmitting(true);
+        
+        // Optimistic Update: 즉시 화면에서 제거
+        const previousResponses = [...responses];
+        const previousSearchResults = searchResults ? [...searchResults] : null;
+        
+        setResponses(prev => prev.filter(r => r.id !== id));
+        if (searchResults) {
+            setSearchResults(prev => prev ? prev.filter(r => r.id !== id) : null);
+        }
+
         try {
             const res = await deleteSurveyResponseAction(id);
             if (res.success) {
                 setMsg({ type: 'success', text: '응답이 삭제되었습니다.' });
-                await fetchResponses();
-                setSearchResults(prev => prev ? prev.filter(r => r.id !== id) : null);
+                // 서버 데이터와 최종 동기화 (이미 제거했으므로 백그라운드 확인용)
             } else {
                 setMsg({ type: 'error', text: res.error || '삭제 실패' });
+                // 실패 시 복구
+                setResponses(previousResponses);
+                setSearchResults(previousSearchResults);
             }
-        } finally {
-            setSubmitting(false);
+        } catch (err) {
+            console.error(err);
+            setResponses(previousResponses);
+            setSearchResults(previousSearchResults);
         }
     };
 
     const handleResetAllResponses = async () => {
         if (!window.confirm(`이 설문의 응답 ${responses.length}건을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+        
+        const previousResponses = [...responses];
         setSubmitting(true);
+        
+        // Optimistic Update: 즉시 비움
+        setResponses([]);
+        setSearchResults(null);
+
         try {
             let failCount = 0;
-            for (const r of responses) {
+            for (const r of previousResponses) {
                 const res = await deleteSurveyResponseAction(r.id);
                 if (!res.success) failCount++;
             }
@@ -237,9 +257,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 setMsg({ type: 'success', text: '모든 응답이 초기화되었습니다.' });
             } else {
                 setMsg({ type: 'error', text: `${failCount}건 삭제 실패. 나머지는 삭제되었습니다.` });
+                // 일부 실패 시 재조회하여 정합성 맞춤
+                await fetchResponses();
             }
-            await fetchResponses();
-            setSearchResults(null);
+        } catch (err) {
+            console.error(err);
+            setResponses(previousResponses);
         } finally {
             setSubmitting(false);
         }
