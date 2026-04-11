@@ -10,6 +10,15 @@ import {
     listAllCandidates as listAllCandidatesSDK,
     listAuditLogs as listAuditLogsSDK,
     listVoterParticipations as listParticipationsSDK,
+    getVoterByInfo as getVoterByInfoSDK,
+    getMemberByInfo as getMemberByInfoSDK,
+    getMemberByBasicInfo as getMemberByBasicInfoSDK,
+    listMembers as listMembersSDK,
+    getSurvey as getSurveySDK,
+    listSurveyQuestions as listSurveyQuestionsSDK,
+    listSurveys as listSurveysSDK,
+    listSurveySections as listSurveySectionsSDK,
+    getSurveyResponseByMember as getSurveyResponseByMemberSDK,
     createVoter as createVoterSDK,
     updateVoter as updateVoterSDK,
     deleteVoter as deleteVoterSDK,
@@ -27,24 +36,20 @@ import {
     deleteAllCandidates as deleteAllCandidatesSDK,
     deleteAllVoters as deleteAllVotersSDK,
     submitVote as submitVoteSDK,
+    submitSurveyResponse as submitSurveyResponseSDK,
     createMember as createMemberSDK,
+    updateMember as updateMemberSDK,
+    deleteMember as deleteMemberSDK,
+    updateSystemService as updateSystemServiceSDK,
     createSurvey as createSurveySDK,
     updateSurvey as updateSurveySDK,
-    updateSystemService as updateSystemServiceSDK,
-    getMemberByInfo as getMemberByInfoSDK,
-    getSurvey as getSurveySDK,
-    listSurveys as listSurveysSDK,
     deleteSurvey as deleteSurveySDK,
-    getVoterByInfo as getVoterByInfoSDK,
-    listSurveyQuestions as listSurveyQuestionsSDK,
     createSurveyQuestion as createSurveyQuestionSDK,
     updateSurveyQuestion as updateSurveyQuestionSDK,
     deleteSurveyQuestion as deleteSurveyQuestionSDK,
-    listSurveySections as listSurveySectionsSDK,
     createSurveySection as createSurveySectionSDK,
     updateSurveySection as updateSurveySectionSDK,
-    deleteSurveySection as deleteSurveySectionSDK,
-    submitSurveyResponse as submitSurveyResponseSDK
+    deleteSurveySection as deleteSurveySectionSDK
 } from '@/lib/dataconnect';
 
 
@@ -147,6 +152,26 @@ export async function getMemberByInfoAction(vars: { phone: string, birthdate: st
     } catch (error) {
         console.error('getMemberByInfoAction error:', error);
         return { success: false, error: '교인 정보를 조회하지 못했습니다.' };
+    }
+}
+
+export async function getMemberByBasicInfoAction(vars: { name: string, phone: string }) {
+    try {
+        const res = await getMemberByBasicInfoSDK(vars);
+        return { success: true, data: res.data.members };
+    } catch (error) {
+        console.error('getMemberByBasicInfoAction error:', error);
+        return { success: false, error: '교인 정보를 조회하지 못했습니다.' };
+    }
+}
+
+export async function listMembersAction() {
+    try {
+        const res = await listMembersSDK();
+        return { success: true, data: res.data.members };
+    } catch (error) {
+        console.error('listMembersAction error:', error);
+        return { success: false, error: '교인 목록을 불러오지 못했습니다.' };
     }
 }
 
@@ -274,13 +299,33 @@ export async function deleteCandidatesByRoundAction(electionId: string, position
 
 // --- NEW: Member / System / Survey Mutations ---
 
-export async function createMemberAction(vars: { name: string, phone?: string, birthdate?: string, originalId?: string }) {
+export async function createMemberAction(vars: { name: string, phone?: string, birthdate?: string, originalId?: string, isSelfRegistered?: boolean }) {
     try {
         await createMemberSDK(vars);
         return { success: true };
     } catch (error) {
         console.error('createMemberAction error:', error);
         return { success: false, error: '교인 등록에 실패했습니다.' };
+    }
+}
+
+export async function updateMemberAction(vars: { id: string, name?: string, phone?: string, birthdate?: string, isSelfRegistered?: boolean }) {
+    try {
+        await updateMemberSDK(vars as any);
+        return { success: true };
+    } catch (error) {
+        console.error('updateMemberAction error:', error);
+        return { success: false, error: '교인 정보 수정에 실패했습니다.' };
+    }
+}
+
+export async function deleteMemberAction(id: string) {
+    try {
+        await deleteMemberSDK({ id });
+        return { success: true };
+    } catch (error) {
+        console.error('deleteMemberAction error:', error);
+        return { success: false, error: '교인 삭제에 실패했습니다.' };
     }
 }
 
@@ -448,5 +493,15 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
     } catch (error) {
         console.error('submitSurveyResponseAction error:', error);
         return { success: false, error: '설문 응답 제출에 실패했습니다.' };
+    }
+}
+
+export async function getSurveyResponseByMemberAction(vars: { surveyId: string, memberId: string }) {
+    try {
+        const res = await getSurveyResponseByMemberSDK(vars);
+        return { success: true, data: res.data.surveyResponses };
+    } catch (error) {
+        console.error('getSurveyResponseByMemberAction error:', error);
+        return { success: false, error: '응답 조회에 실패했습니다.' };
     }
 }

@@ -367,6 +367,30 @@ exports.getMemberByInfo = function getMemberByInfo(dcOrVars, vars) {
   return executeQuery(getMemberByInfoRef(dcOrVars, vars));
 };
 
+const getMemberByBasicInfoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetMemberByBasicInfo', inputVars);
+}
+getMemberByBasicInfoRef.operationName = 'GetMemberByBasicInfo';
+exports.getMemberByBasicInfoRef = getMemberByBasicInfoRef;
+
+exports.getMemberByBasicInfo = function getMemberByBasicInfo(dcOrVars, vars) {
+  return executeQuery(getMemberByBasicInfoRef(dcOrVars, vars));
+};
+
+const listMembersRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListMembers');
+}
+listMembersRef.operationName = 'ListMembers';
+exports.listMembersRef = listMembersRef;
+
+exports.listMembers = function listMembers(dc) {
+  return executeQuery(listMembersRef(dc));
+};
+
 const createMemberRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -377,6 +401,30 @@ exports.createMemberRef = createMemberRef;
 
 exports.createMember = function createMember(dcOrVars, vars) {
   return executeMutation(createMemberRef(dcOrVars, vars));
+};
+
+const updateMemberRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateMember', inputVars);
+}
+updateMemberRef.operationName = 'UpdateMember';
+exports.updateMemberRef = updateMemberRef;
+
+exports.updateMember = function updateMember(dcOrVars, vars) {
+  return executeMutation(updateMemberRef(dcOrVars, vars));
+};
+
+const deleteMemberRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'DeleteMember', inputVars);
+}
+deleteMemberRef.operationName = 'DeleteMember';
+exports.deleteMemberRef = deleteMemberRef;
+
+exports.deleteMember = function deleteMember(dcOrVars, vars) {
+  return executeMutation(deleteMemberRef(dcOrVars, vars));
 };
 
 const updateSystemServiceRef = (dcOrVars, vars) => {
@@ -437,6 +485,18 @@ exports.submitSurveyResponseRef = submitSurveyResponseRef;
 
 exports.submitSurveyResponse = function submitSurveyResponse(dcOrVars, vars) {
   return executeMutation(submitSurveyResponseRef(dcOrVars, vars));
+};
+
+const getSurveyResponseByMemberRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'GetSurveyResponseByMember', inputVars);
+}
+getSurveyResponseByMemberRef.operationName = 'GetSurveyResponseByMember';
+exports.getSurveyResponseByMemberRef = getSurveyResponseByMemberRef;
+
+exports.getSurveyResponseByMember = function getSurveyResponseByMember(dcOrVars, vars) {
+  return executeQuery(getSurveyResponseByMemberRef(dcOrVars, vars));
 };
 
 const deleteSurveyRef = (dcOrVars, vars) => {

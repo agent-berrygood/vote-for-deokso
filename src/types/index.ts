@@ -43,3 +43,12 @@ export interface AdminLog {
     timestamp: string | number;
     adminId?: string; 
 }
+
+export interface Member {
+    id: string;
+    name: string;
+    phone?: string | null;
+    birthdate?: string | null;
+    isSelfRegistered: boolean;
+    originalId?: string | null;
+}

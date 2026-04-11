@@ -79,6 +79,7 @@ type Member @table(key: "id") {
   phone: String
   birthdate: String
   originalId: String # 파이어스토어에서 이관된 원본 ID 추적용
+  isSelfRegistered: Boolean @default(value: false)
 }
 
 type Survey @table(key: "id") {

@@ -325,16 +325,55 @@ query GetMemberByInfo($phone: String!, $birthdate: String!) @auth(level: PUBLIC)
     name
     phone
     birthdate
+    isSelfRegistered
   }
 }
 
-mutation CreateMember($name: String!, $phone: String, $birthdate: String, $originalId: String) @auth(level: PUBLIC) {
+query GetMemberByBasicInfo($name: String!, $phone: String!) @auth(level: PUBLIC) {
+  members(where: {
+    name: { eq: $name },
+    phone: { eq: $phone }
+  }) {
+    id
+    name
+    phone
+    birthdate
+    isSelfRegistered
+  }
+}
+
+query ListMembers @auth(level: PUBLIC) {
+  members(orderBy: [{ name: ASC }]) {
+    id
+    name
+    phone
+    birthdate
+    isSelfRegistered
+    originalId
+  }
+}
+
+mutation CreateMember($name: String!, $phone: String, $birthdate: String, $originalId: String, $isSelfRegistered: Boolean) @auth(level: PUBLIC) {
   member_insert(data: {
     name: $name,
     phone: $phone,
     birthdate: $birthdate,
-    originalId: $originalId
+    originalId: $originalId,
+    isSelfRegistered: $isSelfRegistered
   })
+}
+
+mutation UpdateMember($id: UUID!, $name: String, $phone: String, $birthdate: String, $isSelfRegistered: Boolean) @auth(level: PUBLIC) {
+  member_update(id: $id, data: {
+    name: $name,
+    phone: $phone,
+    birthdate: $birthdate,
+    isSelfRegistered: $isSelfRegistered
+  })
+}
+
+mutation DeleteMember($id: UUID!) @auth(level: PUBLIC) {
+  member_delete(id: $id)
 }
 
 # --- NEW: 설문 시스템 관련 ---
@@ -380,6 +419,17 @@ mutation SubmitSurveyResponse($surveyId: UUID!, $memberId: UUID!, $answers: Stri
     memberId: $memberId,
     answers: $answers
   })
+}
+
+# 중복 응답 확인 쿼리
+query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level: PUBLIC) {
+  surveyResponses(where: {
+    surveyId: { eq: $surveyId },
+    memberId: { eq: $memberId }
+  }) {
+    id
+    submittedAt
+  }
 }
 
 mutation DeleteSurvey($id: UUID!) @auth(level: PUBLIC) {

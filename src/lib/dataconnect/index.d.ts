@@ -85,6 +85,7 @@ export interface CreateMemberVariables {
   phone?: string | null;
   birthdate?: string | null;
   originalId?: string | null;
+  isSelfRegistered?: boolean | null;
 }
 
 export interface CreateSurveyData {
@@ -101,6 +102,7 @@ export interface CreateSurveyQuestionVariables {
   text: string;
   type: string;
   options?: string | null;
+  maxChoices?: number | null;
   logic?: string | null;
   orderIdx: number;
 }
@@ -167,6 +169,14 @@ export interface DeleteCandidatesByRoundVariables {
   round: number;
 }
 
+export interface DeleteMemberData {
+  member_delete?: Member_Key | null;
+}
+
+export interface DeleteMemberVariables {
+  id: UUIDString;
+}
+
 export interface DeleteSurveyData {
   survey_delete?: Survey_Key | null;
 }
@@ -220,12 +230,28 @@ export interface GetElectionSettingsVariables {
   electionId: string;
 }
 
+export interface GetMemberByBasicInfoData {
+  members: ({
+    id: UUIDString;
+    name: string;
+    phone?: string | null;
+    birthdate?: string | null;
+    isSelfRegistered?: boolean | null;
+  } & Member_Key)[];
+}
+
+export interface GetMemberByBasicInfoVariables {
+  name: string;
+  phone: string;
+}
+
 export interface GetMemberByInfoData {
   members: ({
     id: UUIDString;
     name: string;
     phone?: string | null;
     birthdate?: string | null;
+    isSelfRegistered?: boolean | null;
   } & Member_Key)[];
 }
 
@@ -264,6 +290,18 @@ export interface GetSurveyData {
     startDate?: TimestampString | null;
     endDate?: TimestampString | null;
   } & Survey_Key;
+}
+
+export interface GetSurveyResponseByMemberData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+  } & SurveyResponse_Key)[];
+}
+
+export interface GetSurveyResponseByMemberVariables {
+  surveyId: UUIDString;
+  memberId: UUIDString;
 }
 
 export interface GetSurveyVariables {
@@ -403,6 +441,17 @@ export interface ListElectionsData {
   } & Election_Key)[];
 }
 
+export interface ListMembersData {
+  members: ({
+    id: UUIDString;
+    name: string;
+    phone?: string | null;
+    birthdate?: string | null;
+    isSelfRegistered?: boolean | null;
+    originalId?: string | null;
+  } & Member_Key)[];
+}
+
 export interface ListSurveyQuestionsData {
   surveyQuestions: ({
     id: UUIDString;
@@ -410,6 +459,7 @@ export interface ListSurveyQuestionsData {
     text: string;
     type: string;
     options?: string | null;
+    maxChoices?: number | null;
     logic?: string | null;
     orderIdx: number;
   } & SurveyQuestion_Key)[];
@@ -570,6 +620,18 @@ export interface UpdateElectionSettingsVariables {
   endDate?: TimestampString | null;
 }
 
+export interface UpdateMemberData {
+  member_update?: Member_Key | null;
+}
+
+export interface UpdateMemberVariables {
+  id: UUIDString;
+  name?: string | null;
+  phone?: string | null;
+  birthdate?: string | null;
+  isSelfRegistered?: boolean | null;
+}
+
 export interface UpdateSurveyData {
   survey_update?: Survey_Key | null;
 }
@@ -584,6 +646,7 @@ export interface UpdateSurveyQuestionVariables {
   text?: string | null;
   type?: string | null;
   options?: string | null;
+  maxChoices?: number | null;
   logic?: string | null;
   orderIdx?: number | null;
 }
@@ -999,6 +1062,30 @@ export const getMemberByInfoRef: GetMemberByInfoRef;
 export function getMemberByInfo(vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
 export function getMemberByInfo(dc: DataConnect, vars: GetMemberByInfoVariables): QueryPromise<GetMemberByInfoData, GetMemberByInfoVariables>;
 
+interface GetMemberByBasicInfoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetMemberByBasicInfoVariables): QueryRef<GetMemberByBasicInfoData, GetMemberByBasicInfoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetMemberByBasicInfoVariables): QueryRef<GetMemberByBasicInfoData, GetMemberByBasicInfoVariables>;
+  operationName: string;
+}
+export const getMemberByBasicInfoRef: GetMemberByBasicInfoRef;
+
+export function getMemberByBasicInfo(vars: GetMemberByBasicInfoVariables): QueryPromise<GetMemberByBasicInfoData, GetMemberByBasicInfoVariables>;
+export function getMemberByBasicInfo(dc: DataConnect, vars: GetMemberByBasicInfoVariables): QueryPromise<GetMemberByBasicInfoData, GetMemberByBasicInfoVariables>;
+
+interface ListMembersRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListMembersData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListMembersData, undefined>;
+  operationName: string;
+}
+export const listMembersRef: ListMembersRef;
+
+export function listMembers(): QueryPromise<ListMembersData, undefined>;
+export function listMembers(dc: DataConnect): QueryPromise<ListMembersData, undefined>;
+
 interface CreateMemberRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: CreateMemberVariables): MutationRef<CreateMemberData, CreateMemberVariables>;
@@ -1010,6 +1097,30 @@ export const createMemberRef: CreateMemberRef;
 
 export function createMember(vars: CreateMemberVariables): MutationPromise<CreateMemberData, CreateMemberVariables>;
 export function createMember(dc: DataConnect, vars: CreateMemberVariables): MutationPromise<CreateMemberData, CreateMemberVariables>;
+
+interface UpdateMemberRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateMemberVariables): MutationRef<UpdateMemberData, UpdateMemberVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateMemberVariables): MutationRef<UpdateMemberData, UpdateMemberVariables>;
+  operationName: string;
+}
+export const updateMemberRef: UpdateMemberRef;
+
+export function updateMember(vars: UpdateMemberVariables): MutationPromise<UpdateMemberData, UpdateMemberVariables>;
+export function updateMember(dc: DataConnect, vars: UpdateMemberVariables): MutationPromise<UpdateMemberData, UpdateMemberVariables>;
+
+interface DeleteMemberRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: DeleteMemberVariables): MutationRef<DeleteMemberData, DeleteMemberVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: DeleteMemberVariables): MutationRef<DeleteMemberData, DeleteMemberVariables>;
+  operationName: string;
+}
+export const deleteMemberRef: DeleteMemberRef;
+
+export function deleteMember(vars: DeleteMemberVariables): MutationPromise<DeleteMemberData, DeleteMemberVariables>;
+export function deleteMember(dc: DataConnect, vars: DeleteMemberVariables): MutationPromise<DeleteMemberData, DeleteMemberVariables>;
 
 interface UpdateSystemServiceRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -1070,6 +1181,18 @@ export const submitSurveyResponseRef: SubmitSurveyResponseRef;
 
 export function submitSurveyResponse(vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
 export function submitSurveyResponse(dc: DataConnect, vars: SubmitSurveyResponseVariables): MutationPromise<SubmitSurveyResponseData, SubmitSurveyResponseVariables>;
+
+interface GetSurveyResponseByMemberRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: GetSurveyResponseByMemberVariables): QueryRef<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: GetSurveyResponseByMemberVariables): QueryRef<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
+  operationName: string;
+}
+export const getSurveyResponseByMemberRef: GetSurveyResponseByMemberRef;
+
+export function getSurveyResponseByMember(vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
+export function getSurveyResponseByMember(dc: DataConnect, vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
 
 interface DeleteSurveyRef {
   /* Allow users to create refs without passing in DataConnect */

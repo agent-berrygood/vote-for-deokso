@@ -611,6 +611,23 @@ export default function AdminPage() {
                     </Box>
 
                     <Divider sx={{ my: 2 }} />
+                    <Box sx={{ p: 3, mb: 2, border: '1px solid #1976d2', borderRadius: 1, bgcolor: '#e3f2fd' }}>
+                        <Typography variant="subtitle1" color="primary" fontWeight="bold" gutterBottom>
+                            👥 교인 명부 관리 (설문용)
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            전교인 명단을 관리하고, 설문조사 시 자가 등록된 참여자를 확인합니다.
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => router.push('/admin/members')}
+                        >
+                            교인 명부 관리하러 가기
+                        </Button>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
                     <Box sx={{ p: 2, border: '1px solid #f44336', borderRadius: 1, bgcolor: '#fff5f5' }}>
                         <Typography variant="subtitle2" color="error" fontWeight="bold" gutterBottom>
                             ⚠ Danger Zone

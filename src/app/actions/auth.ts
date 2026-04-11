@@ -2,7 +2,14 @@
 
 import { cookies } from 'next/headers';
 import { signToken } from '@/lib/auth';
-import { getVoterByInfoAction, getElectionSettingsAction, createAuditLogAction, getMemberByInfoAction } from './data';
+import { 
+    getVoterByInfoAction, 
+    getElectionSettingsAction, 
+    createAuditLogAction, 
+    getMemberByInfoAction,
+    getMemberByBasicInfoAction,
+    createMemberAction
+} from './data';
 
 const POSITION_ORDER = ['장로', '안수집사', '권사'] as const;
 
@@ -91,19 +98,45 @@ export async function verifyMemberInfo(
 
         const res = await getMemberByInfoAction({ phone: cleanPhone, birthdate: cleanBirthdate });
         if (!res.success || !res.data) throw new Error(res.error || '교인 데이터를 불러오지 못했습니다.');
-        const members = res.data;
+        let members = res.data;
 
-        if (!members || members.length === 0) {
-            return { success: false, message: '등록된 교인 정보가 없습니다. (전화번호, 생년월일 확인)' };
-        }
-
-        const member = members.find((m: any) => {
+        // 1. 기존 명부에서 찾기 (이름/번호/생일 매칭)
+        let member = members.find((m: any) => {
             const dbName = (m.name || '').replace(/\s+/g, '');
             return dbName === normalizedInputName;
         });
 
+        // 2. 만약 생년월일이 다르거나 없어서 못 찾은 경우, 이름/번호만으로 재검색 (설문 모드 대응)
         if (!member) {
-            return { success: false, message: '등록된 교인 정보가 없습니다. (이름 확인)' };
+            const basicRes = await getMemberByBasicInfoAction({ name: normalizedInputName, phone: cleanPhone });
+            if (basicRes.success && basicRes.data && (basicRes.data as any[]).length > 0) {
+                member = (basicRes.data as any[])[0];
+            }
+        }
+
+        // 3. 그래도 없으면 신규 등록 (설문 모드 전제)
+        if (!member) {
+            console.log(`[New Member Registration] ${normalizedInputName} (${cleanPhone})`);
+            const createRes = await createMemberAction({
+                name: normalizedInputName,
+                phone: cleanPhone,
+                birthdate: cleanBirthdate || undefined,
+                isSelfRegistered: true
+            });
+
+            if (!createRes.success) {
+                return { success: false, message: '신규 교인 등록 중 오류가 발생했습니다.' };
+            }
+
+            // 등록 후 다시 조회하여 ID 확보
+            const retryRes = await getMemberByBasicInfoAction({ name: normalizedInputName, phone: cleanPhone });
+            if (retryRes.success && retryRes.data && (retryRes.data as any[]).length > 0) {
+                member = (retryRes.data as any[])[0];
+            }
+        }
+
+        if (!member) {
+            return { success: false, message: '교인 정보 처리 중 오류가 발생했습니다.' };
         }
 
         return {

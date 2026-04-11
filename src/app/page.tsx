@@ -168,9 +168,11 @@ export default function LoginPage() {
 
     // Basic Validation
     const cleanName = name.replace(/\s+/g, '');
-    if (!cleanName || !phone || !birthdate) {
+    const isElection = activeService === 'ELECTION';
+
+    if (!cleanName || !phone || (isElection && !birthdate)) {
       console.log("Validation Failed:", { name, phone, birthdate });
-      setError('모든 정보를 입력해주세요.');
+      setError('필수 정보를 모두 입력해주세요.');
       return;
     }
 
@@ -186,8 +188,13 @@ export default function LoginPage() {
     }
 
     const birthdateRegex = /^\d{6}$/;
-    if (!birthdateRegex.test(birthdate)) {
-      setError('생년월일 6자리를 정확히 입력해주세요.');
+    if (birthdate && !birthdateRegex.test(birthdate)) {
+      setError('생년월일 6자리를 정확히 입력해주세요. (YYMMDD)');
+      return;
+    }
+
+    if (isElection && !birthdate) {
+      setError('선거 모드에서는 생년월일이 필수입니다.');
       return;
     }
 
@@ -233,7 +240,7 @@ export default function LoginPage() {
         sessionStorage.setItem('tempVoterName', cleanName);
       } else {
         // --- SURVEY MODE: Bypass SMS ---
-        const verifyResult = await verifyMemberInfo(cleanName, phone.trim(), birthdate.trim());
+        const verifyResult = await verifyMemberInfo(cleanName, phone.trim(), birthdate.trim() || '');
 
         if (!verifyResult.success || !verifyResult.memberId) {
           setError(verifyResult.message || '등록된 교인 정보가 없습니다.');
@@ -440,13 +447,14 @@ export default function LoginPage() {
                 />
                 <TextField
                   margin="normal"
-                  required
+                  required={activeService === 'ELECTION'}
                   fullWidth
-                  label="생년월일 (6자리)"
+                  label={activeService === 'ELECTION' ? "생년월일 (6자리)" : "생년월일 (6자리, 선택사항)"}
                   placeholder="YYMMDD"
                   inputProps={{ maxLength: 6 }}
                   value={birthdate}
                   onChange={(e) => setBirthdate(e.target.value)}
+                  helperText={activeService === 'SURVEY' ? "명부에 없는 분은 이름/번호로 자동 등록됩니다." : ""}
                 />
                 <Button
                   type="submit"

@@ -29,7 +29,7 @@ import {
     Stack
 } from '@mui/material';
 import { useElection } from '@/hooks/useElection';
-import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction } from '@/app/actions/data';
+import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction, getSurveyResponseByMemberAction } from '@/app/actions/data';
 
 interface Question {
     id: string;
@@ -156,9 +156,7 @@ export default function SurveyPage() {
         fetchSurvey();
     }, [activeSurveyId, sysLoading]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
+    const handleSubmit = async () => {
         if (!activeSurveyId || !memberId) {
             setError('제출을 위한 정보가 부족합니다. 다시 로그인해 주세요.');
             return;
@@ -168,9 +166,19 @@ export default function SurveyPage() {
         setError('');
 
         try {
-            // Check if all required questions are answered (optional, but good for UX)
-            // For now, we'll just submit whatever we have.
+            // 1. 중복 참여 확인
+            const duplicateCheck = await getSurveyResponseByMemberAction({
+                surveyId: activeSurveyId,
+                memberId: memberId
+            });
 
+            if (duplicateCheck.success && duplicateCheck.data && duplicateCheck.data.length > 0) {
+                setError('이미 이 설문에 참여하셨습니다. 중복 제출은 허용되지 않습니다.');
+                setLoading(false);
+                return;
+            }
+
+            // 2. 응답 제출
             const res = await submitSurveyResponseAction({
                 surveyId: activeSurveyId,
                 memberId: memberId,
@@ -232,7 +240,7 @@ export default function SurveyPage() {
             {error && <Alert severity="warning" sx={{ mb: 3 }}>{error}</Alert>}
 
             {survey && (
-                <form onSubmit={handleSubmit}>
+                <Box>
                     <Paper sx={{ p: 4, borderRadius: 3, mb: 3 }}>
                         <Typography variant="h6" fontWeight="bold" gutterBottom>
                             {survey.title}
@@ -488,6 +496,7 @@ export default function SurveyPage() {
                     <Stack direction="row" spacing={2} sx={{ mb: 4 }}>
                         {currentPageIdx > 0 && (
                             <Button 
+                                type="button"
                                 variant="outlined" 
                                 color="secondary" 
                                 fullWidth 
@@ -511,6 +520,7 @@ export default function SurveyPage() {
                             if (currentPageIdx < totalPages - 1) {
                                 return (
                                     <Button 
+                                        type="button"
                                         variant="contained" 
                                         color="secondary" 
                                         fullWidth 
@@ -530,13 +540,14 @@ export default function SurveyPage() {
                             } else {
                                 return (
                                     <Button 
-                                        type="submit" 
+                                        type="button"
                                         variant="contained" 
                                         color="secondary" 
                                         fullWidth 
                                         size="large"
                                         sx={{ py: 1.5, borderRadius: 2, fontSize: '1.1rem', fontWeight: 'bold' }}
                                         disabled={loading}
+                                        onClick={handleSubmit}
                                     >
                                         {loading ? <CircularProgress size={24} /> : '설문 제출하기'}
                                     </Button>
@@ -544,7 +555,7 @@ export default function SurveyPage() {
                             }
                         })()}
                     </Stack>
-                </form>
+                </Box>
             )}
         </Container>
     );
