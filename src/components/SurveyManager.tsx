@@ -186,6 +186,15 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                                 >
                                     문항 편집
                                 </Button>
+                                <Button 
+                                    variant="contained" 
+                                    size="small" 
+                                    color="info" 
+                                    onClick={() => router.push(`/admin/surveys/${sy.id}/results`)}
+                                    sx={{ ml: 1 }}
+                                >
+                                    📊 결과
+                                </Button>
                             </ListItem>
                         ))
                     )}
