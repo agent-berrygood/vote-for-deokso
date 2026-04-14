@@ -145,7 +145,7 @@ export default function LoginPage() {
     if (activeService === 'SURVEY') {
       document.title = '높은뜻덕소교회 전교인 설문조사';
     } else {
-      document.title = '높은뜻덕소교회 장로, 안수집사, 권사 선거';
+      document.title = '높은뜻덕소교회 전교인 설문조사';
     }
   }, [activeService]);
 
