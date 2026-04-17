@@ -454,17 +454,18 @@ export default function LoginPage() {
                   onChange={handlePhoneChange}
                   inputProps={{ maxLength: 13 }}
                 />
-                <TextField
-                  margin="normal"
-                  required={activeService === 'ELECTION'}
-                  fullWidth
-                  label={activeService === 'ELECTION' ? "생년월일 (6자리)" : "생년월일 (6자리, 선택사항)"}
-                  placeholder="YYMMDD"
-                  inputProps={{ maxLength: 6 }}
-                  value={birthdate}
-                  onChange={(e) => setBirthdate(e.target.value)}
-                  helperText={activeService === 'SURVEY' ? "모든 설문은 익명으로 저장됩니다. 중복 투표 방지 및 답변 수정을 위해서 개인정보를 확인합니다." : ""}
-                />
+                {activeService === 'ELECTION' && (
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="생년월일 (6자리)"
+                    placeholder="YYMMDD"
+                    inputProps={{ maxLength: 6 }}
+                    value={birthdate}
+                    onChange={(e) => setBirthdate(e.target.value)}
+                  />
+                )}
                 <Button
                   type="submit"
                   fullWidth
