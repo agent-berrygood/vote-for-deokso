@@ -265,7 +265,9 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 
                 // Format ranking data
                 if (q.type === 'RANK_CHOICE' && val && typeof val === 'object') {
-                    val = `1순위: ${val.rank1 || ''}, 2순위: ${val.rank2 || ''}`;
+                    const r1 = val.rank1 === '기타' && val.other1 ? `기타(${val.other1})` : (val.rank1 || '');
+                    const r2 = val.rank2 === '기타' && val.other2 ? `기타(${val.other2})` : (val.rank2 || '');
+                    val = `1순위: ${r1}, 2순위: ${r2}`;
                 }
                 
                 row[`Q${idx + 1}. ${q.text}`] = Array.isArray(val) ? val.join(', ') : val;

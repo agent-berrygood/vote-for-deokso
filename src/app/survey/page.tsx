@@ -402,46 +402,76 @@ export default function SurveyPage() {
                                                             );
 
                                                         case 'RANK_CHOICE':
-                                                            const rankAnswers = answers[q.id] || { rank1: '', rank2: '' };
+                                                            const rankAnswers = answers[q.id] || { rank1: '', rank2: '', other1: '', other2: '' };
                                                             return (
                                                                 <Stack spacing={2}>
-                                                                    <FormControl fullWidth>
-                                                                        <InputLabel>1순위 선택</InputLabel>
-                                                                        <Select
-                                                                            label="1순위 선택"
-                                                                            value={rankAnswers.rank1 || ''}
-                                                                            onChange={(e) => setAnswers({
-                                                                                ...answers, 
-                                                                                [q.id]: { ...rankAnswers, rank1: e.target.value }
-                                                                            })}
-                                                                        >
-                                                                            <MenuItem value="" disabled>1순위를 선택해 주세요</MenuItem>
-                                                                            {(options || []).map((opt: string, i: number) => (
-                                                                                <MenuItem key={i} value={opt}>{opt}</MenuItem>
-                                                                            ))}
-                                                                        </Select>
-                                                                    </FormControl>
-                                                                    
-                                                                    <FormControl fullWidth>
-                                                                        <InputLabel>2순위 선택</InputLabel>
-                                                                        <Select
-                                                                            label="2순위 선택"
-                                                                            value={rankAnswers.rank2 || ''}
-                                                                            onChange={(e) => setAnswers({
-                                                                                ...answers, 
-                                                                                [q.id]: { ...rankAnswers, rank2: e.target.value }
-                                                                            })}
-                                                                            disabled={!rankAnswers.rank1}
-                                                                        >
-                                                                            <MenuItem value="" disabled>2순위를 선택해 주세요</MenuItem>
-                                                                            {(options || [])
-                                                                                .filter((opt: string) => opt !== rankAnswers.rank1)
-                                                                                .map((opt: string, i: number) => (
+                                                                    <Box>
+                                                                        <FormControl fullWidth>
+                                                                            <InputLabel>1순위 선택</InputLabel>
+                                                                            <Select
+                                                                                label="1순위 선택"
+                                                                                value={rankAnswers.rank1 || ''}
+                                                                                onChange={(e) => setAnswers({
+                                                                                    ...answers, 
+                                                                                    [q.id]: { ...rankAnswers, rank1: e.target.value }
+                                                                                })}
+                                                                            >
+                                                                                <MenuItem value="" disabled>1순위를 선택해 주세요</MenuItem>
+                                                                                {(options || []).map((opt: string, i: number) => (
                                                                                     <MenuItem key={i} value={opt}>{opt}</MenuItem>
-                                                                                ))
-                                                                            }
-                                                                        </Select>
-                                                                    </FormControl>
+                                                                                ))}
+                                                                            </Select>
+                                                                        </FormControl>
+                                                                        {rankAnswers.rank1 === '기타' && (
+                                                                            <TextField
+                                                                                fullWidth
+                                                                                size="small"
+                                                                                placeholder="1순위 기타 내용을 입력해 주세요"
+                                                                                sx={{ mt: 1 }}
+                                                                                value={rankAnswers.other1 || ''}
+                                                                                onChange={(e) => setAnswers({
+                                                                                    ...answers,
+                                                                                    [q.id]: { ...rankAnswers, other1: e.target.value }
+                                                                                })}
+                                                                            />
+                                                                        )}
+                                                                    </Box>
+                                                                    
+                                                                    <Box>
+                                                                        <FormControl fullWidth>
+                                                                            <InputLabel>2순위 선택</InputLabel>
+                                                                            <Select
+                                                                                label="2순위 선택"
+                                                                                value={rankAnswers.rank2 || ''}
+                                                                                onChange={(e) => setAnswers({
+                                                                                    ...answers, 
+                                                                                    [q.id]: { ...rankAnswers, rank2: e.target.value }
+                                                                                })}
+                                                                                disabled={!rankAnswers.rank1}
+                                                                            >
+                                                                                <MenuItem value="" disabled>2순위를 선택해 주세요</MenuItem>
+                                                                                {(options || [])
+                                                                                    .filter((opt: string) => opt !== rankAnswers.rank1)
+                                                                                    .map((opt: string, i: number) => (
+                                                                                        <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                                                                    ))
+                                                                                }
+                                                                            </Select>
+                                                                        </FormControl>
+                                                                        {rankAnswers.rank2 === '기타' && (
+                                                                            <TextField
+                                                                                fullWidth
+                                                                                size="small"
+                                                                                placeholder="2순위 기타 내용을 입력해 주세요"
+                                                                                sx={{ mt: 1 }}
+                                                                                value={rankAnswers.other2 || ''}
+                                                                                onChange={(e) => setAnswers({
+                                                                                    ...answers,
+                                                                                    [q.id]: { ...rankAnswers, other2: e.target.value }
+                                                                                })}
+                                                                            />
+                                                                        )}
+                                                                    </Box>
                                                                 </Stack>
                                                             );
 
