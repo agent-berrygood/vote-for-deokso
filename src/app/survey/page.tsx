@@ -268,7 +268,13 @@ export default function SurveyPage() {
                         <Typography variant="h6" fontWeight="bold" gutterBottom>
                             {survey.title}
                         </Typography>
-                        <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ 
+                            mb: 2, 
+                            whiteSpace: 'pre-wrap', 
+                            wordBreak: 'keep-all', 
+                            overflowWrap: 'break-word',
+                            lineHeight: 1.6
+                        }}>
                             {survey.description}
                         </Typography>
                         
@@ -315,7 +321,12 @@ export default function SurveyPage() {
                                                 {section.title}
                                             </Typography>
                                             {section.description && (
-                                                <Typography variant="body2" color="text.secondary">
+                                                <Typography variant="body2" color="text.secondary" sx={{ 
+                                                    whiteSpace: 'pre-wrap', 
+                                                    wordBreak: 'keep-all', 
+                                                    overflowWrap: 'break-word',
+                                                    lineHeight: 1.6
+                                                }}>
                                                     {section.description}
                                                 </Typography>
                                             )}

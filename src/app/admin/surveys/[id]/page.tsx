@@ -672,7 +672,18 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                         <IconButton size="small" onClick={() => handleDeleteSection(s.id)}><DeleteIcon fontSize="small" color="error" /></IconButton>
                                     </Stack>
                                 }>
-                                    <ListItemText primary={`${idx + 1}. ${s.title}`} secondary={s.description} />
+                                    <ListItemText 
+                                        primary={`${idx + 1}. ${s.title}`} 
+                                        secondary={
+                                            <Typography variant="body2" color="text.secondary" sx={{ 
+                                                whiteSpace: 'pre-wrap', 
+                                                wordBreak: 'keep-all', 
+                                                overflowWrap: 'break-word'
+                                            }}>
+                                                {s.description}
+                                            </Typography>
+                                        } 
+                                    />
                                 </ListItem>
                             ))
                         )}
