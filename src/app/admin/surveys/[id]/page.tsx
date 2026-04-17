@@ -261,7 +261,13 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             // 질문들 매핑
             const answers = r.answers ? JSON.parse(r.answers) : {};
             questions.forEach((q, idx) => {
-                const val = answers[q.id] || answers[q.text] || '';
+                let val = answers[q.id] || answers[q.text] || '';
+                
+                // Format ranking data
+                if (q.type === 'RANK_CHOICE' && val && typeof val === 'object') {
+                    val = `1순위: ${val.rank1 || ''}, 2순위: ${val.rank2 || ''}`;
+                }
+                
                 row[`Q${idx + 1}. ${q.text}`] = Array.isArray(val) ? val.join(', ') : val;
             });
 
@@ -731,14 +737,15 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                                                     q.type === 'GRID_CHOICE' ? '객관식 그리드' :
                                                                     q.type === 'GRID_CHECK' ? '체크박스 그리드' :
                                                                     q.type === 'DATE' ? '날짜' :
-                                                                    q.type === 'TIME' ? '시간' : '주관식'
+                                                                    q.type === 'TIME' ? '시간' : 
+                                                                    q.type === 'RANK_CHOICE' ? '순위 선택형 (1, 2순위)' : '주관식'
                                                                 } size="small" variant="outlined" />
                                                                 {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
                                                             </Box>
                                                         }
                                                         secondary={
                                                             <Box>
-                                                                {(q.type === 'MULTIPLE_CHOICE' || q.type === 'MULTIPLE_SELECT') && q.options && (
+                                                                {(q.type === 'MULTIPLE_CHOICE' || q.type === 'MULTIPLE_SELECT' || q.type === 'RANK_CHOICE' || q.type === 'DROPDOWN') && q.options && (
                                                                     <Box sx={{ mt: 1, pl: 2 }}>
                                                                         {JSON.parse(q.options).map((opt: string, i: number) => (
                                                                             <Typography key={i} variant="body2" color="text.secondary">○ {opt}</Typography>
@@ -994,6 +1001,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 <MenuItem value="GRID_CHECK">체크박스 그리드</MenuItem>
                                 <MenuItem value="DATE">날짜</MenuItem>
                                 <MenuItem value="TIME">시간</MenuItem>
+                                <MenuItem value="RANK_CHOICE">순위 선택형 (1, 2순위)</MenuItem>
                             </Select>
                         </FormControl>
 
@@ -1054,7 +1062,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             </Box>
                         )}
 
-                        {(qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT' || qType === 'DROPDOWN') && (
+                        {(qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT' || qType === 'DROPDOWN' || qType === 'RANK_CHOICE') && (
                             <Box>
                                 <Typography variant="subtitle2" gutterBottom fontWeight="bold">
                                     보기 설정
