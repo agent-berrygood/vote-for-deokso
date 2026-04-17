@@ -66,6 +66,7 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                 setCreateDialogOpen(false);
                 setNewTitle('');
                 setNewDesc('');
+                router.refresh();
                 fetchSurveys();
                 onRefresh();
             } else {
@@ -87,6 +88,7 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
                 activeSurveyId: surveyId
             });
             if (res.success) {
+                router.refresh();
                 onRefresh();
             } else {
                 alert(res.error || '설문 활성화 실패');
@@ -104,6 +106,7 @@ export default function SurveyManager({ systemId, activeSurveyId, onRefresh }: S
         try {
             const res = await deleteSurveyAction(surveyId);
             if (res.success) {
+                router.refresh();
                 fetchSurveys();
             } else {
                 alert(res.error || '설문 삭제 실패');

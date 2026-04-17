@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 import '@/lib/firebase'; // Ensure Firebase is initialized on server-side
 
 import { 
@@ -59,6 +59,7 @@ import {
 // --- Queries ---
 export async function getElectionSettingsAction(electionId: string) {
     try {
+        noStore();
         const res = await getSettingsSDK({ electionId });
         return { success: true, data: res.data.election };
     } catch (error) {
@@ -69,6 +70,7 @@ export async function getElectionSettingsAction(electionId: string) {
 
 export async function listCandidatesByRoundAction(electionId: string, position: string, round: number) {
     try {
+        noStore();
         const res = await listCandidatesSDK({ electionId, position, round });
         return { success: true, data: res.data.candidates };
     } catch (error) {
@@ -79,6 +81,7 @@ export async function listCandidatesByRoundAction(electionId: string, position: 
 
 export async function listVotersAction(electionId: string) {
     try {
+        noStore();
         const res = await listVotersSDK({ electionId });
         return { success: true, data: res.data.voters };
     } catch (error) {
@@ -89,6 +92,7 @@ export async function listVotersAction(electionId: string) {
 
 export async function listAllCandidatesAction(electionId: string) {
     try {
+        noStore();
         const res = await listAllCandidatesSDK({ electionId });
         return { success: true, data: res.data.candidates };
     } catch (error) {
@@ -99,6 +103,7 @@ export async function listAllCandidatesAction(electionId: string) {
 
 export async function listVoterParticipationsAction(electionId: string) {
     try {
+        noStore();
         const res = await listParticipationsSDK({ electionId });
         return { success: true, data: res.data.voterParticipations };
     } catch (error) {
@@ -109,6 +114,7 @@ export async function listVoterParticipationsAction(electionId: string) {
 
 export async function listAuditLogsAction(electionId: string) {
     try {
+        noStore();
         const res = await listAuditLogsSDK({ electionId });
         return { success: true, data: res.data.auditLogs };
     } catch (error) {
@@ -119,6 +125,7 @@ export async function listAuditLogsAction(electionId: string) {
 
 export async function getVoterByInfoAction(vars: { electionId: string, phone: string, birthdate: string }) {
     try {
+        noStore();
         const res = await getVoterByInfoSDK(vars);
         return { success: true, data: res.data.voters };
     } catch (error) {
@@ -129,6 +136,7 @@ export async function getVoterByInfoAction(vars: { electionId: string, phone: st
 
 export async function listCandidatesByPositionAction(electionId: string, position: string) {
     try {
+        noStore();
         const res = await listCandidatesByPositionSDK({ electionId, position });
         return { success: true, data: res.data.candidates };
     } catch (error) {
@@ -139,6 +147,7 @@ export async function listCandidatesByPositionAction(electionId: string, positio
 
 export async function getResultsByRoundAction(electionId: string, position: string, round: number) {
     try {
+        noStore();
         const res = await getResultsByRoundSDK({ electionId, position, round });
         return { success: true, data: res.data.candidates };
     } catch (error) {
@@ -150,6 +159,7 @@ export async function getResultsByRoundAction(electionId: string, position: stri
 // --- NEW Member & Survey Queries ---
 export async function getMemberByInfoAction(vars: { phone: string, birthdate: string }) {
     try {
+        noStore();
         const res = await getMemberByInfoSDK(vars);
         return { success: true, data: res.data.members };
     } catch (error) {
@@ -160,6 +170,7 @@ export async function getMemberByInfoAction(vars: { phone: string, birthdate: st
 
 export async function getMemberByBasicInfoAction(vars: { name: string, phone: string }) {
     try {
+        noStore();
         const res = await getMemberByBasicInfoSDK(vars);
         return { success: true, data: res.data.members };
     } catch (error) {
@@ -170,6 +181,7 @@ export async function getMemberByBasicInfoAction(vars: { name: string, phone: st
 
 export async function listMembersAction() {
     try {
+        noStore();
         const res = await listMembersSDK();
         return { success: true, data: res.data.members };
     } catch (error) {
@@ -180,6 +192,7 @@ export async function listMembersAction() {
 
 export async function getSurveyAction(vars: { id: string }) {
     try {
+        noStore();
         const res = await getSurveySDK({ id: vars.id });
         return { success: true, data: res.data.survey };
     } catch (error) {
@@ -190,6 +203,7 @@ export async function getSurveyAction(vars: { id: string }) {
 
 export async function listSurveyQuestionsAction(surveyId: string) {
     try {
+        noStore();
         const res = await listSurveyQuestionsSDK({ surveyId });
         return { success: true, data: res.data.surveyQuestions };
     } catch (error) {
@@ -354,6 +368,7 @@ export async function createSurveyAction(vars: { title: string, description?: st
 
 export async function listSurveysAction() {
     try {
+        noStore();
         const res = await listSurveysSDK();
         return { success: true, data: res.data.surveys };
     } catch (error) {
@@ -370,6 +385,8 @@ export async function updateSurveyAction(vars: { id: string, title?: string, des
         );
         console.log('updateSurveyAction vars:', cleanedVars);
         await updateSurveySDK(cleanedVars as any);
+        revalidatePath('/admin');
+        revalidatePath(`/admin/surveys/${vars.id}`);
         return { success: true };
     } catch (error: any) {
         console.error('updateSurveyAction error:', error);
@@ -382,6 +399,7 @@ export async function updateSurveyAction(vars: { id: string, title?: string, des
 export async function deleteSurveyAction(id: string) {
     try {
         await deleteSurveySDK({ id });
+        revalidatePath('/admin');
         return { success: true };
     } catch (error) {
         console.error('deleteSurveyAction error:', error);
@@ -439,6 +457,7 @@ export async function deleteSurveyQuestionAction(id: string, surveyId: string) {
 // --- SurveySection Actions ---
 export async function listSurveySectionsAction(surveyId: string) {
     try {
+        noStore();
         const res = await listSurveySectionsSDK({ surveyId });
         return { success: true, data: res.data.surveySections };
     } catch (error) {
@@ -481,6 +500,7 @@ export async function updateSurveySectionAction(vars: { surveyId: string, id: st
 export async function deleteSurveySectionAction(id: string, surveyId: string) {
     try {
         await deleteSurveySectionSDK({ id });
+        revalidatePath(`/admin/surveys/${surveyId}`);
         return { success: true };
     } catch (error: any) {
         console.error('deleteSurveySectionAction error:', error);
@@ -501,6 +521,7 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
 
 export async function getSurveyResponseByMemberAction(vars: { surveyId: string, memberId: string }) {
     try {
+        noStore();
         const res = await getSurveyResponseByMemberSDK(vars);
         return { success: true, data: res.data.surveyResponses };
     } catch (error) {
@@ -513,6 +534,7 @@ export async function getSurveyResponseByMemberAction(vars: { surveyId: string, 
 
 export async function listSurveyResponsesAction(surveyId: string) {
     try {
+        noStore();
         const res = await listSurveyResponsesSDK({ surveyId });
         return { success: true, data: res.data.surveyResponses };
     } catch (error: any) {

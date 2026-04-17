@@ -425,6 +425,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             if (res.success) {
                 setMsg({ type: 'success', text: '설문 정보가 수정되었습니다.' });
                 setSurveyEditOpen(false);
+                router.refresh();
                 fetchData();
             } else {
                 console.error('Update survey failed:', res.error);
@@ -460,6 +461,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 if (res.success) {
                     setMsg({ type: 'success', text: '새 섹션이 추가되었습니다.' });
                     setSectionDialogOpen(false);
+                    router.refresh();
                     fetchData();
                 } else {
                     setMsg({ type: 'error', text: `섹션 추가 실패: ${res.error}` });
@@ -479,6 +481,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             const res = await deleteSurveySectionAction(id, surveyId);
             if (res.success) {
                 setMsg({ type: 'success', text: '섹션이 삭제되었습니다.' });
+                router.refresh();
                 fetchData();
             } else {
                 setMsg({ type: 'error', text: `섹션 삭제 실패: ${res.error}` });
@@ -527,6 +530,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 if (res.success) {
                     setMsg({ type: 'success', text: '문항이 수정되었습니다.' });
                     setDialogOpen(false);
+                    router.refresh();
                     fetchData();
                 } else {
                     setMsg({ type: 'error', text: res.error || '문항 수정 실패' });
@@ -545,6 +549,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 if (res.success) {
                     setMsg({ type: 'success', text: '새 문항이 추가되었습니다.' });
                     setDialogOpen(false);
+                    router.refresh();
                     fetchData();
                 } else {
                     setMsg({ type: 'error', text: res.error || '문항 추가 실패' });
@@ -565,6 +570,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             const res = await deleteSurveyQuestionAction(id, surveyId);
             if (res.success) {
                 setMsg({ type: 'success', text: '문항이 삭제되었습니다.' });
+                router.refresh();
                 fetchData();
             } else {
                 setMsg({ type: 'error', text: res.error || '문항 삭제 실패' });
