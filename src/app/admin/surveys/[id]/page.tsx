@@ -514,7 +514,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const handleSaveQuestion = async () => {
         if (!qText.trim()) return;
         
-        const filteredOptions = (qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT' || qType === 'DROPDOWN')
+        const filteredOptions = (qType === 'MULTIPLE_CHOICE' || qType === 'MULTIPLE_SELECT' || qType === 'DROPDOWN' || qType === 'RANK_CHOICE')
             ? JSON.stringify(qOptions.map(o => o.trim()).filter(o => o !== ''))
             : qType === 'SCALE'
                 ? JSON.stringify({ min: scaleMin, max: scaleMax, minLabel: scaleMinLabel.trim(), maxLabel: scaleMaxLabel.trim() })
