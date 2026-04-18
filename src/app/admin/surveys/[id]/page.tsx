@@ -1002,7 +1002,13 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 labelId="q-type-label"
                                 value={qType}
                                 label="문항 타입"
-                                onChange={(e) => setQType(e.target.value as string)}
+                                onChange={(e) => {
+                                    const newType = e.target.value as string;
+                                    setQType(newType);
+                                    if (newType === 'RANK_CHOICE' && qOptions.length === 0) {
+                                        setQOptions(['']);
+                                    }
+                                }}
                             >
                                 <MenuItem value="TEXT_SHORT">단답형</MenuItem>
                                 <MenuItem value="TEXT_LONG">장문형</MenuItem>

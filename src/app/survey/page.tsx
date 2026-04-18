@@ -345,7 +345,15 @@ export default function SurveyPage() {
                                                 </Typography>
                                                 
                                                 {(() => {
-                                                    const options = q.options ? JSON.parse(q.options) : null;
+                                                    let options = q.options ? JSON.parse(q.options) : null;
+                                                    
+                                                    // RANK_CHOICE의 경우 '기타' 항목이 옵션에 없다면 자동으로 추가 (사용자 편의성)
+                                                    if (q.type === 'RANK_CHOICE') {
+                                                        const currentOptions = options || [];
+                                                        if (!currentOptions.includes('기타')) {
+                                                            options = [...currentOptions, '기타'];
+                                                        }
+                                                    }
                                                     
                                                     switch (q.type) {
                                                         case 'MULTIPLE_CHOICE':
