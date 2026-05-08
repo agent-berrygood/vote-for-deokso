@@ -119,10 +119,9 @@ export default function SurveyPage() {
         const name = sessionStorage.getItem('memberName');
         const id = sessionStorage.getItem('memberId');
         
-        // 잘못된 형식(guest_... 또는 UUID가 아닌 형태)의 ID가 남아있으면 초기화
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (id && (!uuidRegex.test(id) || id.startsWith('00000000-0000-4000-8000-'))) {
-            console.log("Invalid ID detected, clearing session:", id);
+        // 잘못된 형식(guest_...)의 ID가 남아있을 때만 초기화 (UUID 체크는 선택적으로)
+        if (id && id.startsWith('guest_')) {
+            console.log("Old guest ID detected, clearing session:", id);
             sessionStorage.removeItem('memberId');
             sessionStorage.removeItem('memberName');
             router.push('/');
