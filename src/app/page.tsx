@@ -149,16 +149,16 @@ export default function LoginPage() {
       const autoLogin = async () => {
         setLoading(true);
         try {
-          // 익명 사용자를 위한 고유 UUID 생성 (DB 규격 준수)
-          const guestName = '익명성도';
-          // UUID v4 형식의 더미 ID (8-4-4-4-12)
-          const guestId = `00000000-0000-4000-8000-${Date.now().toString().slice(-12).padStart(12, '0')}`;
+          const { ensureAnonymousMember, createSurveySession } = await import('@/app/actions/auth');
+          const result = await ensureAnonymousMember();
           
-          const sessionResult = await createSurveySession(guestId, guestName);
-          if (sessionResult.success) {
-            sessionStorage.setItem('memberId', guestId);
-            sessionStorage.setItem('memberName', guestName);
-            router.push('/survey');
+          if (result.success && result.memberId) {
+            const sessionResult = await createSurveySession(result.memberId, result.memberName || '익명성도');
+            if (sessionResult.success) {
+              sessionStorage.setItem('memberId', result.memberId);
+              sessionStorage.setItem('memberName', result.memberName || '익명성도');
+              router.push('/survey');
+            }
           }
         } catch (err) {
           console.error("Auto survey login failed:", err);

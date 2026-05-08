@@ -149,6 +149,47 @@ export async function verifyMemberInfo(
     }
 }
 
+/**
+ * 설문 모드용 익명 세션 생성 (DB에 익명 교인 레코드가 없으면 생성)
+ */
+export async function ensureAnonymousMember(): Promise<{ success: boolean; memberId?: string; memberName?: string }> {
+    try {
+        const anonymousName = '익명성도';
+        const anonymousPhone = '000-0000-0000'; // 가상 번호
+        
+        // 1. 이미 등록된 익명 계정이 있는지 확인
+        const res = await getMemberByBasicInfoAction({ name: anonymousName, phone: anonymousPhone });
+        
+        if (res.success && res.data && (res.data as any[]).length > 0) {
+            const member = (res.data as any[])[0];
+            return { success: true, memberId: member.id, memberName: member.name };
+        }
+        
+        // 2. 없으면 신규 등록
+        const createRes = await createMemberAction({
+            name: anonymousName,
+            phone: anonymousPhone,
+            isSelfRegistered: true
+        });
+        
+        if (!createRes.success) {
+            return { success: false };
+        }
+        
+        // 3. 다시 조회하여 ID 확보
+        const retryRes = await getMemberByBasicInfoAction({ name: anonymousName, phone: anonymousPhone });
+        if (retryRes.success && retryRes.data && (retryRes.data as any[]).length > 0) {
+            const member = (retryRes.data as any[])[0];
+            return { success: true, memberId: member.id, memberName: member.name };
+        }
+        
+        return { success: false };
+    } catch (error) {
+        console.error('ensureAnonymousMember error:', error);
+        return { success: false };
+    }
+}
+
 
 export async function loginAdmin(password: string) {
     const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD;
