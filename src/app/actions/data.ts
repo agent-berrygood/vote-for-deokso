@@ -578,11 +578,18 @@ export async function listSurveyResponsesAction(surveyId: string) {
         noStore();
         const res = await listSurveyResponsesSDK({ surveyId });
         const raw = res.data.surveyResponses || [];
-        // id 기준 중복 제거 (SDK 캐싱 등으로 인한 이중 수신 방어)
-        const data = raw.filter((r: any, i: number, arr: any[]) => 
+        
+        // Firebase Data Connect SDK는 내부적으로 정규화 캐시를 사용함.
+        // 모든 응답이 같은 memberId를 공유할 경우 객체 참조가 겹쳐 첫 번째 응답만
+        // 반복되어 나타나는 현상이 발생함. deep clone으로 참조를 완전히 분리.
+        const data = JSON.parse(JSON.stringify(raw));
+        
+        // 추가로 id 기준 중복 제거
+        const unique = data.filter((r: any, i: number, arr: any[]) => 
             arr.findIndex((x: any) => x.id === r.id) === i
         );
-        return { success: true, data };
+        
+        return { success: true, data: unique };
     } catch (error: any) {
         console.error('listSurveyResponsesAction error:', error);
         return { 
