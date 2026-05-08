@@ -264,9 +264,9 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
-    // 초기 데이터 로드 (fetchData, fetchResponses를 분리하여 이중 실행 방지)
-    useEffect(() => { fetchData(); }, [fetchData]);
-    useEffect(() => { fetchResponses(); }, [fetchResponses]);
+    // 초기 데이터 로드 (한 번만 실행)
+    useEffect(() => { fetchData(); fetchResponses(); }, [fetchData, fetchResponses]);
+
 
     // Handle unsaved changes warning
     useEffect(() => {
@@ -396,7 +396,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         setResponses(prev => prev.filter(r => r.id !== id));
 
         try {
-            const res = await deleteSurveyResponseAction(id);
+            const res = await deleteSurveyResponseAction(id, surveyId);
             if (res.success) {
                 setMsg({ type: 'success', text: '응답이 삭제되었습니다.' });
             } else {
@@ -419,7 +419,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         try {
             let failCount = 0;
             for (const r of previousResponses) {
-                const res = await deleteSurveyResponseAction(r.id);
+                const res = await deleteSurveyResponseAction(r.id, surveyId);
                 if (!res.success) failCount++;
             }
             if (failCount === 0) {
@@ -438,10 +438,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     };
 
-    useEffect(() => {
-        fetchData();
-        fetchResponses();
-    }, [fetchData, fetchResponses]);
 
     const handleOpenDialog = (q: Question | null = null) => {
         if (q) {

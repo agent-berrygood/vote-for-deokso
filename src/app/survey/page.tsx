@@ -146,7 +146,9 @@ export default function SurveyPage() {
             let id = sessionStorage.getItem('memberId');
             
             if (!name || !id || id.startsWith('guest_') || id.startsWith('anonymous_')) {
-                // ... 생략 (기존 로직 유지 가능하지만 SURVEY 모드에서 이미 처리됨)
+                // ELECTION 등 실명 모드에서는 세션 없으면 메인(로그인) 페이지로 리다이렉트
+                router.replace('/');
+                return;
             } else {
                 setMemberName(name);
                 setMemberId(id);

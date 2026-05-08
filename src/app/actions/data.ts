@@ -589,10 +589,10 @@ export async function listSurveyResponsesAction(surveyId: string) {
         const data = JSON.parse(JSON.stringify(raw));
         
         // 어드민 UI와 기존 로직 호환성을 위해 가짜 member 객체 주입
-        // 이 데이터는 어차피 "익명" 설문이므로 어드민 페이지에서 일괄 "익명"으로 표시됨
+        // NoJoin 쿼리이므로 memberId 필드가 없음 - 익명 표시용 더미 주입
         data.forEach((r: any) => {
             r.member = {
-                id: r.memberId || 'anonymous_fixed_uuid',
+                id: 'anonymous_fixed_uuid',
                 name: '익명',
                 phone: '010-0000-0000',
                 isSelfRegistered: true
@@ -614,10 +614,14 @@ export async function listSurveyResponsesAction(surveyId: string) {
     }
 }
 
-export async function deleteSurveyResponseAction(id: string) {
+export async function deleteSurveyResponseAction(id: string, surveyId?: string) {
     try {
         await deleteSurveyResponseSDK({ id });
-        revalidatePath('/admin/surveys/[id]');
+        // 동적 경로 패턴으로 revalidate
+        revalidatePath('/admin/surveys', 'layout');
+        if (surveyId) {
+            revalidatePath(`/admin/surveys/${surveyId}`);
+        }
         return { success: true };
     } catch (error) {
         console.error('deleteSurveyResponseAction error:', error);
