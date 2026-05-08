@@ -2229,7 +2229,6 @@ export interface ListSurveyResponsesOnlyData {
     id: UUIDString;
     submittedAt: TimestampString;
     answers: string;
-    memberId: UUIDString;
   } & SurveyResponse_Key)[];
 }
 ```

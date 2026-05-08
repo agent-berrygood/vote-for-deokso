@@ -447,7 +447,6 @@ query ListSurveyResponsesOnly($surveyId: UUID!) @auth(level: PUBLIC) {
     id
     submittedAt
     answers
-    memberId
   }
 }
 
