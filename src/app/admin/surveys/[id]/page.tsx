@@ -64,6 +64,28 @@ import {
     deleteSurveyResponseAction
 } from '@/app/actions/data';
 
+// DND Kit Imports
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { GripVertical } from 'lucide-react';
+
+
 interface Section {
     id: string;
     title: string;
@@ -134,6 +156,19 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [showOnlyNew, setShowOnlyNew] = useState(false);
     const [orderBy, setOrderBy] = useState('submittedAt');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+
+    // DND Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Prevent accidental drags
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
 
     useEffect(() => {
         if (logicQuestionId) {
@@ -590,6 +625,133 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     };
 
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = questions.findIndex((q) => q.id === active.id);
+        const newIndex = questions.findIndex((q) => q.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const newQuestions = arrayMove(questions, oldIndex, newIndex);
+        
+        // Optimistic Update
+        setQuestions(newQuestions);
+
+        try {
+            // Update only the affected question's orderIdx based on the new sequence
+            // For simplicity and robustness, we re-calculate indices for all affected or even all questions
+            // Here, we'll find the target orderIdx and update
+            const targetQuestion = newQuestions[newIndex];
+            const activeQuestion = questions[oldIndex];
+            
+            // Actually we need to update orderIdx in the DB.
+            // A common way is to update the dragged item and potentially its neighbors
+            // Or just update the dragged item with a value between its new neighbors
+            
+            setSubmitting(true);
+            const res = await updateSurveyQuestionAction({
+                surveyId,
+                id: active.id as string,
+                orderIdx: newIndex + 1 // Use 1-based index from the new array position
+            });
+
+            if (!res.success) {
+                setMsg({ type: 'error', text: '순서 변경 저장 실패' });
+                setQuestions(questions); // Rollback
+            } else {
+                // To ensure all IDs have correct consecutive orderIdx if needed, 
+                // we might need a batch update, but let's try simple first.
+                // Re-fetch to sync with server's orderIdx logic if any
+                fetchData();
+            }
+        } catch (err) {
+            console.error(err);
+            setQuestions(questions);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // Sortable Question Item Component
+    const SortableQuestion = ({ q, idx, sectionId }: { q: Question, idx: number, sectionId: string }) => {
+        const {
+            attributes,
+            listeners,
+            setNodeRef,
+            transform,
+            transition,
+            isDragging
+        } = useSortable({ id: q.id });
+
+        const style = {
+            transform: CSS.Transform.toString(transform),
+            transition,
+            zIndex: isDragging ? 1 : 0,
+            opacity: isDragging ? 0.5 : 1,
+            backgroundColor: isDragging ? '#f3e5f5' : 'transparent',
+        };
+
+        return (
+            <Box ref={setNodeRef} style={style}>
+                <ListItem 
+                    alignItems="flex-start"
+                    sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
+                    secondaryAction={
+                        <Stack direction="row" spacing={1}>
+                            <IconButton edge="end" onClick={(e) => { e.currentTarget.blur(); handleOpenDialog(q); }}><EditIcon color="primary" /></IconButton>
+                            <IconButton edge="end" onClick={() => handleDeleteQuestion(q.id)}><DeleteIcon color="error" /></IconButton>
+                        </Stack>
+                    }
+                >
+                    <Box {...attributes} {...listeners} sx={{ cursor: 'grab', mr: 2, mt: 1, display: 'flex', alignItems: 'center' }}>
+                        <GripVertical size={20} color="#9c27b0" />
+                    </Box>
+                    <ListItemText
+                        primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle1" fontWeight="bold">{idx + 1}. {q.text}</Typography>
+                                <Chip label={
+                                    q.type === 'MULTIPLE_CHOICE' ? '객관식' : 
+                                    q.type === 'MULTIPLE_SELECT' ? `체크박스 (${q.maxChoices}개)` : 
+                                    q.type === 'TEXT_SHORT' ? '단답형' :
+                                    q.type === 'TEXT_LONG' ? '장문형' :
+                                    q.type === 'DROPDOWN' ? '드롭다운' :
+                                    q.type === 'SCALE' ? '선형 배율' :
+                                    q.type === 'GRID_CHOICE' ? '객관식 그리드' :
+                                    q.type === 'GRID_CHECK' ? '체크박스 그리드' :
+                                    q.type === 'DATE' ? '날짜' :
+                                    q.type === 'TIME' ? '시간' : 
+                                    q.type === 'RANK_CHOICE' ? '순위 선택형 (1, 2순위)' : '주관식'
+                                } size="small" variant="outlined" />
+                                {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
+                            </Box>
+                        }
+                        secondary={
+                            <Box>
+                                {(q.type === 'MULTIPLE_CHOICE' || q.type === 'MULTIPLE_SELECT' || q.type === 'RANK_CHOICE' || q.type === 'DROPDOWN') && q.options && (
+                                    <Box sx={{ mt: 1, pl: 2 }}>
+                                        {JSON.parse(q.options).map((opt: string, i: number) => (
+                                            <Typography key={i} variant="body2" color="text.secondary">○ {opt}</Typography>
+                                        ))}
+                                    </Box>
+                                )}
+                                {q.logic && (
+                                    <Typography variant="caption" display="block" color="warning.main" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                                        Logic: {q.logic}
+                                    </Typography>
+                                )}
+                            </Box>
+                        }
+                    />
+                </ListItem>
+                <Divider component="li" />
+            </Box>
+        );
+    };
+
+
     if (loading && !survey) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -704,84 +866,47 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         </Button>
                     </Box>
 
-                    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-                        {questions.length === 0 ? (
-                            <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
-                                등록된 문항이 없습니다.
-                            </Typography>
-                        ) : (
-                            // Group questions by section
-                            [...sections, { id: 'none', title: '섹션 없음' }].map((section) => {
-                                const sectionQuestions = questions.filter(q => 
-                                    section.id === 'none'
-                                        ? !sections.some(s => s.id === q.sectionId)
-                                        : q.sectionId === section.id
-                                );
-                                if (sectionQuestions.length === 0 && section.id !== 'none') return null;
-                                
-                                return (
-                                    <Box key={section.id || 'none'} sx={{ mb: 4 }}>
-                                        <Typography variant="subtitle1" fontWeight="bold" color="secondary" sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1, mb: 1 }}>
-                                            {section.title}
-                                        </Typography>
-                                        {sectionQuestions.map((q, idx) => (
-                                            <Box key={q.id}>
-                                                <ListItem 
-                                                    alignItems="flex-start"
-                                                    sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
-                                                    secondaryAction={
-                                                        <Stack direction="row" spacing={1}>
-                                                            <IconButton edge="end" onClick={(e) => { e.currentTarget.blur(); handleOpenDialog(q); }}><EditIcon color="primary" /></IconButton>
-                                                            <IconButton edge="end" onClick={() => handleDeleteQuestion(q.id)}><DeleteIcon color="error" /></IconButton>
-                                                        </Stack>
-                                                    }
-                                                >
-                                                    <ListItemText
-                                                        primary={
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                <Typography variant="subtitle1" fontWeight="bold">{idx + 1}. {q.text}</Typography>
-                                                                <Chip label={
-                                                                    q.type === 'MULTIPLE_CHOICE' ? '객관식' : 
-                                                                    q.type === 'MULTIPLE_SELECT' ? `체크박스 (${q.maxChoices}개)` : 
-                                                                    q.type === 'TEXT_SHORT' ? '단답형' :
-                                                                    q.type === 'TEXT_LONG' ? '장문형' :
-                                                                    q.type === 'DROPDOWN' ? '드롭다운' :
-                                                                    q.type === 'SCALE' ? '선형 배율' :
-                                                                    q.type === 'GRID_CHOICE' ? '객관식 그리드' :
-                                                                    q.type === 'GRID_CHECK' ? '체크박스 그리드' :
-                                                                    q.type === 'DATE' ? '날짜' :
-                                                                    q.type === 'TIME' ? '시간' : 
-                                                                    q.type === 'RANK_CHOICE' ? '순위 선택형 (1, 2순위)' : '주관식'
-                                                                } size="small" variant="outlined" />
-                                                                {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
-                                                            </Box>
-                                                        }
-                                                        secondary={
-                                                            <Box>
-                                                                {(q.type === 'MULTIPLE_CHOICE' || q.type === 'MULTIPLE_SELECT' || q.type === 'RANK_CHOICE' || q.type === 'DROPDOWN') && q.options && (
-                                                                    <Box sx={{ mt: 1, pl: 2 }}>
-                                                                        {JSON.parse(q.options).map((opt: string, i: number) => (
-                                                                            <Typography key={i} variant="body2" color="text.secondary">○ {opt}</Typography>
-                                                                        ))}
-                                                                    </Box>
-                                                                )}
-                                                                {q.logic && (
-                                                                    <Typography variant="caption" display="block" color="warning.main" sx={{ mt: 1, fontFamily: 'monospace' }}>
-                                                                        Logic: {q.logic}
-                                                                    </Typography>
-                                                                )}
-                                                            </Box>
-                                                        }
-                                                    />
-                                                </ListItem>
-                                                <Divider component="li" />
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                );
-                            })
-                        )}
-                    </List>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                        modifiers={[restrictToVerticalAxis]}
+                    >
+                        <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+                            {questions.length === 0 ? (
+                                <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
+                                    등록된 문항이 없습니다.
+                                </Typography>
+                            ) : (
+                                // Group questions by section
+                                [...sections, { id: 'none', title: '섹션 없음' }].map((section) => {
+                                    const sectionQuestions = questions.filter(q => 
+                                        section.id === 'none'
+                                            ? !sections.some(s => s.id === q.sectionId)
+                                            : q.sectionId === section.id
+                                    );
+                                    if (sectionQuestions.length === 0 && section.id !== 'none') return null;
+                                    
+                                    return (
+                                        <Box key={section.id || 'none'} sx={{ mb: 4 }}>
+                                            <Typography variant="subtitle1" fontWeight="bold" color="secondary" sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1, mb: 1 }}>
+                                                {section.title}
+                                            </Typography>
+                                            <SortableContext 
+                                                items={sectionQuestions.map(q => q.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                {sectionQuestions.map((q, idx) => (
+                                                    <SortableQuestion key={q.id} q={q} idx={idx} sectionId={section.id} />
+                                                ))}
+                                            </SortableContext>
+                                        </Box>
+                                    );
+                                })
+                            )}
+                        </List>
+                    </DndContext>
+
                 </Paper>
 
                 {/* 응답 관리 패널 */}
