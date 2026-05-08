@@ -146,8 +146,8 @@ export default function SurveyPage() {
                 if (sectionsRes.success) setSections(sectionsRes.data as any);
                 if (questionsRes.success) setQuestions(questionsRes.data as any);
                 
-                // 중복 응답 확인 및 데이터 로드
-                if (memberId) {
+                // 중복 응답 확인 및 데이터 로드 (익명 사용자가 아닐 때만 수행)
+                if (memberId && !memberId.startsWith('00000000-0000-4000-8000-')) {
                     const dupRes = await getSurveyResponseByMemberAction({
                         surveyId: activeSurveyId,
                         memberId: memberId

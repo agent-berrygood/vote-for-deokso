@@ -149,9 +149,10 @@ export default function LoginPage() {
       const autoLogin = async () => {
         setLoading(true);
         try {
-          // 익명 또는 기본 정보로 세션 생성 (설문 제출 시 식별이 필요하다면 추후 수정 가능)
+          // 익명 사용자를 위한 고유 UUID 생성 (DB 규격 준수)
           const guestName = '익명성도';
-          const guestId = `guest_${Date.now()}`;
+          // UUID v4 형식의 더미 ID (8-4-4-4-12)
+          const guestId = `00000000-0000-4000-8000-${Date.now().toString().slice(-12).padStart(12, '0')}`;
           
           const sessionResult = await createSurveySession(guestId, guestName);
           if (sessionResult.success) {
