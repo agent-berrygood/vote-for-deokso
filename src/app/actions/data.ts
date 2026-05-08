@@ -582,7 +582,7 @@ export async function listSurveyResponsesAction(surveyId: string) {
 
         // member 조인을 제외한 쿼리 호출 (SDK 내부 정규화 캐시 오염 원천 차단)
         const res = await listSurveyResponsesNoJoinSDK({ surveyId });
-        console.log(`[DEBUG] SDK Response Success: ${res.success}`);
+        console.log(`[DEBUG] SDK Response data received for survey: ${surveyId}`);
         const raw = res.data.surveyResponses || [];
         
         // DataConnect SDK 캐시 참조 완전 차단
