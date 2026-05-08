@@ -426,8 +426,22 @@ export default function LoginPage() {
     }
   };
 
-  if (electionLoading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+  if (electionLoading || (activeService === 'SURVEY' && loading)) {
+    return (
+      <Box 
+        display="flex" 
+        flexDirection="column"
+        alignItems="center" 
+        justifyContent="center" 
+        minHeight="100vh"
+        bgcolor="#f8faff"
+      >
+        <CircularProgress color="secondary" size={60} thickness={4} />
+        <Typography variant="h6" sx={{ mt: 3, color: '#556cd6', fontWeight: 500 }}>
+          {activeService === 'SURVEY' ? '설문조사 페이지로 이동 중입니다...' : '로딩 중...'}
+        </Typography>
+      </Box>
+    );
   }
 
   return (
