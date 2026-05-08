@@ -6,9 +6,10 @@ import {
     getVoterByInfoAction, 
     getElectionSettingsAction, 
     createAuditLogAction, 
-    getMemberByInfoAction,
+    getMemberByInfoAction, 
     getMemberByBasicInfoAction,
-    createMemberAction
+    createMemberAction,
+    listMembersAction
 } from './data';
 
 const POSITION_ORDER = ['장로', '안수집사', '권사'] as const;
