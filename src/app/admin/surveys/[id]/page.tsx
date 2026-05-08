@@ -715,9 +715,14 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setHasUnsavedChanges(false);
             setDeletedQuestionIds([]);
             setDeletedSectionIds([]);
+            
+            // Force refresh server and then local state
             router.refresh();
-            fetchData();
+            setTimeout(() => {
+                fetchData();
+            }, 500); // Small delay to ensure DB propagation and server cache revalidation
         } catch (err) {
+
             console.error(err);
             setMsg({ type: 'error', text: '저장 중 오류가 발생했습니다. 일부 데이터만 저장되었을 수 있습니다.' });
         } finally {
