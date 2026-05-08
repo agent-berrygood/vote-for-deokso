@@ -425,6 +425,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             }
             if (failCount === 0) {
                 setMsg({ type: 'success', text: '모든 응답이 초기화되었습니다.' });
+                setResponses([]); // 상태 확실히 비움
+                router.refresh(); // 라우터 캐시 무효화
             } else {
                 setMsg({ type: 'error', text: `${failCount}건 삭제 실패. 나머지는 삭제되었습니다.` });
                 await fetchResponses();
