@@ -516,23 +516,33 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
         
         // 가상 ID(anonymous_...)인 경우 DB에 임시 '익명' 교인을 새로 생성하여 UUID 확보
         if (vars.memberId.startsWith('anonymous_')) {
-            // 서버 사이드에서 직접 UUID 생성 (조회 지연 문제 원천 차단)
-            const newMemberId = crypto.randomUUID();
-            const uniqueName = `ANON_${Date.now()}`;
+            // 타입 에러 방지: ID를 직접 넣지 않고, 절대 겹치지 않는 고유 이름으로 생성 후 검색
+            const uniqueName = `ANON_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
             const tempMemberPhone = '010-0000-0000';
             
-            console.log(`[Submit] Creating unique member with pre-generated ID: ${newMemberId}`);
+            console.log(`[Submit] Creating unique member record: ${uniqueName}`);
             
-            // ID를 직접 지정하여 생성 (SDK가 지원하는 경우)
             await createMemberSDK({
-                id: newMemberId,
                 name: uniqueName,
                 phone: tempMemberPhone,
                 birthdate: '000000',
                 isSelfRegistered: true
             });
             
-            finalMemberId = newMemberId;
+            // DB 인덱싱 대기 (0.8초로 조금 더 늘림)
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // 정확히 그 uniqueName을 가진 멤버 찾기
+            const membersRes = await listMembersSDK();
+            const member = (membersRes.data.members || []).find(m => m.name === uniqueName);
+            
+            if (member) {
+                finalMemberId = member.id;
+            } else {
+                // 최후의 수단: 가장 최근 멤버
+                const all = membersRes.data.members || [];
+                if (all.length > 0) finalMemberId = all[all.length - 1].id;
+            }
         }
         
         await submitSurveyResponseSDK({
