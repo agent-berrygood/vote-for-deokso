@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "vote-for-deokso-back"
+  },
   "targets": {},
   "etags": {}
 }
