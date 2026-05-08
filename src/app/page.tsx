@@ -140,14 +140,37 @@ export default function LoginPage() {
     checkSchedule();
   }, [activeElectionId]);
 
-  // Handle Dynamic Title
+  // Handle Dynamic Title & Auto-survey redirect
   useEffect(() => {
     if (activeService === 'SURVEY') {
       document.title = '높은뜻덕소교회 전교인 설문조사';
+      
+      // 설문 모드인 경우 인증 없이 바로 세션 생성 후 이동
+      const autoLogin = async () => {
+        setLoading(true);
+        try {
+          // 익명 또는 기본 정보로 세션 생성 (설문 제출 시 식별이 필요하다면 추후 수정 가능)
+          const guestName = '익명성도';
+          const guestId = `guest_${Date.now()}`;
+          
+          const sessionResult = await createSurveySession(guestId, guestName);
+          if (sessionResult.success) {
+            sessionStorage.setItem('memberId', guestId);
+            sessionStorage.setItem('memberName', guestName);
+            router.push('/survey');
+          }
+        } catch (err) {
+          console.error("Auto survey login failed:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      autoLogin();
     } else {
       document.title = '높은뜻덕소교회 전교인 설문조사';
     }
-  }, [activeService]);
+  }, [activeService, router]);
 
   // Clear error on input change
   useEffect(() => { setError(''); }, [name, phone, birthdate, inputAuthKey, passkey]);
