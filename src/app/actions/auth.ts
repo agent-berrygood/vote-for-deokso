@@ -154,21 +154,30 @@ export async function verifyMemberInfo(
  */
 export async function ensureAnonymousMember(): Promise<{ success: boolean; memberId?: string; memberName?: string }> {
     try {
-        const anonymousName = '익명성도';
-        const anonymousPhone = '000-0000-0000'; // 가상 번호
+        const anonymousName = '익명';
+        const anonymousPhone = '010-0000-0000';
+        const anonymousBirthdate = '000000';
         
-        // 1. 이미 등록된 익명 계정이 있는지 확인
-        const res = await getMemberByBasicInfoAction({ name: anonymousName, phone: anonymousPhone });
+        // 1. 사용자가 직접 만든 익명 계정이 있는지 확인 (이름/번호/생일 매칭)
+        const res = await getMemberByInfoAction({ phone: anonymousPhone, birthdate: anonymousBirthdate });
         
         if (res.success && res.data && (res.data as any[]).length > 0) {
             const member = (res.data as any[])[0];
             return { success: true, memberId: member.id, memberName: member.name };
         }
         
-        // 2. 없으면 신규 등록
+        // 2. 만약 없으면 이름/번호만으로 재검색
+        const basicRes = await getMemberByBasicInfoAction({ name: anonymousName, phone: anonymousPhone });
+        if (basicRes.success && basicRes.data && (basicRes.data as any[]).length > 0) {
+            const member = (basicRes.data as any[])[0];
+            return { success: true, memberId: member.id, memberName: member.name };
+        }
+        
+        // 3. 그래도 없으면 신규 등록
         const createRes = await createMemberAction({
             name: anonymousName,
             phone: anonymousPhone,
+            birthdate: anonymousBirthdate,
             isSelfRegistered: true
         });
         
@@ -176,7 +185,7 @@ export async function ensureAnonymousMember(): Promise<{ success: boolean; membe
             return { success: false };
         }
         
-        // 3. 다시 조회하여 ID 확보
+        // 4. 다시 조회하여 ID 확보
         const retryRes = await getMemberByBasicInfoAction({ name: anonymousName, phone: anonymousPhone });
         if (retryRes.success && retryRes.data && (retryRes.data as any[]).length > 0) {
             const member = (retryRes.data as any[])[0];
