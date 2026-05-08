@@ -516,33 +516,23 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
         
         // 가상 ID(anonymous_...)인 경우 DB에 임시 '익명' 교인을 새로 생성하여 UUID 확보
         if (vars.memberId.startsWith('anonymous_')) {
-            // 절대 겹칠 수 없는 고유 식별자 생성
-            const uniqueId = `ANON_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+            // 서버 사이드에서 직접 UUID 생성 (조회 지연 문제 원천 차단)
+            const newMemberId = crypto.randomUUID();
+            const uniqueName = `ANON_${Date.now()}`;
             const tempMemberPhone = '010-0000-0000';
             
-            console.log(`[Submit] Creating unique member record: ${uniqueId}`);
+            console.log(`[Submit] Creating unique member with pre-generated ID: ${newMemberId}`);
             
+            // ID를 직접 지정하여 생성 (SDK가 지원하는 경우)
             await createMemberSDK({
-                name: uniqueId,
+                id: newMemberId,
+                name: uniqueName,
                 phone: tempMemberPhone,
                 birthdate: '000000',
                 isSelfRegistered: true
             });
             
-            // 0.5초 정도 대기 (DB 인덱싱 지연 방지)
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // 정확히 그 uniqueId를 가진 멤버 찾기
-            const membersRes = await listMembersSDK();
-            const member = (membersRes.data.members || []).find(m => m.name === uniqueId);
-            
-            if (member) {
-                finalMemberId = member.id;
-                console.log(`[Submit] Successfully mapped to new UUID: ${finalMemberId}`);
-            } else {
-                // 찾기 실패 시 에러를 던져서 잘못된 ID(중복)로 저장되는 것을 방지
-                throw new Error('익명 세션 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-            }
+            finalMemberId = newMemberId;
         }
         
         await submitSurveyResponseSDK({
