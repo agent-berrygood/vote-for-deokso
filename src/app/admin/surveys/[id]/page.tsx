@@ -243,25 +243,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
-    // Handle initial data load
-    useEffect(() => {
-        fetchData();
-        fetchResponses();
-    }, [fetchData, fetchResponses]);
-
-    // Handle unsaved changes warning
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [hasUnsavedChanges]);
-
-
     const fetchResponses = useCallback(async () => {
         setResponsesLoading(true);
         console.log('Fetching responses for survey:', surveyId);
@@ -281,6 +262,24 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setResponsesLoading(false);
         }
     }, [surveyId]);
+
+    // Handle initial data load
+    useEffect(() => {
+        fetchData();
+        fetchResponses();
+    }, [fetchData, fetchResponses]);
+
+    // Handle unsaved changes warning
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasUnsavedChanges]);
 
     const filteredResponses = useMemo(() => {
         let result = [...responses];
