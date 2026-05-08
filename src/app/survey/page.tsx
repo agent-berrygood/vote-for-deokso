@@ -117,25 +117,18 @@ export default function SurveyPage() {
 
     useEffect(() => {
         const checkAuth = async () => {
-            let name = sessionStorage.getItem('memberName');
-            let id = sessionStorage.getItem('memberId');
-            
-            // 설문 모드이거나 세션이 없으면 무조건 새 세션 생성
-            if (activeService === 'SURVEY' || !name || !id || id.startsWith('guest_') || id.startsWith('anonymous_')) {
+            // 설문 모드일 때는 기존 세션을 아예 보지 않고 항상 무조건 새 세션 생성 (보안 및 중복 방지 핵심)
+            if (activeService === 'SURVEY') {
                 setLoading(true);
                 try {
                     const { ensureAnonymousMember } = await import('@/app/actions/auth');
                     const result = await ensureAnonymousMember();
                     if (result.success && result.memberId) {
-                        // 기존 세션 클리어 (중요)
                         sessionStorage.clear();
-                        
                         sessionStorage.setItem('memberId', result.memberId);
-                        sessionStorage.setItem('memberName', result.memberName || '익명');
-                        setMemberName(result.memberName || '익명');
+                        sessionStorage.setItem('memberName', '익명 사용자');
+                        setMemberName('익명 사용자');
                         setMemberId(result.memberId);
-                        
-                        // 설문 모드일 때는 URL 파라미터나 상태에 의한 이전 데이터 로딩을 방지하기 위해 강제 상태 초기화
                         setExistingResponseId(null);
                         setIsEditMode(false);
                     }
@@ -145,6 +138,15 @@ export default function SurveyPage() {
                 } finally {
                     setLoading(false);
                 }
+                return; // 설문 모드 로직 완료 후 종료
+            }
+
+            // 일반 모드 (ELECTION 등) 로직
+            let name = sessionStorage.getItem('memberName');
+            let id = sessionStorage.getItem('memberId');
+            
+            if (!name || !id || id.startsWith('guest_') || id.startsWith('anonymous_')) {
+                // ... 생략 (기존 로직 유지 가능하지만 SURVEY 모드에서 이미 처리됨)
             } else {
                 setMemberName(name);
                 setMemberId(id);

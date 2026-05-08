@@ -540,11 +540,8 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
                 finalMemberId = member.id;
                 console.log(`[Submit] Successfully mapped to new UUID: ${finalMemberId}`);
             } else {
-                // 찾기 실패 시 가장 마지막에 들어온 멤버라도 사용 (최후의 수단)
-                const allMembers = membersRes.data.members || [];
-                if (allMembers.length > 0) {
-                    finalMemberId = allMembers[allMembers.length - 1].id;
-                }
+                // 찾기 실패 시 에러를 던져서 잘못된 ID(중복)로 저장되는 것을 방지
+                throw new Error('익명 세션 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.');
             }
         }
         
