@@ -140,6 +140,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qSectionId, setQSectionId] = useState<string>('');
     const [qLogic, setQLogic] = useState('');
     const [qMaxChoices, setQMaxChoices] = useState<number>(1);
+    const [qIsPrivate, setQIsPrivate] = useState(false);
+    
     
     // Scale settings
     const [scaleMin, setScaleMin] = useState(1);
@@ -179,22 +181,30 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
 
     useEffect(() => {
-        if (logicQuestionId) {
-            const newLogic = JSON.stringify({
-                showIf: {
-                    questionId: logicQuestionId,
-                    value: logicValue
-                }
-            });
-            // Only update if actually different to avoid redundant re-renders
-            if (qLogic !== newLogic) {
-                setQLogic(newLogic);
-            }
-        } else if (logicQuestionId === '' && qLogic.includes('showIf')) {
-            // Only clear if it was previously a showIf logic
-            setQLogic('');
+        const logicObj: any = {};
+        if (qLogic) {
+            try {
+                const existing = JSON.parse(qLogic);
+                if (existing.isPrivate) logicObj.isPrivate = true;
+            } catch(e) {}
         }
-    }, [logicQuestionId, logicValue]);
+
+        if (logicQuestionId) {
+            logicObj.showIf = {
+                questionId: logicQuestionId,
+                value: logicValue
+            };
+        }
+        
+        if (qIsPrivate) {
+            logicObj.isPrivate = true;
+        }
+
+        const newLogic = Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : '';
+        if (qLogic !== newLogic) {
+            setQLogic(newLogic);
+        }
+    }, [logicQuestionId, logicValue, qIsPrivate]);
     const [submitting, setSubmitting] = useState(false);
 
     const fetchData = useCallback(async () => {
@@ -304,9 +314,26 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         setOrderBy(property);
     };
 
-    const handleExportExcel = () => {
+    const handleExportExcel = (isPrivateOnly: boolean = false) => {
         if (filteredResponses.length === 0) {
             setMsg({ type: 'error', text: '내보낼 데이터가 없습니다.' });
+            return;
+        }
+
+        // Filter questions based on isPrivate flag in logic
+        const targetQuestions = questions.filter(q => {
+            let isPrivate = false;
+            if (q.logic) {
+                try {
+                    const logic = JSON.parse(q.logic);
+                    isPrivate = !!logic.isPrivate;
+                } catch(e) {}
+            }
+            return isPrivateOnly ? isPrivate : !isPrivate;
+        });
+
+        if (targetQuestions.length === 0) {
+            setMsg({ type: 'error', text: isPrivateOnly ? '개인정보로 설정된 문항이 없습니다.' : '일반 응답으로 설정된 문항이 없습니다.' });
             return;
         }
 
@@ -320,7 +347,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
             // 질문들 매핑
             const answers = r.answers ? JSON.parse(r.answers) : {};
-            questions.forEach((q, idx) => {
+            targetQuestions.forEach((q, idx) => {
                 let val = answers[q.id] || answers[q.text] || '';
                 
                 // Format ranking data
@@ -330,7 +357,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     val = `1순위: ${r1}, 2순위: ${r2}`;
                 }
                 
-                row[`Q${idx + 1}. ${q.text}`] = Array.isArray(val) ? val.join(', ') : val;
+                const qKey = isPrivateOnly ? `[개인정보] ${q.text}` : `Q${idx + 1}. ${q.text}`;
+                row[qKey] = Array.isArray(val) ? val.join(', ') : val;
             });
 
             return row;
@@ -338,6 +366,10 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Responses");
+        const fileName = `${surveyTitle}_${isPrivateOnly ? '개인정보' : '일반응답'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    };
         XLSX.utils.book_append_sheet(wb, ws, "설문응답");
         
         // 열 너비 자동 조정 (기본)
@@ -427,7 +459,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 } catch (e) {}
             }
             
-            // Parse logic for builder
+            // Parse logic for builder and private flag
             if (q.logic) {
                 try {
                     const parsed = JSON.parse(q.logic);
@@ -438,13 +470,16 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         setLogicQuestionId('');
                         setLogicValue('');
                     }
+                    setQIsPrivate(!!parsed.isPrivate);
                 } catch (e) {
                     setLogicQuestionId('');
                     setLogicValue('');
+                    setQIsPrivate(false);
                 }
             } else {
                 setLogicQuestionId('');
                 setLogicValue('');
+                setQIsPrivate(false);
             }
         } else {
             setEditingQuestion(null);
@@ -577,7 +612,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 type: qType,
                 options: filteredOptions,
                 maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
-                logic: qLogic || null
+                logic: qLogic || (qIsPrivate ? JSON.stringify({ isPrivate: true }) : null)
             } : q));
         } else {
             const tempId = `temp_q_${Date.now()}`;
@@ -588,7 +623,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 type: qType,
                 options: filteredOptions,
                 maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
-                logic: qLogic || null,
+                logic: qLogic || (qIsPrivate ? JSON.stringify({ isPrivate: true }) : null),
                 orderIdx: questions.length > 0 ? Math.max(...questions.map(q => q.orderIdx)) + 1 : 1
             };
             setQuestions(prev => [...prev, newQuestion]);
@@ -799,7 +834,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                     q.type === 'TIME' ? '시간' : 
                                     q.type === 'RANK_CHOICE' ? '순위 선택형 (1, 2순위)' : '주관식'
                                 } size="small" variant="outlined" />
-                                {q.logic && <Chip label="분기 로직 있음" size="small" color="warning" variant="filled" />}
+                                {q.logic && JSON.parse(q.logic || '{}').isPrivate && <Chip label="개인정보(분리)" size="small" color="warning" variant="filled" />}
+                                {q.logic && JSON.parse(q.logic || '{}').showIf && <Chip label="분기 로직 있음" size="small" color="info" variant="filled" />}
                             </Box>
                         }
                         secondary={
@@ -1081,10 +1117,21 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             variant="contained"
                             color="success"
                             startIcon={<SaveIcon />}
-                            onClick={handleExportExcel}
+                            onClick={() => handleExportExcel(false)}
                             disabled={filteredResponses.length === 0}
+                            sx={{ fontWeight: 'bold' }}
                         >
-                            📥 엑셀 다운로드
+                            📥 일반 응답 다운로드
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            startIcon={<SaveIcon />}
+                            onClick={() => handleExportExcel(true)}
+                            disabled={filteredResponses.length === 0}
+                            sx={{ fontWeight: 'bold' }}
+                        >
+                            🎁 추첨용(개인정보) 다운로드
                         </Button>
                     </Box>
 
@@ -1217,7 +1264,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     {editingQuestion ? '문항 수정' : '새 문항 추가'}
                 </DialogTitle>
                 <DialogContent>
-                    <Stack spacing={3} sx={{ mt: 1 }}>
+                    <Stack spacing={3} sx={{ mt: 2 }}>
+                    
                         <FormControl fullWidth>
                             <InputLabel id="q-section-label">섹션 선택</InputLabel>
                             <Select
@@ -1459,6 +1507,24 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 />
                             </AccordionDetails>
                         </Accordion>
+
+                        <Box sx={{ mt: 1, p: 2, border: '1px solid #ff9800', bgcolor: '#fffde7', borderRadius: 2 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox 
+                                        color="warning" 
+                                        checked={qIsPrivate} 
+                                        onChange={(e) => setQIsPrivate(e.target.checked)} 
+                                    />
+                                }
+                                label={
+                                    <Box>
+                                        <Typography variant="body2" fontWeight="bold" color="warning.main">개인정보 수집 문항 (엑셀 분리)</Typography>
+                                        <Typography variant="caption" color="text.secondary">체크 시 일반 응답 엑셀에서 제외되며, 추첨용 엑셀에만 나타납니다.</Typography>
+                                    </Box>
+                                }
+                            />
+                        </Box>
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ p: 3 }}>
