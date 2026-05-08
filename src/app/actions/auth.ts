@@ -168,6 +168,7 @@ export async function ensureAnonymousMember(): Promise<{ success: boolean; membe
                 const targetPhone = anonymousPhone.replace(/[^0-9]/g, '');
                 return dbName === anonymousName && dbPhone === targetPhone;
             });
+            if (member) {
                 // 실제 DB의 익명 UUID를 찾았더라도, 세션 구분을 위해 고유 가상 ID를 반환
                 const virtualId = `guest_${member.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
                 return { success: true, memberId: virtualId, memberName: member.name };

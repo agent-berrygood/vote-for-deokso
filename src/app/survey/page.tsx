@@ -52,7 +52,7 @@ interface Section {
 
 export default function SurveyPage() {
     const router = useRouter();
-    const { activeSurveyId, loading: sysLoading } = useElection();
+    const { activeSurveyId, activeService, loading: sysLoading } = useElection();
     
     const [survey, setSurvey] = useState<any>(null);
     const [sections, setSections] = useState<Section[]>([]);
