@@ -245,15 +245,16 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
     const fetchResponses = useCallback(async () => {
         setResponsesLoading(true);
-        console.log('Fetching responses for survey:', surveyId);
+        setResponses([]); // 로딩 시작 전 초기화 (이전 데이터 append 방지)
         try {
             const res = await listSurveyResponsesAction(surveyId);
-            console.log('listSurveyResponsesAction result:', res);
             if (res.success) {
-                setResponses(res.data as any[]);
-                console.log('Set responses state:', res.data);
+                // id 기준 중복 제거 후 상태 반영
+                const unique = (res.data as any[]).filter(
+                    (r, i, arr) => arr.findIndex((x: any) => x.id === r.id) === i
+                );
+                setResponses(unique);
             } else {
-                console.error('Failed to fetch responses:', res.error);
                 setMsg({ type: 'error', text: res.error || '응답을 불러오지 못했습니다.' });
             }
         } catch (err) {
@@ -263,11 +264,9 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
-    // Handle initial data load
-    useEffect(() => {
-        fetchData();
-        fetchResponses();
-    }, [fetchData, fetchResponses]);
+    // 초기 데이터 로드 (fetchData, fetchResponses를 분리하여 이중 실행 방지)
+    useEffect(() => { fetchData(); }, [fetchData]);
+    useEffect(() => { fetchResponses(); }, [fetchResponses]);
 
     // Handle unsaved changes warning
     useEffect(() => {

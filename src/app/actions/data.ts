@@ -511,37 +511,37 @@ export async function deleteSurveySectionAction(id: string, surveyId: string) {
 
 export async function submitSurveyResponseAction(vars: { surveyId: string, memberId: string, answers: string }) {
     try {
-        noStore(); // 캐시 무효화 강제
+        noStore();
         let finalMemberId = vars.memberId;
         
-        // 가상 ID(anonymous_...)인 경우 DB에 임시 '익명' 교인을 새로 생성하여 UUID 확보
+        // 가상 ID(anonymous_...)인 경우: 고정된 '익명' 교인 UUID를 조회하여 사용
+        // surveyResponse_insert는 (memberId, surveyId) 유니크 제약이 없으므로
+        // 같은 memberId로 반복 제출해도 각각 독립된 레코드가 생성됨 → 안전
         if (vars.memberId.startsWith('anonymous_')) {
-            // 타입 에러 방지: ID를 직접 넣지 않고, 절대 겹치지 않는 고유 이름으로 생성 후 검색
-            const uniqueName = `ANON_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-            const tempMemberPhone = '010-0000-0000';
+            // 이름='익명', 전화번호='010-0000-0000'인 고정 익명 계정 조회
+            const anonRes = await getMemberByBasicInfoSDK({ name: '익명', phone: '010-0000-0000' });
+            const anonMember = anonRes.data.members?.[0];
             
-            console.log(`[Submit] Creating unique member record: ${uniqueName}`);
-            
-            await createMemberSDK({
-                name: uniqueName,
-                phone: tempMemberPhone,
-                birthdate: '000000',
-                isSelfRegistered: true
-            });
-            
-            // DB 인덱싱 대기 (0.8초로 조금 더 늘림)
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            // 정확히 그 uniqueName을 가진 멤버 찾기
-            const membersRes = await listMembersSDK();
-            const member = (membersRes.data.members || []).find(m => m.name === uniqueName);
-            
-            if (member) {
-                finalMemberId = member.id;
+            if (anonMember) {
+                finalMemberId = anonMember.id;
+                console.log(`[Submit] Using fixed anonymous member UUID: ${finalMemberId}`);
             } else {
-                // 최후의 수단: 가장 최근 멤버
-                const all = membersRes.data.members || [];
-                if (all.length > 0) finalMemberId = all[all.length - 1].id;
+                // 고정 익명 계정이 없으면 1회만 생성 (이후는 항상 위에서 찾힘)
+                console.log('[Submit] Fixed anonymous member not found, creating one...');
+                await createMemberSDK({
+                    name: '익명',
+                    phone: '010-0000-0000',
+                    birthdate: '000000',
+                    isSelfRegistered: false
+                });
+                // 생성 직후 재조회
+                const retryRes = await getMemberByBasicInfoSDK({ name: '익명', phone: '010-0000-0000' });
+                const created = retryRes.data.members?.[0];
+                if (created) {
+                    finalMemberId = created.id;
+                } else {
+                    return { success: false, error: '익명 계정을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+                }
             }
         }
         
@@ -550,7 +550,6 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
             memberId: finalMemberId
         });
         
-        // 응답 목록 페이지 캐시 갱신
         revalidatePath(`/admin/surveys/${vars.surveyId}`);
         revalidatePath(`/admin/surveys/${vars.surveyId}/results`);
         
@@ -577,10 +576,12 @@ export async function getSurveyResponseByMemberAction(vars: { surveyId: string, 
 export async function listSurveyResponsesAction(surveyId: string) {
     try {
         noStore();
-        console.log(`[ServerAction] Listing responses for survey: ${surveyId}`);
         const res = await listSurveyResponsesSDK({ surveyId });
-        const data = res.data.surveyResponses || [];
-        console.log(`[ServerAction] Successfully fetched ${data.length} responses.`);
+        const raw = res.data.surveyResponses || [];
+        // id 기준 중복 제거 (SDK 캐싱 등으로 인한 이중 수신 방어)
+        const data = raw.filter((r: any, i: number, arr: any[]) => 
+            arr.findIndex((x: any) => x.id === r.id) === i
+        );
         return { success: true, data };
     } catch (error: any) {
         console.error('listSurveyResponsesAction error:', error);
