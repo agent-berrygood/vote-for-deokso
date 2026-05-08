@@ -157,7 +157,10 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [orderBy, setOrderBy] = useState('submittedAt');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
     // DND Sensors
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -210,6 +213,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             if (questionsRes.success) {
                 console.log('Fetched questions:', questionsRes.data);
                 setQuestions(questionsRes.data as any);
+                setHasUnsavedChanges(false);
             }
         } catch (e) {
             console.error(e);
@@ -218,6 +222,19 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setLoading(false);
         }
     }, [surveyId]);
+
+    // Handle unsaved changes warning
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasUnsavedChanges]);
+
 
     const fetchResponses = useCallback(async () => {
         setResponsesLoading(true);
@@ -636,43 +653,42 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
         const newQuestions = arrayMove(questions, oldIndex, newIndex);
         
-        // Optimistic Update
+        // Update local state and mark as unsaved
         setQuestions(newQuestions);
+        setHasUnsavedChanges(true);
+    };
 
+    const handleSaveOrder = async () => {
+        setSubmitting(true);
         try {
-            // Update only the affected question's orderIdx based on the new sequence
-            // For simplicity and robustness, we re-calculate indices for all affected or even all questions
-            // Here, we'll find the target orderIdx and update
-            const targetQuestion = newQuestions[newIndex];
-            const activeQuestion = questions[oldIndex];
-            
-            // Actually we need to update orderIdx in the DB.
-            // A common way is to update the dragged item and potentially its neighbors
-            // Or just update the dragged item with a value between its new neighbors
-            
-            setSubmitting(true);
-            const res = await updateSurveyQuestionAction({
-                surveyId,
-                id: active.id as string,
-                orderIdx: newIndex + 1 // Use 1-based index from the new array position
-            });
+            // Update all questions' orderIdx in the DB
+            let successCount = 0;
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                const res = await updateSurveyQuestionAction({
+                    surveyId,
+                    id: q.id,
+                    orderIdx: i + 1
+                });
+                if (res.success) successCount++;
+            }
 
-            if (!res.success) {
-                setMsg({ type: 'error', text: '순서 변경 저장 실패' });
-                setQuestions(questions); // Rollback
-            } else {
-                // To ensure all IDs have correct consecutive orderIdx if needed, 
-                // we might need a batch update, but let's try simple first.
-                // Re-fetch to sync with server's orderIdx logic if any
+            if (successCount === questions.length) {
+                setMsg({ type: 'success', text: '순서가 저장되었습니다.' });
+                setHasUnsavedChanges(false);
+                router.refresh();
                 fetchData();
+            } else {
+                setMsg({ type: 'error', text: `일부 문항 저장 실패 (${successCount}/${questions.length})` });
             }
         } catch (err) {
             console.error(err);
-            setQuestions(questions);
+            setMsg({ type: 'error', text: '순서 저장 중 오류가 발생했습니다.' });
         } finally {
             setSubmitting(false);
         }
     };
+
 
     // Sortable Question Item Component
     const SortableQuestion = ({ q, idx, sectionId }: { q: Question, idx: number, sectionId: string }) => {
@@ -855,16 +871,30 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #e1bee7' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                         <Typography variant="h6" fontWeight="bold">문항 목록</Typography>
-                        <Button 
-                            variant="contained" 
-                            color="secondary" 
-                            startIcon={<AddIcon />}
-                            onClick={(e) => { e.currentTarget.blur(); handleOpenDialog(); }}
-                            disabled={submitting}
-                        >
-                            문항 추가
-                        </Button>
+                        <Stack direction="row" spacing={1}>
+                            {hasUnsavedChanges && (
+                                <Button 
+                                    variant="contained" 
+                                    color="success" 
+                                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                                    onClick={handleSaveOrder}
+                                    disabled={submitting}
+                                >
+                                    순서 저장 적용
+                                </Button>
+                            )}
+                            <Button 
+                                variant="contained" 
+                                color="secondary" 
+                                startIcon={<AddIcon />}
+                                onClick={(e) => { e.currentTarget.blur(); handleOpenDialog(); }}
+                                disabled={submitting}
+                            >
+                                문항 추가
+                            </Button>
+                        </Stack>
                     </Box>
+
 
                     <DndContext
                         sensors={sensors}
