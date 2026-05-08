@@ -492,6 +492,19 @@ export interface ListSurveyResponsesData {
   } & SurveyResponse_Key)[];
 }
 
+export interface ListSurveyResponsesOnlyData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    answers: string;
+    memberId: UUIDString;
+  } & SurveyResponse_Key)[];
+}
+
+export interface ListSurveyResponsesOnlyVariables {
+  surveyId: UUIDString;
+}
+
 export interface ListSurveyResponsesVariables {
   surveyId: UUIDString;
 }
@@ -1241,6 +1254,18 @@ export const getSurveyResponseByMemberRef: GetSurveyResponseByMemberRef;
 
 export function getSurveyResponseByMember(vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
 export function getSurveyResponseByMember(dc: DataConnect, vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
+
+interface ListSurveyResponsesOnlyRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveyResponsesOnlyVariables): QueryRef<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListSurveyResponsesOnlyVariables): QueryRef<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+  operationName: string;
+}
+export const listSurveyResponsesOnlyRef: ListSurveyResponsesOnlyRef;
+
+export function listSurveyResponsesOnly(vars: ListSurveyResponsesOnlyVariables): QueryPromise<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+export function listSurveyResponsesOnly(dc: DataConnect, vars: ListSurveyResponsesOnlyVariables): QueryPromise<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
 
 interface ListSurveyResponsesRef {
   /* Allow users to create refs without passing in DataConnect */

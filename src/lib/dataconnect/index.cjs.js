@@ -511,6 +511,18 @@ exports.getSurveyResponseByMember = function getSurveyResponseByMember(dcOrVars,
   return executeQuery(getSurveyResponseByMemberRef(dcOrVars, vars));
 };
 
+const listSurveyResponsesOnlyRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListSurveyResponsesOnly', inputVars);
+}
+listSurveyResponsesOnlyRef.operationName = 'ListSurveyResponsesOnly';
+exports.listSurveyResponsesOnlyRef = listSurveyResponsesOnlyRef;
+
+exports.listSurveyResponsesOnly = function listSurveyResponsesOnly(dcOrVars, vars) {
+  return executeQuery(listSurveyResponsesOnlyRef(dcOrVars, vars));
+};
+
 const listSurveyResponsesRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

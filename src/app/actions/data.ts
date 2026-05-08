@@ -22,7 +22,7 @@ import {
     submitSurveyResponse as submitSurveyResponseSDK,
     updateSurveyResponse as updateSurveyResponseSDK,
     deleteSurveyResponse as deleteSurveyResponseSDK,
-    listSurveyResponses as listSurveyResponsesSDK,
+    listSurveyResponsesOnly as listSurveyResponsesOnlySDK,
     createVoter as createVoterSDK,
     updateVoter as updateVoterSDK,
     deleteVoter as deleteVoterSDK,
@@ -576,15 +576,25 @@ export async function getSurveyResponseByMemberAction(vars: { surveyId: string, 
 export async function listSurveyResponsesAction(surveyId: string) {
     try {
         noStore();
-        const res = await listSurveyResponsesSDK({ surveyId });
+        // member 조인을 제외한 쿼리 호출 (SDK 내부 정규화 캐시 오염 원천 차단)
+        const res = await listSurveyResponsesOnlySDK({ surveyId });
         const raw = res.data.surveyResponses || [];
         
-        // Firebase Data Connect SDK는 내부적으로 정규화 캐시를 사용함.
-        // 모든 응답이 같은 memberId를 공유할 경우 객체 참조가 겹쳐 첫 번째 응답만
-        // 반복되어 나타나는 현상이 발생함. deep clone으로 참조를 완전히 분리.
+        // DataConnect SDK 캐시 참조 완전 차단
         const data = JSON.parse(JSON.stringify(raw));
         
-        // 추가로 id 기준 중복 제거
+        // 어드민 UI와 기존 로직 호환성을 위해 가짜 member 객체 주입
+        // 이 데이터는 어차피 "익명" 설문이므로 어드민 페이지에서 일괄 "익명"으로 표시됨
+        data.forEach((r: any) => {
+            r.member = {
+                id: r.memberId || 'anonymous_fixed_uuid',
+                name: '익명',
+                phone: '010-0000-0000',
+                isSelfRegistered: true
+            };
+        });
+        
+        // 추가로 id 기준 중복 제거 (방어 로직)
         const unique = data.filter((r: any, i: number, arr: any[]) => 
             arr.findIndex((x: any) => x.id === r.id) === i
         );

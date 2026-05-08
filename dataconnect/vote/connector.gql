@@ -439,7 +439,19 @@ query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level:
   }
 }
 
-# 설문 응답 관리 쿼리
+# 설문 응답 관리 쿼리 (member 조인 없음 - SDK 캐시 충돌 방지)
+query ListSurveyResponsesOnly($surveyId: UUID!) @auth(level: PUBLIC) {
+  surveyResponses(where: {
+    surveyId: { eq: $surveyId }
+  }, orderBy: [{ submittedAt: DESC }]) {
+    id
+    submittedAt
+    answers
+    memberId
+  }
+}
+
+# 설문 응답 관리 쿼리 (member 조인 포함 - 기존 유지)
 query ListSurveyResponses($surveyId: UUID!) @auth(level: PUBLIC) {
   surveyResponses(where: {
     surveyId: { eq: $surveyId }
