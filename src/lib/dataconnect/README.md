@@ -26,7 +26,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*ListMembers*](#listmembers)
   - [*GetSurvey*](#getsurvey)
   - [*GetSurveyResponseByMember*](#getsurveyresponsebymember)
-  - [*ListSurveyResponsesOnly*](#listsurveyresponsesonly)
+  - [*ListSurveyResponsesNoJoin*](#listsurveyresponsesnojoin)
   - [*ListSurveyResponses*](#listsurveyresponses)
   - [*ListSurveySections*](#listsurveysections)
   - [*ListSurveyQuestions*](#listsurveyquestions)
@@ -2182,49 +2182,49 @@ executeQuery(ref).then((response) => {
 });
 ```
 
-## ListSurveyResponsesOnly
-You can execute the `ListSurveyResponsesOnly` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+## ListSurveyResponsesNoJoin
+You can execute the `ListSurveyResponsesNoJoin` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
 ```typescript
-listSurveyResponsesOnly(vars: ListSurveyResponsesOnlyVariables): QueryPromise<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+listSurveyResponsesNoJoin(vars: ListSurveyResponsesNoJoinVariables): QueryPromise<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
 
-interface ListSurveyResponsesOnlyRef {
+interface ListSurveyResponsesNoJoinRef {
   ...
   /* Allow users to create refs without passing in DataConnect */
-  (vars: ListSurveyResponsesOnlyVariables): QueryRef<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+  (vars: ListSurveyResponsesNoJoinVariables): QueryRef<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
 }
-export const listSurveyResponsesOnlyRef: ListSurveyResponsesOnlyRef;
+export const listSurveyResponsesNoJoinRef: ListSurveyResponsesNoJoinRef;
 ```
 You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
 ```typescript
-listSurveyResponsesOnly(dc: DataConnect, vars: ListSurveyResponsesOnlyVariables): QueryPromise<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+listSurveyResponsesNoJoin(dc: DataConnect, vars: ListSurveyResponsesNoJoinVariables): QueryPromise<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
 
-interface ListSurveyResponsesOnlyRef {
+interface ListSurveyResponsesNoJoinRef {
   ...
-  (dc: DataConnect, vars: ListSurveyResponsesOnlyVariables): QueryRef<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+  (dc: DataConnect, vars: ListSurveyResponsesNoJoinVariables): QueryRef<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
 }
-export const listSurveyResponsesOnlyRef: ListSurveyResponsesOnlyRef;
+export const listSurveyResponsesNoJoinRef: ListSurveyResponsesNoJoinRef;
 ```
 
-If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listSurveyResponsesOnlyRef:
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listSurveyResponsesNoJoinRef:
 ```typescript
-const name = listSurveyResponsesOnlyRef.operationName;
+const name = listSurveyResponsesNoJoinRef.operationName;
 console.log(name);
 ```
 
 ### Variables
-The `ListSurveyResponsesOnly` query requires an argument of type `ListSurveyResponsesOnlyVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+The `ListSurveyResponsesNoJoin` query requires an argument of type `ListSurveyResponsesNoJoinVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
 
 ```typescript
-export interface ListSurveyResponsesOnlyVariables {
+export interface ListSurveyResponsesNoJoinVariables {
   surveyId: UUIDString;
 }
 ```
 ### Return Type
-Recall that executing the `ListSurveyResponsesOnly` query returns a `QueryPromise` that resolves to an object with a `data` property.
+Recall that executing the `ListSurveyResponsesNoJoin` query returns a `QueryPromise` that resolves to an object with a `data` property.
 
-The `data` property is an object of type `ListSurveyResponsesOnlyData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+The `data` property is an object of type `ListSurveyResponsesNoJoinData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
 ```typescript
-export interface ListSurveyResponsesOnlyData {
+export interface ListSurveyResponsesNoJoinData {
   surveyResponses: ({
     id: UUIDString;
     submittedAt: TimestampString;
@@ -2232,55 +2232,55 @@ export interface ListSurveyResponsesOnlyData {
   } & SurveyResponse_Key)[];
 }
 ```
-### Using `ListSurveyResponsesOnly`'s action shortcut function
+### Using `ListSurveyResponsesNoJoin`'s action shortcut function
 
 ```typescript
 import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, listSurveyResponsesOnly, ListSurveyResponsesOnlyVariables } from '@vote/dataconnect';
+import { connectorConfig, listSurveyResponsesNoJoin, ListSurveyResponsesNoJoinVariables } from '@vote/dataconnect';
 
-// The `ListSurveyResponsesOnly` query requires an argument of type `ListSurveyResponsesOnlyVariables`:
-const listSurveyResponsesOnlyVars: ListSurveyResponsesOnlyVariables = {
+// The `ListSurveyResponsesNoJoin` query requires an argument of type `ListSurveyResponsesNoJoinVariables`:
+const listSurveyResponsesNoJoinVars: ListSurveyResponsesNoJoinVariables = {
   surveyId: ..., 
 };
 
-// Call the `listSurveyResponsesOnly()` function to execute the query.
+// Call the `listSurveyResponsesNoJoin()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
-const { data } = await listSurveyResponsesOnly(listSurveyResponsesOnlyVars);
+const { data } = await listSurveyResponsesNoJoin(listSurveyResponsesNoJoinVars);
 // Variables can be defined inline as well.
-const { data } = await listSurveyResponsesOnly({ surveyId: ..., });
+const { data } = await listSurveyResponsesNoJoin({ surveyId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
-const { data } = await listSurveyResponsesOnly(dataConnect, listSurveyResponsesOnlyVars);
+const { data } = await listSurveyResponsesNoJoin(dataConnect, listSurveyResponsesNoJoinVars);
 
 console.log(data.surveyResponses);
 
 // Or, you can use the `Promise` API.
-listSurveyResponsesOnly(listSurveyResponsesOnlyVars).then((response) => {
+listSurveyResponsesNoJoin(listSurveyResponsesNoJoinVars).then((response) => {
   const data = response.data;
   console.log(data.surveyResponses);
 });
 ```
 
-### Using `ListSurveyResponsesOnly`'s `QueryRef` function
+### Using `ListSurveyResponsesNoJoin`'s `QueryRef` function
 
 ```typescript
 import { getDataConnect, executeQuery } from 'firebase/data-connect';
-import { connectorConfig, listSurveyResponsesOnlyRef, ListSurveyResponsesOnlyVariables } from '@vote/dataconnect';
+import { connectorConfig, listSurveyResponsesNoJoinRef, ListSurveyResponsesNoJoinVariables } from '@vote/dataconnect';
 
-// The `ListSurveyResponsesOnly` query requires an argument of type `ListSurveyResponsesOnlyVariables`:
-const listSurveyResponsesOnlyVars: ListSurveyResponsesOnlyVariables = {
+// The `ListSurveyResponsesNoJoin` query requires an argument of type `ListSurveyResponsesNoJoinVariables`:
+const listSurveyResponsesNoJoinVars: ListSurveyResponsesNoJoinVariables = {
   surveyId: ..., 
 };
 
-// Call the `listSurveyResponsesOnlyRef()` function to get a reference to the query.
-const ref = listSurveyResponsesOnlyRef(listSurveyResponsesOnlyVars);
+// Call the `listSurveyResponsesNoJoinRef()` function to get a reference to the query.
+const ref = listSurveyResponsesNoJoinRef(listSurveyResponsesNoJoinVars);
 // Variables can be defined inline as well.
-const ref = listSurveyResponsesOnlyRef({ surveyId: ..., });
+const ref = listSurveyResponsesNoJoinRef({ surveyId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
-const ref = listSurveyResponsesOnlyRef(dataConnect, listSurveyResponsesOnlyVars);
+const ref = listSurveyResponsesNoJoinRef(dataConnect, listSurveyResponsesNoJoinVars);
 
 // Call `executeQuery()` on the reference to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.

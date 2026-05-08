@@ -511,16 +511,16 @@ exports.getSurveyResponseByMember = function getSurveyResponseByMember(dcOrVars,
   return executeQuery(getSurveyResponseByMemberRef(dcOrVars, vars));
 };
 
-const listSurveyResponsesOnlyRef = (dcOrVars, vars) => {
+const listSurveyResponsesNoJoinRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
-  return queryRef(dcInstance, 'ListSurveyResponsesOnly', inputVars);
+  return queryRef(dcInstance, 'ListSurveyResponsesNoJoin', inputVars);
 }
-listSurveyResponsesOnlyRef.operationName = 'ListSurveyResponsesOnly';
-exports.listSurveyResponsesOnlyRef = listSurveyResponsesOnlyRef;
+listSurveyResponsesNoJoinRef.operationName = 'ListSurveyResponsesNoJoin';
+exports.listSurveyResponsesNoJoinRef = listSurveyResponsesNoJoinRef;
 
-exports.listSurveyResponsesOnly = function listSurveyResponsesOnly(dcOrVars, vars) {
-  return executeQuery(listSurveyResponsesOnlyRef(dcOrVars, vars));
+exports.listSurveyResponsesNoJoin = function listSurveyResponsesNoJoin(dcOrVars, vars) {
+  return executeQuery(listSurveyResponsesNoJoinRef(dcOrVars, vars));
 };
 
 const listSurveyResponsesRef = (dcOrVars, vars) => {

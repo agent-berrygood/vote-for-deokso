@@ -22,7 +22,7 @@ import {
     submitSurveyResponse as submitSurveyResponseSDK,
     updateSurveyResponse as updateSurveyResponseSDK,
     deleteSurveyResponse as deleteSurveyResponseSDK,
-    listSurveyResponsesOnly as listSurveyResponsesOnlySDK,
+    listSurveyResponsesNoJoin as listSurveyResponsesNoJoinSDK,
     createVoter as createVoterSDK,
     updateVoter as updateVoterSDK,
     deleteVoter as deleteVoterSDK,
@@ -576,8 +576,13 @@ export async function getSurveyResponseByMemberAction(vars: { surveyId: string, 
 export async function listSurveyResponsesAction(surveyId: string) {
     try {
         noStore();
+        // 런타임 프로젝트 ID 확인용 로그
+        console.log(`[DEBUG] Current Project ID: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
+        console.log(`[DEBUG] Calling ListSurveyResponsesOnly for survey: ${surveyId}`);
+
         // member 조인을 제외한 쿼리 호출 (SDK 내부 정규화 캐시 오염 원천 차단)
-        const res = await listSurveyResponsesOnlySDK({ surveyId });
+        const res = await listSurveyResponsesNoJoinSDK({ surveyId });
+        console.log(`[DEBUG] SDK Response Success: ${res.success}`);
         const raw = res.data.surveyResponses || [];
         
         // DataConnect SDK 캐시 참조 완전 차단

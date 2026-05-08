@@ -492,7 +492,7 @@ export interface ListSurveyResponsesData {
   } & SurveyResponse_Key)[];
 }
 
-export interface ListSurveyResponsesOnlyData {
+export interface ListSurveyResponsesNoJoinData {
   surveyResponses: ({
     id: UUIDString;
     submittedAt: TimestampString;
@@ -500,7 +500,7 @@ export interface ListSurveyResponsesOnlyData {
   } & SurveyResponse_Key)[];
 }
 
-export interface ListSurveyResponsesOnlyVariables {
+export interface ListSurveyResponsesNoJoinVariables {
   surveyId: UUIDString;
 }
 
@@ -1254,17 +1254,17 @@ export const getSurveyResponseByMemberRef: GetSurveyResponseByMemberRef;
 export function getSurveyResponseByMember(vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
 export function getSurveyResponseByMember(dc: DataConnect, vars: GetSurveyResponseByMemberVariables): QueryPromise<GetSurveyResponseByMemberData, GetSurveyResponseByMemberVariables>;
 
-interface ListSurveyResponsesOnlyRef {
+interface ListSurveyResponsesNoJoinRef {
   /* Allow users to create refs without passing in DataConnect */
-  (vars: ListSurveyResponsesOnlyVariables): QueryRef<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+  (vars: ListSurveyResponsesNoJoinVariables): QueryRef<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
   /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: ListSurveyResponsesOnlyVariables): QueryRef<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+  (dc: DataConnect, vars: ListSurveyResponsesNoJoinVariables): QueryRef<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
   operationName: string;
 }
-export const listSurveyResponsesOnlyRef: ListSurveyResponsesOnlyRef;
+export const listSurveyResponsesNoJoinRef: ListSurveyResponsesNoJoinRef;
 
-export function listSurveyResponsesOnly(vars: ListSurveyResponsesOnlyVariables): QueryPromise<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
-export function listSurveyResponsesOnly(dc: DataConnect, vars: ListSurveyResponsesOnlyVariables): QueryPromise<ListSurveyResponsesOnlyData, ListSurveyResponsesOnlyVariables>;
+export function listSurveyResponsesNoJoin(vars: ListSurveyResponsesNoJoinVariables): QueryPromise<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
+export function listSurveyResponsesNoJoin(dc: DataConnect, vars: ListSurveyResponsesNoJoinVariables): QueryPromise<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
 
 interface ListSurveyResponsesRef {
   /* Allow users to create refs without passing in DataConnect */
