@@ -168,13 +168,14 @@ export async function ensureAnonymousMember(): Promise<{ success: boolean; membe
                 const targetPhone = anonymousPhone.replace(/[^0-9]/g, '');
                 return dbName === anonymousName && dbPhone === targetPhone;
             });
-            if (member) {
-                return { success: true, memberId: member.id, memberName: member.name };
+                // 실제 DB의 익명 UUID를 찾았더라도, 세션 구분을 위해 고유 가상 ID를 반환
+                const virtualId = `guest_${member.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                return { success: true, memberId: virtualId, memberName: member.name };
             }
         }
         
         // 2. 검색 실패 시 강제 생성 시도
-        await createMemberAction({
+        const createRes = await createMemberAction({
             name: anonymousName,
             phone: anonymousPhone,
             birthdate: anonymousBirthdate,
@@ -191,7 +192,8 @@ export async function ensureAnonymousMember(): Promise<{ success: boolean; membe
                 return dbName === anonymousName && dbPhone === targetPhone;
             });
             if (member) {
-                return { success: true, memberId: member.id, memberName: member.name };
+                const virtualId = `guest_${member.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                return { success: true, memberId: virtualId, memberName: member.name };
             }
         }
         

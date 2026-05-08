@@ -120,17 +120,24 @@ export default function SurveyPage() {
             let name = sessionStorage.getItem('memberName');
             let id = sessionStorage.getItem('memberId');
             
-            // 세션이 없으면 그 자리에서 즉시 익명 세션 발급
-            if (!name || !id || id.startsWith('guest_')) {
+            // 설문 모드이거나 세션이 없으면 무조건 새 세션 생성
+            if (activeService === 'SURVEY' || !name || !id || id.startsWith('guest_')) {
                 setLoading(true);
                 try {
-                    const { ensureAnonymousMember, createSurveySession } = await import('@/app/actions/auth');
+                    const { ensureAnonymousMember } = await import('@/app/actions/auth');
                     const result = await ensureAnonymousMember();
                     if (result.success && result.memberId) {
+                        // 기존 세션 클리어 (중요)
+                        sessionStorage.clear();
+                        
                         sessionStorage.setItem('memberId', result.memberId);
                         sessionStorage.setItem('memberName', result.memberName || '익명');
                         setMemberName(result.memberName || '익명');
                         setMemberId(result.memberId);
+                        
+                        // 설문 모드일 때는 URL 파라미터나 상태에 의한 이전 데이터 로딩을 방지하기 위해 강제 상태 초기화
+                        setExistingResponseId(null);
+                        setIsEditMode(false);
                     }
                 } catch (err) {
                     console.error("Auto session generation failed:", err);
@@ -145,7 +152,7 @@ export default function SurveyPage() {
         };
 
         checkAuth();
-    }, [router]);
+    }, [router, activeService]);
 
     useEffect(() => {
         if (sysLoading) return;
@@ -167,8 +174,8 @@ export default function SurveyPage() {
                 if (sectionsRes.success) setSections(sectionsRes.data as any);
                 if (questionsRes.success) setQuestions(questionsRes.data as any);
                 
-                // 중복 응답 확인 및 데이터 로드 (익명 사용자가 아닐 때만 수행)
-                if (memberId && !memberId.startsWith('00000000-0000-4000-8000-')) {
+                // 중복 응답 확인 및 데이터 로드 (ELECTION 모드이거나 실명 인증 사용자일 때만 수행)
+                if (activeService === 'ELECTION' && memberId && !memberId.startsWith('guest_')) {
                     const dupRes = await getSurveyResponseByMemberAction({
                         surveyId: activeSurveyId,
                         memberId: memberId
@@ -210,8 +217,15 @@ export default function SurveyPage() {
 
         try {
             let res;
-            if (existingResponseId) {
-                // 수정 모드
+            // 설문 모드일 때는 무조건 신규 제출로 강제 (중복 데이터 덮어쓰기 방지)
+            if (activeService === 'SURVEY') {
+                res = await submitSurveyResponseAction({
+                    surveyId: activeSurveyId,
+                    memberId: memberId,
+                    answers: JSON.stringify(answers)
+                });
+            } else if (existingResponseId) {
+                // 수정 모드 (ELECTION 등 실명 모드용)
                 res = await updateSurveyResponseAction(existingResponseId, JSON.stringify(answers));
             } else {
                 // 신규 제출

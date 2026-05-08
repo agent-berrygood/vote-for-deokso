@@ -511,7 +511,20 @@ export async function deleteSurveySectionAction(id: string, surveyId: string) {
 
 export async function submitSurveyResponseAction(vars: { surveyId: string, memberId: string, answers: string }) {
     try {
-        await submitSurveyResponseSDK(vars);
+        let finalMemberId = vars.memberId;
+        
+        // 가상 ID(guest_UUID_timestamp)인 경우 실제 UUID만 추출
+        if (vars.memberId.startsWith('guest_')) {
+            const parts = vars.memberId.split('_');
+            if (parts.length >= 2) {
+                finalMemberId = parts[1]; // UUID 부분만 추출
+            }
+        }
+        
+        await submitSurveyResponseSDK({
+            ...vars,
+            memberId: finalMemberId
+        });
         return { success: true };
     } catch (error: any) {
         console.error('submitSurveyResponseAction error:', error);
