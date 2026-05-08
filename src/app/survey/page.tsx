@@ -116,24 +116,35 @@ export default function SurveyPage() {
     }, [renderGroups, currentSectionId]);
 
     useEffect(() => {
-        const name = sessionStorage.getItem('memberName');
-        const id = sessionStorage.getItem('memberId');
-        
-        // 잘못된 형식(guest_...)의 ID가 남아있을 때만 초기화 (UUID 체크는 선택적으로)
-        if (id && id.startsWith('guest_')) {
-            console.log("Old guest ID detected, clearing session:", id);
-            sessionStorage.removeItem('memberId');
-            sessionStorage.removeItem('memberName');
-            router.push('/');
-            return;
-        }
+        const checkAuth = async () => {
+            let name = sessionStorage.getItem('memberName');
+            let id = sessionStorage.getItem('memberId');
+            
+            // 세션이 없으면 그 자리에서 즉시 익명 세션 발급
+            if (!name || !id || id.startsWith('guest_')) {
+                setLoading(true);
+                try {
+                    const { ensureAnonymousMember, createSurveySession } = await import('@/app/actions/auth');
+                    const result = await ensureAnonymousMember();
+                    if (result.success && result.memberId) {
+                        sessionStorage.setItem('memberId', result.memberId);
+                        sessionStorage.setItem('memberName', result.memberName || '익명');
+                        setMemberName(result.memberName || '익명');
+                        setMemberId(result.memberId);
+                    }
+                } catch (err) {
+                    console.error("Auto session generation failed:", err);
+                    setError("세션 생성에 실패했습니다.");
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setMemberName(name);
+                setMemberId(id);
+            }
+        };
 
-        if (!name || !id) {
-            router.push('/');
-            return;
-        }
-        setMemberName(name);
-        setMemberId(id);
+        checkAuth();
     }, [router]);
 
     useEffect(() => {
