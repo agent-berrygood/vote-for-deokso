@@ -378,20 +378,36 @@ export default function SurveyPage() {
                                                     
                                                     switch (q.type) {
                                                         case 'MULTIPLE_CHOICE':
+                                                            const isOtherSelected = (answers[q.id] || '').includes('기타');
+                                                            const otherKey = `${q.id}_other`;
                                                             return (
-                                                                <RadioGroup 
-                                                                    value={answers[q.id] || ''} 
-                                                                    onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
-                                                                >
-                                                                    {(options || []).map((opt: string, i: number) => (
-                                                                        <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
-                                                                    ))}
-                                                                </RadioGroup>
+                                                                <Box>
+                                                                    <RadioGroup 
+                                                                        value={answers[q.id] || ''} 
+                                                                        onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                                                                    >
+                                                                        {(options || []).map((opt: string, i: number) => (
+                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
+                                                                        ))}
+                                                                    </RadioGroup>
+                                                                    {isOtherSelected && (
+                                                                        <TextField
+                                                                            fullWidth
+                                                                            placeholder="기타 의견을 입력해 주세요"
+                                                                            variant="standard"
+                                                                            sx={{ mt: 1, ml: 4, width: 'calc(100% - 32px)' }}
+                                                                            value={answers[otherKey] || ''}
+                                                                            onChange={(e) => setAnswers({...answers, [otherKey]: e.target.value})}
+                                                                        />
+                                                                    )}
+                                                                </Box>
                                                             );
                                                         
                                                         case 'MULTIPLE_SELECT':
                                                             const currentAnswers = Array.isArray(answers[q.id]) ? answers[q.id] : [];
                                                             const maxReached = currentAnswers.length >= (q.maxChoices || 1);
+                                                            const isSelectOtherSelected = currentAnswers.some((a: string) => a.includes('기타'));
+                                                            const selectOtherKey = `${q.id}_other`;
                                                             return (
                                                                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                                                     {(options || []).map((opt: string, i: number) => {
@@ -419,6 +435,16 @@ export default function SurveyPage() {
                                                                             />
                                                                         );
                                                                     })}
+                                                                    {isSelectOtherSelected && (
+                                                                        <TextField
+                                                                            fullWidth
+                                                                            placeholder="기타 의견을 입력해 주세요"
+                                                                            variant="standard"
+                                                                            sx={{ mt: 1, ml: 4, width: 'calc(100% - 32px)' }}
+                                                                            value={answers[selectOtherKey] || ''}
+                                                                            onChange={(e) => setAnswers({...answers, [selectOtherKey]: e.target.value})}
+                                                                        />
+                                                                    )}
                                                                     <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
                                                                         * 최대 {q.maxChoices || 1}개까지 선택 가능합니다.
                                                                     </Typography>
