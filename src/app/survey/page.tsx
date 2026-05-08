@@ -253,7 +253,10 @@ export default function SurveyPage() {
                         소중한 고견을 주셔서 감사합니다.<br />
                         주신 의견은 교회 발전을 위해 <br />귀하게 사용하겠습니다.
                     </Typography>
-                    <Button variant="contained" color="secondary" fullWidth onClick={() => router.push('/')}>
+                    <Button variant="contained" color="secondary" fullWidth onClick={() => {
+                        sessionStorage.clear();
+                        router.push('/');
+                    }}>
                         닫기
                     </Button>
                 </Paper>

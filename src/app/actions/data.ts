@@ -511,33 +511,34 @@ export async function deleteSurveySectionAction(id: string, surveyId: string) {
 
 export async function submitSurveyResponseAction(vars: { surveyId: string, memberId: string, answers: string }) {
     try {
+        noStore(); // 캐시 무효화 강제
         let finalMemberId = vars.memberId;
         
         // 가상 ID(anonymous_...)인 경우 DB에 임시 '익명' 교인을 새로 생성하여 UUID 확보
         if (vars.memberId.startsWith('anonymous_')) {
-            console.log('Anonymous session detected, creating temporary member record for isolation.');
-            
-            // 1. 임시 교인 생성 (이름: 익명, 번호: 010-0000-0000)
-            // 이를 통해 매 응답마다 고유한 memberId(UUID)가 생성되어 데이터 덮어쓰기를 원천 방지함
-            const tempMemberName = '익명';
+            // 고유한 이름을 생성하여 검색 시 혼선 방지 (익명_타임스탬프)
+            const uniqueName = `익명_${Date.now()}`;
             const tempMemberPhone = '010-0000-0000';
             
-            // Note: createMemberSDK가 생성된 ID를 바로 반환하지 않을 수 있으므로 생성 후 조회 로직 필요
             await createMemberSDK({
-                name: tempMemberName,
+                name: uniqueName,
                 phone: tempMemberPhone,
                 birthdate: '000000',
                 isSelfRegistered: true
             });
             
-            // 2. 방금 생성된 교인의 ID를 가져오기 위해 목록 조회 (가장 최근 생성된 익명 교인 찾기)
+            // 방금 생성된 특정 고유 이름의 교인 ID 가져오기
             const membersRes = await listMembersSDK();
-            const anonymousMembers = (membersRes.data.members || []).filter(m => m.name === tempMemberName && m.phone === tempMemberPhone);
+            const member = (membersRes.data.members || []).find(m => m.name === uniqueName);
             
-            if (anonymousMembers.length > 0) {
-                // 가장 최근에 생성된(마지막 인덱스) 멤버 ID 사용
-                finalMemberId = anonymousMembers[anonymousMembers.length - 1].id;
-                console.log('Mapped anonymous session to new member UUID:', finalMemberId);
+            if (member) {
+                finalMemberId = member.id;
+            } else {
+                // 혹시라도 조회가 늦어질 경우를 대비해 가장 최근 생성된 멤버라도 찾음
+                const allAnonymous = (membersRes.data.members || []).filter(m => m.name.startsWith('익명'));
+                if (allAnonymous.length > 0) {
+                    finalMemberId = allAnonymous[allAnonymous.length - 1].id;
+                }
             }
         }
         
@@ -545,6 +546,11 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
             ...vars,
             memberId: finalMemberId
         });
+        
+        // 응답 목록 페이지 캐시 갱신
+        revalidatePath(`/admin/surveys/${vars.surveyId}`);
+        revalidatePath(`/admin/surveys/${vars.surveyId}/results`);
+        
         return { success: true };
     } catch (error: any) {
         console.error('submitSurveyResponseAction error:', error);
