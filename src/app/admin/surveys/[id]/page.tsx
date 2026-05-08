@@ -243,6 +243,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         }
     }, [surveyId]);
 
+    // Handle initial data load
+    useEffect(() => {
+        fetchData();
+        fetchResponses();
+    }, [fetchData, fetchResponses]);
+
     // Handle unsaved changes warning
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -1119,6 +1125,17 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             sx={{ fontWeight: 'bold' }}
                         />
                         <Box sx={{ flexGrow: 1 }} />
+                        <Button
+                            variant="outlined"
+                            color="secondary"
+                            startIcon={<SearchIcon />}
+                            onClick={() => fetchResponses()}
+                            disabled={responsesLoading}
+                            sx={{ fontWeight: 'bold' }}
+                        >
+                            {responsesLoading ? <CircularProgress size={20} /> : '🔄 데이터 새로고침'}
+                        </Button>
+                        <Box sx={{ ml: 1 }} />
                         <Button
                             variant="contained"
                             color="success"

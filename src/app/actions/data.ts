@@ -574,8 +574,11 @@ export async function getSurveyResponseByMemberAction(vars: { surveyId: string, 
 export async function listSurveyResponsesAction(surveyId: string) {
     try {
         noStore();
+        console.log(`[ServerAction] Listing responses for survey: ${surveyId}`);
         const res = await listSurveyResponsesSDK({ surveyId });
-        return { success: true, data: res.data.surveyResponses };
+        const data = res.data.surveyResponses || [];
+        console.log(`[ServerAction] Successfully fetched ${data.length} responses.`);
+        return { success: true, data };
     } catch (error: any) {
         console.error('listSurveyResponsesAction error:', error);
         return { 
