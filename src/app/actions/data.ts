@@ -516,28 +516,34 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
         
         // 가상 ID(anonymous_...)인 경우 DB에 임시 '익명' 교인을 새로 생성하여 UUID 확보
         if (vars.memberId.startsWith('anonymous_')) {
-            // 고유한 이름을 생성하여 검색 시 혼선 방지 (익명_타임스탬프)
-            const uniqueName = `익명_${Date.now()}`;
+            // 절대 겹칠 수 없는 고유 식별자 생성
+            const uniqueId = `ANON_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
             const tempMemberPhone = '010-0000-0000';
             
+            console.log(`[Submit] Creating unique member record: ${uniqueId}`);
+            
             await createMemberSDK({
-                name: uniqueName,
+                name: uniqueId,
                 phone: tempMemberPhone,
                 birthdate: '000000',
                 isSelfRegistered: true
             });
             
-            // 방금 생성된 특정 고유 이름의 교인 ID 가져오기
+            // 0.5초 정도 대기 (DB 인덱싱 지연 방지)
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 정확히 그 uniqueId를 가진 멤버 찾기
             const membersRes = await listMembersSDK();
-            const member = (membersRes.data.members || []).find(m => m.name === uniqueName);
+            const member = (membersRes.data.members || []).find(m => m.name === uniqueId);
             
             if (member) {
                 finalMemberId = member.id;
+                console.log(`[Submit] Successfully mapped to new UUID: ${finalMemberId}`);
             } else {
-                // 혹시라도 조회가 늦어질 경우를 대비해 가장 최근 생성된 멤버라도 찾음
-                const allAnonymous = (membersRes.data.members || []).filter(m => m.name.startsWith('익명'));
-                if (allAnonymous.length > 0) {
-                    finalMemberId = allAnonymous[allAnonymous.length - 1].id;
+                // 찾기 실패 시 가장 마지막에 들어온 멤버라도 사용 (최후의 수단)
+                const allMembers = membersRes.data.members || [];
+                if (allMembers.length > 0) {
+                    finalMemberId = allMembers[allMembers.length - 1].id;
                 }
             }
         }
