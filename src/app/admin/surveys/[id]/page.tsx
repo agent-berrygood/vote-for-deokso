@@ -370,13 +370,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         const fileName = `${surveyTitle}_${isPrivateOnly ? '개인정보' : '일반응답'}_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, fileName);
     };
-        XLSX.utils.book_append_sheet(wb, ws, "설문응답");
-        
-        // 열 너비 자동 조정 (기본)
-        ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 25 }];
-
-        XLSX.writeFile(wb, `설문응답_${survey?.title || 'export'}_${new Date().toISOString().slice(0,10)}.xlsx`);
-    };
 
     const handleDeleteResponse = async (id: string, label: string) => {
         if (!window.confirm(`${label}의 응답을 삭제하시겠습니까?`)) return;
