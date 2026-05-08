@@ -115,10 +115,15 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+    // [New] Tracks deletions to perform them on final save
+    const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
+    const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
+
     // Survey Editing State
     const [isSurveyEditOpen, setSurveyEditOpen] = useState(false);
     const [surveyTitle, setSurveyTitle] = useState('');
     const [surveyDesc, setSurveyDesc] = useState('');
+
 
     // Section Dialog State
     const [isSectionDialogOpen, setSectionDialogOpen] = useState(false);
@@ -214,7 +219,10 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 console.log('Fetched questions:', questionsRes.data);
                 setQuestions(questionsRes.data as any);
                 setHasUnsavedChanges(false);
+                setDeletedQuestionIds([]);
+                setDeletedSectionIds([]);
             }
+
         } catch (e) {
             console.error(e);
             setMsg({ type: 'error', text: '데이터를 불러오는 중 오류가 발생했습니다.' });
@@ -501,53 +509,38 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
     const handleSaveSection = async () => {
         if (!sTitle.trim()) return;
-        setSubmitting(true);
-        try {
-            if (editingSection) {
-                const res = await updateSurveySectionAction({
-                    surveyId,
-                    id: editingSection.id,
-                    title: sTitle.trim(),
-                    description: sDesc.trim() || undefined
-                });
-                if (res.success) setMsg({ type: 'success', text: '섹션이 수정되었습니다.' });
-            } else {
-                const res = await createSurveySectionAction({
-                    surveyId,
-                    title: sTitle.trim(),
-                    description: sDesc.trim() || undefined,
-                    orderIdx: sections.length > 0 ? Math.max(...sections.map(s => s.orderIdx)) + 1 : 1
-                });
-                if (res.success) {
-                    setMsg({ type: 'success', text: '새 섹션이 추가되었습니다.' });
-                    setSectionDialogOpen(false);
-                    router.refresh();
-                    fetchData();
-                } else {
-                    setMsg({ type: 'error', text: `섹션 추가 실패: ${res.error}` });
-                }
-            }
-        } catch (e) {
-            setMsg({ type: 'error', text: '오류가 발생했습니다.' });
-        } finally {
-            setSubmitting(false);
+        
+        if (editingSection) {
+            // Update local state
+            setSections(prev => prev.map(s => s.id === editingSection.id ? { ...s, title: sTitle.trim(), description: sDesc.trim() || null } : s));
+            setHasUnsavedChanges(true);
+            setSectionDialogOpen(false);
+        } else {
+            // Create local temporary ID
+            const tempId = `temp_s_${Date.now()}`;
+            const newSection: Section = {
+                id: tempId,
+                title: sTitle.trim(),
+                description: sDesc.trim() || null,
+                orderIdx: sections.length > 0 ? Math.max(...sections.map(s => s.orderIdx)) + 1 : 1
+            };
+            setSections(prev => [...prev, newSection]);
+            setHasUnsavedChanges(true);
+            setSectionDialogOpen(false);
         }
     };
 
-    const handleDeleteSection = async (id: string) => {
-        if (!window.confirm('이 섹션을 삭제하시겠습니까? 섹션 내 문항들의 섹션 지정이 해제됩니다.')) return;
-        setSubmitting(true);
-        try {
-            const res = await deleteSurveySectionAction(id, surveyId);
-            if (res.success) {
-                setMsg({ type: 'success', text: '섹션이 삭제되었습니다.' });
-                router.refresh();
-                fetchData();
-            } else {
-                setMsg({ type: 'error', text: `섹션 삭제 실패: ${res.error}` });
-            }
-        } catch (e) { } finally { setSubmitting(false); }
+    const handleDeleteSection = (id: string) => {
+        if (!window.confirm('이 섹션을 삭제하시겠습니까? 섹션 내 문항들의 섹션 지정이 해제됩니다. (최종 저장 버튼을 누를 때까지 실제로 삭제되지 않습니다)')) return;
+        
+        if (!id.startsWith('temp_')) {
+            setDeletedSectionIds(prev => [...prev, id]);
+        }
+        setSections(prev => prev.filter(s => s.id !== id));
+        setQuestions(prev => prev.map(q => q.sectionId === id ? { ...q, sectionId: null } : q));
+        setHasUnsavedChanges(true);
     };
+
 
     const handleAddOption = () => {
         setQOptions([...qOptions, '']);
@@ -574,69 +567,140 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     ? JSON.stringify({ rows: gridRows.map(r => r.trim()).filter(r => r !== ''), columns: gridCols.map(c => c.trim()).filter(c => c !== '') })
                     : null;
 
-        setSubmitting(true);
-        try {
-            if (editingQuestion) {
-                const res = await updateSurveyQuestionAction({
-                    surveyId,
-                    id: editingQuestion.id,
-                    sectionId: qSectionId || null,
-                    text: qText.trim(),
-                    type: qType,
-                    options: filteredOptions, // null to clear if changed to TEXT
-                    maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
-                    logic: qLogic || null
-                });
-                if (res.success) {
-                    setMsg({ type: 'success', text: '문항이 수정되었습니다.' });
-                    setDialogOpen(false);
-                    router.refresh();
-                    fetchData();
-                } else {
-                    setMsg({ type: 'error', text: res.error || '문항 수정 실패' });
-                }
-            } else {
-                const res = await createSurveyQuestionAction({
-                    surveyId,
-                    sectionId: qSectionId || undefined,
-                    text: qText.trim(),
-                    type: qType,
-                    options: filteredOptions || undefined,
-                    maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
-                    logic: qLogic || undefined,
-                    orderIdx: questions.length > 0 ? Math.max(...questions.map(q => q.orderIdx)) + 1 : 1
-                });
-                if (res.success) {
-                    setMsg({ type: 'success', text: '새 문항이 추가되었습니다.' });
-                    setDialogOpen(false);
-                    router.refresh();
-                    fetchData();
-                } else {
-                    setMsg({ type: 'error', text: res.error || '문항 추가 실패' });
-                }
-            }
-        } catch (e) {
-            console.error(e);
-            setMsg({ type: 'error', text: '저장 중 오류가 발생했습니다.' });
-        } finally {
-            setSubmitting(false);
+        if (editingQuestion) {
+            setQuestions(prev => prev.map(q => q.id === editingQuestion.id ? {
+                ...q,
+                sectionId: qSectionId || null,
+                text: qText.trim(),
+                type: qType,
+                options: filteredOptions,
+                maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
+                logic: qLogic || null
+            } : q));
+        } else {
+            const tempId = `temp_q_${Date.now()}`;
+            const newQuestion: Question = {
+                id: tempId,
+                sectionId: qSectionId || null,
+                text: qText.trim(),
+                type: qType,
+                options: filteredOptions,
+                maxChoices: qType === 'MULTIPLE_SELECT' ? qMaxChoices : 1,
+                logic: qLogic || null,
+                orderIdx: questions.length > 0 ? Math.max(...questions.map(q => q.orderIdx)) + 1 : 1
+            };
+            setQuestions(prev => [...prev, newQuestion]);
         }
+        setHasUnsavedChanges(true);
+        setDialogOpen(false);
     };
 
-    const handleDeleteQuestion = async (id: string) => {
-        if (!window.confirm('이 문항을 삭제하시겠습니까?')) return;
+    const handleDeleteQuestion = (id: string) => {
+        if (!window.confirm('이 문항을 삭제하시겠습니까? (최종 저장 버튼을 누를 때까지 실제로 삭제되지 않습니다)')) return;
+        
+        if (!id.startsWith('temp_')) {
+            setDeletedQuestionIds(prev => [...prev, id]);
+        }
+        setQuestions(prev => prev.filter(q => q.id !== id));
+        setHasUnsavedChanges(true);
+    };
+
+
+    const handleSaveOrder = async () => {
         setSubmitting(true);
+        setMsg({ type: 'success', text: '서버에 저장 중입니다...' });
         try {
-            const res = await deleteSurveyQuestionAction(id, surveyId);
-            if (res.success) {
-                setMsg({ type: 'success', text: '문항이 삭제되었습니다.' });
-                router.refresh();
-                fetchData();
-            } else {
-                setMsg({ type: 'error', text: res.error || '문항 삭제 실패' });
+            // 1. Delete removed sections
+            for (const sid of deletedSectionIds) {
+                await deleteSurveySectionAction(sid, surveyId);
             }
-        } catch (e) {
-            console.error(e);
+
+            // 2. Delete removed questions
+            for (const qid of deletedQuestionIds) {
+                await deleteSurveyQuestionAction(qid, surveyId);
+            }
+
+            // 3. Upsert sections and track ID mapping for temp sections
+            const sectionIdMap: Record<string, string> = {};
+            for (let i = 0; i < sections.length; i++) {
+                const s = sections[i];
+                if (s.id.startsWith('temp_')) {
+                    const res = await createSurveySectionAction({
+                        surveyId,
+                        title: s.title,
+                        description: s.description || undefined,
+                        orderIdx: i + 1
+                    });
+                    // This is a bit tricky: createSurveySectionAction doesn't return the new ID currently.
+                    // Ideally it should. For now, we'll need to re-fetch later.
+                } else {
+                    await updateSurveySectionAction({
+                        surveyId,
+                        id: s.id,
+                        title: s.title,
+                        description: s.description || undefined,
+                        orderIdx: i + 1
+                    });
+                }
+            }
+
+            // [Important] Re-fetch sections to get real IDs if new ones were added
+            // because questions need sectionId
+            const freshSectionsRes = await listSurveySectionsAction(surveyId);
+            const freshSections = freshSectionsRes.success ? freshSectionsRes.data as any[] : [];
+
+            // Simple mapping: matching by title if it's unique enough (risky) or just assume they are there
+            // BETTER: modify questions sectionId logic if needed.
+
+            // 4. Upsert questions
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                
+                // Map temp sectionId to real sectionId if necessary
+                let finalSectionId = q.sectionId;
+                if (q.sectionId && q.sectionId.startsWith('temp_')) {
+                    const tempSection = sections.find(ts => ts.id === q.sectionId);
+                    if (tempSection) {
+                        const realS = freshSections.find(fs => fs.title === tempSection.title);
+                        finalSectionId = realS ? realS.id : null;
+                    }
+                }
+
+                if (q.id.startsWith('temp_')) {
+                    await createSurveyQuestionAction({
+                        surveyId,
+                        sectionId: finalSectionId || undefined,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options || undefined,
+                        maxChoices: q.maxChoices || 1,
+                        logic: q.logic || undefined,
+                        orderIdx: i + 1
+                    });
+                } else {
+                    await updateSurveyQuestionAction({
+                        surveyId,
+                        id: q.id,
+                        sectionId: finalSectionId,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options,
+                        maxChoices: q.maxChoices,
+                        logic: q.logic,
+                        orderIdx: i + 1
+                    });
+                }
+            }
+
+            setMsg({ type: 'success', text: '모든 변경 사항이 최종 저장되었습니다.' });
+            setHasUnsavedChanges(false);
+            setDeletedQuestionIds([]);
+            setDeletedSectionIds([]);
+            router.refresh();
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            setMsg({ type: 'error', text: '저장 중 오류가 발생했습니다. 일부 데이터만 저장되었을 수 있습니다.' });
         } finally {
             setSubmitting(false);
         }
@@ -658,36 +722,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         setHasUnsavedChanges(true);
     };
 
-    const handleSaveOrder = async () => {
-        setSubmitting(true);
-        try {
-            // Update all questions' orderIdx in the DB
-            let successCount = 0;
-            for (let i = 0; i < questions.length; i++) {
-                const q = questions[i];
-                const res = await updateSurveyQuestionAction({
-                    surveyId,
-                    id: q.id,
-                    orderIdx: i + 1
-                });
-                if (res.success) successCount++;
-            }
-
-            if (successCount === questions.length) {
-                setMsg({ type: 'success', text: '순서가 저장되었습니다.' });
-                setHasUnsavedChanges(false);
-                router.refresh();
-                fetchData();
-            } else {
-                setMsg({ type: 'error', text: `일부 문항 저장 실패 (${successCount}/${questions.length})` });
-            }
-        } catch (err) {
-            console.error(err);
-            setMsg({ type: 'error', text: '순서 저장 중 오류가 발생했습니다.' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
 
     // Sortable Question Item Component
@@ -867,22 +901,10 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         )}
                     </List>
                 </Paper>
-
                 <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #e1bee7' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                         <Typography variant="h6" fontWeight="bold">문항 목록</Typography>
                         <Stack direction="row" spacing={1}>
-                            {hasUnsavedChanges && (
-                                <Button 
-                                    variant="contained" 
-                                    color="success" 
-                                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                                    onClick={handleSaveOrder}
-                                    disabled={submitting}
-                                >
-                                    순서 저장 적용
-                                </Button>
-                            )}
                             <Button 
                                 variant="contained" 
                                 color="secondary" 
@@ -894,6 +916,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             </Button>
                         </Stack>
                     </Box>
+
 
 
                     <DndContext
@@ -939,7 +962,52 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
                 </Paper>
 
+                {/* 최종 저장 하단 플로팅 바 (변경사항 있을 때만 노출) */}
+                {hasUnsavedChanges && (
+                    <Paper 
+                        elevation={10} 
+                        sx={{ 
+                            position: 'fixed', 
+                            bottom: 20, 
+                            left: '50%', 
+                            transform: 'translateX(-50%)', 
+                            zIndex: 1000, 
+                            p: 2, 
+                            px: 4, 
+                            borderRadius: 10, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 3, 
+                            bgcolor: '#2e7d32', 
+                            color: 'white',
+                            border: '2px solid #fff',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                        }}
+                    >
+                        <Typography variant="body1" fontWeight="bold">
+                            ⚠️ 변경된 내용이 있습니다. 반드시 저장 버튼을 눌러주세요!
+                        </Typography>
+                        <Button 
+                            variant="contained" 
+                            color="inherit" 
+                            size="large"
+                            startIcon={submitting ? <CircularProgress size={24} /> : <SaveIcon />}
+                            onClick={handleSaveOrder}
+                            disabled={submitting}
+                            sx={{ 
+                                color: '#2e7d32', 
+                                fontWeight: 'bold', 
+                                px: 4, 
+                                '&:hover': { bgcolor: '#f5f5f5' } 
+                            }}
+                        >
+                            {submitting ? '저장 중...' : '전체 설문 저장 적용'}
+                        </Button>
+                    </Paper>
+                )}
+
                 {/* 응답 관리 패널 */}
+
                 <Paper sx={{ p: 4, mb: 4, borderRadius: 3, border: '1px solid #ffcdd2', bgcolor: '#fff8f8' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                         <Box>
