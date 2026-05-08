@@ -118,6 +118,15 @@ export default function SurveyPage() {
     useEffect(() => {
         const name = sessionStorage.getItem('memberName');
         const id = sessionStorage.getItem('memberId');
+        
+        // 잘못된 형식(guest_...)의 ID가 남아있으면 초기화하여 재발급 유도
+        if (id && id.startsWith('guest_')) {
+            sessionStorage.removeItem('memberId');
+            sessionStorage.removeItem('memberName');
+            router.push('/');
+            return;
+        }
+
         if (!name || !id) {
             router.push('/');
             return;
