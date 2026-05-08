@@ -517,10 +517,14 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
         if (vars.memberId.startsWith('guest_')) {
             const parts = vars.memberId.split('_');
             if (parts.length >= 2) {
-                finalMemberId = parts[1]; // UUID 부분만 추출
+                finalMemberId = parts[1]; // UUID 부분만 추출 (예: guest_uuid_... -> uuid)
+                console.log('Detected anonymous session, mapping to member UUID:', finalMemberId);
             }
         }
         
+        // 중복 응답 방지를 위한 key(memberId + surveyId)가 DB에 있을 수 있으므로 
+        // 설문 모드에서는 항상 새로운 ID로 인식되게 하거나, 서버 SDK 단에서 Insert를 보장해야 함.
+        // 여기서는 SDK 호출 시 memberId를 치환하여 전달함.
         await submitSurveyResponseSDK({
             ...vars,
             memberId: finalMemberId

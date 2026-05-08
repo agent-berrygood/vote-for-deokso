@@ -350,9 +350,20 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             // 질문들 매핑
             const answers = r.answers ? JSON.parse(r.answers) : {};
             targetQuestions.forEach((q, idx) => {
+                // 1. 기본 답변 값 찾기
                 let val = answers[q.id] || answers[q.text] || '';
                 
-                // Format ranking data
+                // 2. '기타' 주관식 답변이 별도 키로 존재할 경우 합치기
+                const otherVal = answers[`${q.id}_other`];
+                if (otherVal) {
+                    if (Array.isArray(val)) {
+                        val = val.map(v => v.includes('기타') ? `기타(${otherVal})` : v);
+                    } else if (typeof val === 'string' && val.includes('기타')) {
+                        val = `기타(${otherVal})`;
+                    }
+                }
+
+                // 3. 순위 선택형 데이터 포맷팅
                 if (q.type === 'RANK_CHOICE' && val && typeof val === 'object') {
                     const r1 = val.rank1 === '기타' && val.other1 ? `기타(${val.other1})` : (val.rank1 || '');
                     const r2 = val.rank2 === '기타' && val.other2 ? `기타(${val.other2})` : (val.rank2 || '');

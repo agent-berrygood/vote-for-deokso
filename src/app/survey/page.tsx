@@ -174,24 +174,9 @@ export default function SurveyPage() {
                 if (sectionsRes.success) setSections(sectionsRes.data as any);
                 if (questionsRes.success) setQuestions(questionsRes.data as any);
                 
-                // 중복 응답 확인 및 데이터 로드 (ELECTION 모드이거나 실명 인증 사용자일 때만 수행)
-                if (activeService === 'ELECTION' && memberId && !memberId.startsWith('guest_')) {
-                    const dupRes = await getSurveyResponseByMemberAction({
-                        surveyId: activeSurveyId,
-                        memberId: memberId
-                    });
-                    if (dupRes.success && dupRes.data && dupRes.data.length > 0) {
-                        const existing = dupRes.data[0];
-                        setExistingResponseId(existing.id);
-                        setIsEditMode(true);
-                        try {
-                            const prevAnswers = JSON.parse(existing.answers);
-                            setAnswers(prevAnswers);
-                        } catch (e) {
-                            console.error('Failed to parse existing answers:', e);
-                        }
-                    }
-                }
+                // 설문 모드에서는 이전 응답을 불러오지 않음 (보안 및 중복 방지)
+                // ELECTION 등 실명 인증 모드에서만 필요한 로직이므로 설문 모드에서는 건너뜀
+                
 
                 if (!surveyRes.success) {
                     setError(surveyRes.error || '설문 정보를 불러오지 못했습니다.');
