@@ -155,50 +155,10 @@ export async function verifyMemberInfo(
  */
 export async function ensureAnonymousMember(): Promise<{ success: boolean; memberId?: string; memberName?: string }> {
     try {
-        const anonymousName = '익명';
-        const anonymousPhone = '010-0000-0000';
-        const anonymousBirthdate = '000000';
-        
-        // 1. 모든 교인 목록에서 이름과 번호로 직접 검색 (검색 API 누락 가능성 차단)
-        const allRes = await listMembersAction();
-        if (allRes.success && allRes.data) {
-            const member = (allRes.data as any[]).find(m => {
-                const dbName = (m.name || '').replace(/\s+/g, '');
-                const dbPhone = (m.phone || '').replace(/[^0-9]/g, '');
-                const targetPhone = anonymousPhone.replace(/[^0-9]/g, '');
-                return dbName === anonymousName && dbPhone === targetPhone;
-            });
-            if (member) {
-                // 실제 DB의 익명 UUID를 찾았더라도, 세션 구분을 위해 고유 가상 ID를 반환
-                const virtualId = `guest_${member.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                return { success: true, memberId: virtualId, memberName: member.name };
-            }
-        }
-        
-        // 2. 검색 실패 시 강제 생성 시도
-        const createRes = await createMemberAction({
-            name: anonymousName,
-            phone: anonymousPhone,
-            birthdate: anonymousBirthdate,
-            isSelfRegistered: true
-        });
-        
-        // 3. 생성 후 다시 전체 목록에서 ID 확보
-        const retryRes = await listMembersAction();
-        if (retryRes.success && retryRes.data) {
-            const member = (retryRes.data as any[]).find(m => {
-                const dbName = (m.name || '').replace(/\s+/g, '');
-                const dbPhone = (m.phone || '').replace(/[^0-9]/g, '');
-                const targetPhone = anonymousPhone.replace(/[^0-9]/g, '');
-                return dbName === anonymousName && dbPhone === targetPhone;
-            });
-            if (member) {
-                const virtualId = `guest_${member.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                return { success: true, memberId: virtualId, memberName: member.name };
-            }
-        }
-        
-        return { success: false };
+        // 설문 모드일 때는 DB 조회 없이 즉석에서 무작위 가상 ID 생성
+        // 실제 DB 등록은 제출 시점에 서버에서 처리함 (보안 및 중복 방지)
+        const randomToken = `anonymous_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        return { success: true, memberId: randomToken, memberName: '익명 사용자' };
     } catch (error) {
         console.error('ensureAnonymousMember error:', error);
         return { success: false };

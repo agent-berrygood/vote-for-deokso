@@ -513,18 +513,34 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
     try {
         let finalMemberId = vars.memberId;
         
-        // 가상 ID(guest_UUID_timestamp)인 경우 실제 UUID만 추출
-        if (vars.memberId.startsWith('guest_')) {
-            const parts = vars.memberId.split('_');
-            if (parts.length >= 2) {
-                finalMemberId = parts[1]; // UUID 부분만 추출 (예: guest_uuid_... -> uuid)
-                console.log('Detected anonymous session, mapping to member UUID:', finalMemberId);
+        // 가상 ID(anonymous_...)인 경우 DB에 임시 '익명' 교인을 새로 생성하여 UUID 확보
+        if (vars.memberId.startsWith('anonymous_')) {
+            console.log('Anonymous session detected, creating temporary member record for isolation.');
+            
+            // 1. 임시 교인 생성 (이름: 익명, 번호: 010-0000-0000)
+            // 이를 통해 매 응답마다 고유한 memberId(UUID)가 생성되어 데이터 덮어쓰기를 원천 방지함
+            const tempMemberName = '익명';
+            const tempMemberPhone = '010-0000-0000';
+            
+            // Note: createMemberSDK가 생성된 ID를 바로 반환하지 않을 수 있으므로 생성 후 조회 로직 필요
+            await createMemberSDK({
+                name: tempMemberName,
+                phone: tempMemberPhone,
+                birthdate: '000000',
+                isSelfRegistered: true
+            });
+            
+            // 2. 방금 생성된 교인의 ID를 가져오기 위해 목록 조회 (가장 최근 생성된 익명 교인 찾기)
+            const membersRes = await listMembersSDK();
+            const anonymousMembers = (membersRes.data.members || []).filter(m => m.name === tempMemberName && m.phone === tempMemberPhone);
+            
+            if (anonymousMembers.length > 0) {
+                // 가장 최근에 생성된(마지막 인덱스) 멤버 ID 사용
+                finalMemberId = anonymousMembers[anonymousMembers.length - 1].id;
+                console.log('Mapped anonymous session to new member UUID:', finalMemberId);
             }
         }
         
-        // 중복 응답 방지를 위한 key(memberId + surveyId)가 DB에 있을 수 있으므로 
-        // 설문 모드에서는 항상 새로운 ID로 인식되게 하거나, 서버 SDK 단에서 Insert를 보장해야 함.
-        // 여기서는 SDK 호출 시 memberId를 치환하여 전달함.
         await submitSurveyResponseSDK({
             ...vars,
             memberId: finalMemberId

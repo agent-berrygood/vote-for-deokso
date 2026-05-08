@@ -121,7 +121,7 @@ export default function SurveyPage() {
             let id = sessionStorage.getItem('memberId');
             
             // 설문 모드이거나 세션이 없으면 무조건 새 세션 생성
-            if (activeService === 'SURVEY' || !name || !id || id.startsWith('guest_')) {
+            if (activeService === 'SURVEY' || !name || !id || id.startsWith('guest_') || id.startsWith('anonymous_')) {
                 setLoading(true);
                 try {
                     const { ensureAnonymousMember } = await import('@/app/actions/auth');
