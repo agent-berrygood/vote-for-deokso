@@ -513,9 +513,9 @@ export async function submitSurveyResponseAction(vars: { surveyId: string, membe
     try {
         await submitSurveyResponseSDK(vars);
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('submitSurveyResponseAction error:', error);
-        return { success: false, error: '설문 응답 제출에 실패했습니다.' };
+        return { success: false, error: error.message || '설문 응답 제출에 실패했습니다.' };
     }
 }
 
