@@ -346,18 +346,22 @@ export default function SurveyPage() {
             {survey && (
                 <Box>
                     <Paper sx={{ p: 4, borderRadius: 3, mb: 3 }}>
-                        <Typography variant="h6" fontWeight="bold" gutterBottom>
-                            {survey.title}
-                        </Typography>
-                        <Typography variant="body2" sx={{ 
-                            mb: 2, 
-                            whiteSpace: 'pre-wrap', 
-                            wordBreak: 'keep-all', 
-                            overflowWrap: 'break-word',
-                            lineHeight: 1.6
-                        }}>
-                            {survey.description}
-                        </Typography>
+                        {currentPageIdx === 0 && (
+                            <>
+                                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                    {survey.title}
+                                </Typography>
+                                <Typography variant="body2" sx={{ 
+                                    mb: 2, 
+                                    whiteSpace: 'pre-wrap', 
+                                    wordBreak: 'keep-all', 
+                                    overflowWrap: 'break-word',
+                                    lineHeight: 1.6
+                                }}>
+                                    {survey.description}
+                                </Typography>
+                            </>
+                        )}
                         
                         {/* Progress Bar */}
                         <Box sx={{ width: '100%', mb: 4 }}>
