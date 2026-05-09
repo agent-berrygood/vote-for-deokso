@@ -774,11 +774,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setDeletedQuestionIds([]);
             setDeletedSectionIds([]);
             
-            // Force refresh server and then local state
-            router.refresh();
-            setTimeout(() => {
-                fetchData();
-            }, 500); // Small delay to ensure DB propagation and server cache revalidation
+            // 저장 완료 후 최신 데이터 즉시 로드 (router.refresh() 제거: 클라이언트 컴포넌트에서 불필요하고 느림)
+            fetchData();
         } catch (err) {
 
             console.error(err);
