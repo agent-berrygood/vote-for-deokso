@@ -612,8 +612,8 @@ export default function SurveyPage() {
                                                                                 <MenuItem value="" disabled>2순위를 선택해 주세요</MenuItem>
                                                                                 {(options || [])
                                                                                     .map((opt: string, i: number) => ({ opt, originalIndex: i }))
-                                                                                    .filter(({ opt }) => opt !== rankAnswers.rank1)
-                                                                                    .map(({ opt, originalIndex }) => (
+                                                                                    .filter(({ opt }: { opt: string; originalIndex: number }) => opt !== rankAnswers.rank1)
+                                                                                    .map(({ opt, originalIndex }: { opt: string; originalIndex: number }) => (
                                                                                         <MenuItem key={originalIndex} value={opt}>{originalIndex + 1}. {opt}</MenuItem>
                                                                                     ))
                                                                                 }

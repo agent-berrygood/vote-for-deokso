@@ -89,15 +89,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { GripVertical } from 'lucide-react';
+import 'react-quill/dist/quill.snow.css';
 
-const ReactQuill = dynamic(
-    async () => {
-        const { default: RQ } = await import('react-quill');
-        await import('react-quill/dist/quill.snow.css');
-        return RQ;
-    },
-    { ssr: false }
-);
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 
 
