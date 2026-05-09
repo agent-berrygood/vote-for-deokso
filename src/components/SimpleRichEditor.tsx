@@ -13,9 +13,10 @@ interface SimpleRichEditorProps {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    minHeight?: number;
 }
 
-export default function SimpleRichEditor({ value, onChange, placeholder }: SimpleRichEditorProps) {
+export default function SimpleRichEditor({ value, onChange, placeholder, minHeight = 120 }: SimpleRichEditorProps) {
     const editorRef = useRef<HTMLDivElement>(null);
     const lastValueRef = useRef<string>(value);
 
@@ -150,7 +151,7 @@ export default function SimpleRichEditor({ value, onChange, placeholder }: Simpl
                 onInput={handleInput}
                 data-placeholder={placeholder || '질문 내용을 입력하세요. 텍스트를 드래그하여 서식을 적용할 수 있습니다.'}
                 sx={{
-                    minHeight: 120,
+                    minHeight: minHeight,
                     p: 1.5,
                     outline: 'none',
                     fontSize: '14px',

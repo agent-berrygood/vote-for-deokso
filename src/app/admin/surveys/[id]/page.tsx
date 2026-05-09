@@ -149,7 +149,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qIsPrivate, setQIsPrivate] = useState(false);
     const [qIsRequired, setQIsRequired] = useState(false);
     const [qFontSize, setQFontSize] = useState<number>(1.1);
-    const [qOptionFontSize, setQOptionFontSize] = useState<number>(1.0);
 
     
     
@@ -205,10 +204,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             logicObj.fontSize = qFontSize;
         }
 
-        if (qOptionFontSize && qOptionFontSize !== 1.0) {
-            logicObj.optionFontSize = qOptionFontSize;
-        }
-
         if (logicQuestionId) {
             logicObj.showIf = {
                 questionId: logicQuestionId,
@@ -232,7 +227,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         if (qLogic !== newLogic) {
             setQLogic(newLogic);
         }
-    }, [logicQuestionId, logicValue, qIsPrivate, qIsRequired, qFontSize, qOptionFontSize]);
+    }, [logicQuestionId, logicValue, qIsPrivate, qIsRequired, qFontSize]);
 
     const [submitting, setSubmitting] = useState(false);
 
@@ -508,7 +503,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     setQIsPrivate(!!parsed.isPrivate);
                     setQIsRequired(!!parsed.isRequired);
                     setQFontSize(parsed.fontSize || 1.1);
-                    setQOptionFontSize(parsed.optionFontSize || 1.0);
 
                 } catch (e) {
                     setLogicQuestionId('');
@@ -516,7 +510,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     setQIsPrivate(false);
                     setQIsRequired(false);
                     setQFontSize(1.1);
-                    setQOptionFontSize(1.0);
 
                 }
             } else {
@@ -525,7 +518,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 setQIsPrivate(false);
                 setQIsRequired(false);
                 setQFontSize(1.1);
-                setQOptionFontSize(1.0);
 
             }
         } else {
@@ -547,7 +539,6 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setQIsPrivate(false);
             setQIsRequired(false);
             setQFontSize(1.1);
-            setQOptionFontSize(1.0);
 
         }
         setDialogOpen(true);
@@ -1440,14 +1431,15 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 </Typography>
                                 <Stack spacing={1}>
                                     {qOptions.map((opt, index) => (
-                                        <Box key={index} sx={{ display: 'flex', gap: 1 }}>
-                                            <TextField
-                                                fullWidth
-                                                size="small"
-                                                placeholder={`보기 ${index + 1}`}
-                                                value={opt}
-                                                onChange={(e) => handleOptionChange(index, e.target.value)}
-                                            />
+                                        <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                                            <Box sx={{ flex: 1 }}>
+                                                <SimpleRichEditor
+                                                    value={opt}
+                                                    onChange={(val) => handleOptionChange(index, val)}
+                                                    placeholder={`보기 ${index + 1}`}
+                                                    minHeight={60}
+                                                />
+                                            </Box>
                                             <IconButton 
                                                 size="small" 
                                                 color="error" 
@@ -1624,32 +1616,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 </Typography>
                             </Box>
                         </Box>
-
-                        <Box sx={{ mt: 1, p: 2, border: '1px solid #0288d1', bgcolor: '#e1f5fe', borderRadius: 2 }}>
-                            <Typography variant="body2" fontWeight="bold" color="primary" gutterBottom>
-                                📐 보기(선택지) 글자 크기 조절 ({qOptionFontSize}rem)
-                            </Typography>
-                            <Box sx={{ px: 2, pt: 1 }}>
-                                <Slider
-                                    value={qOptionFontSize}
-                                    min={0.8}
-                                    max={2.0}
-                                    step={0.1}
-                                    marks={[
-                                        { value: 1.0, label: '기본' },
-                                        { value: 1.4, label: '크게' },
-                                        { value: 2.0, label: '매우 크게' }
-                                    ]}
-                                    onChange={(_, newValue) => setQOptionFontSize(newValue as number)}
-                                    color="primary"
-                                />
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                    슬라이더를 조절하여 선택지 보기의 글자 크기를 조정할 수 있습니다.
-                                </Typography>
-                            </Box>
-                        </Box>
                     </Stack>
-
 
                 </DialogContent>
                 <DialogActions sx={{ p: 3 }}>
