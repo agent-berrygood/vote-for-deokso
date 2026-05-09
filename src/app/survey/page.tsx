@@ -481,7 +481,7 @@ export default function SurveyPage() {
                                                                         onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
                                                                     >
                                                                         {(options || []).map((opt: string, i: number) => (
-                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={opt} />
+                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={`${i + 1}. ${opt}`} />
                                                                         ))}
                                                                     </RadioGroup>
                                                                     {isOtherSelected && (
@@ -525,7 +525,7 @@ export default function SurveyPage() {
                                                                                         }}
                                                                                     />
                                                                                 } 
-                                                                                label={opt} 
+                                                                                label={`${i + 1}. ${opt}`} 
                                                                             />
                                                                         );
                                                                     })}
@@ -555,7 +555,7 @@ export default function SurveyPage() {
                                                                     >
                                                                         <MenuItem value="" disabled>선택해 주세요</MenuItem>
                                                                         {(options || []).map((opt: string, i: number) => (
-                                                                            <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                                                            <MenuItem key={i} value={opt}>{i + 1}. {opt}</MenuItem>
                                                                         ))}
                                                                     </Select>
                                                                 </FormControl>
@@ -578,7 +578,7 @@ export default function SurveyPage() {
                                                                             >
                                                                                 <MenuItem value="" disabled>1순위를 선택해 주세요</MenuItem>
                                                                                 {(options || []).map((opt: string, i: number) => (
-                                                                                    <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                                                                    <MenuItem key={i} value={opt}>{i + 1}. {opt}</MenuItem>
                                                                                 ))}
                                                                             </Select>
                                                                         </FormControl>
@@ -611,9 +611,10 @@ export default function SurveyPage() {
                                                                             >
                                                                                 <MenuItem value="" disabled>2순위를 선택해 주세요</MenuItem>
                                                                                 {(options || [])
-                                                                                    .filter((opt: string) => opt !== rankAnswers.rank1)
-                                                                                    .map((opt: string, i: number) => (
-                                                                                        <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                                                                    .map((opt: string, i: number) => ({ opt, originalIndex: i }))
+                                                                                    .filter(({ opt }) => opt !== rankAnswers.rank1)
+                                                                                    .map(({ opt, originalIndex }) => (
+                                                                                        <MenuItem key={originalIndex} value={opt}>{originalIndex + 1}. {opt}</MenuItem>
                                                                                     ))
                                                                                 }
                                                                             </Select>
