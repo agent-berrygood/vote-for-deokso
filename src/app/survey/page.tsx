@@ -142,6 +142,26 @@ export default function SurveyPage() {
         });
     }, [questions, sections, answers]);
 
+    // 전체 문항 중 표시되는 문항에 대해 1번부터 순차적으로 번호 부여 (파트 구분 없이 전체 누적)
+    const visibleQuestionIndices = useMemo(() => {
+        const indices: Record<string, number> = {};
+        let count = 1;
+        for (const group of renderGroups) {
+            const groupQuestions = questions.filter(q => 
+                group.id === 'none' 
+                    ? !sections.some(s => s.id === q.sectionId)
+                    : q.sectionId === group.id
+            );
+            for (const q of groupQuestions) {
+                if (isQuestionVisible(q)) {
+                    indices[q.id] = count++;
+                }
+            }
+        }
+        return indices;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [questions, renderGroups, answers]);
+
     // Set initial section and handle dynamic visibility changes
     useEffect(() => {
         if (renderGroups.length > 0 && !currentSectionId) {
@@ -442,16 +462,21 @@ export default function SurveyPage() {
                                                             fontWeight="bold" 
                                                             gutterBottom
                                                             sx={{ 
+                                                                display: 'flex',
+                                                                alignItems: 'flex-start',
                                                                 fontSize,
                                                                 lineHeight: 1.4,
                                                                 wordBreak: 'keep-all',
-                                                                '& p': { m: 0 } // quill의 기본 p 태그 여백 제거
+                                                                '& p': { m: 0, display: 'inline' } // quill의 기본 p 태그 여백 제거 및 인라인 처리
                                                             }}
                                                         >
-                                                            <span dangerouslySetInnerHTML={{ __html: q.text }} />
-                                                            {isRequired && (
-                                                                <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold', fontSize: 'inherit', verticalAlign: 'middle' }}>*</Typography>
-                                                            )}
+                                                            <span style={{ marginRight: '8px', flexShrink: 0 }}>{visibleQuestionIndices[q.id]}.</span>
+                                                            <Box component="span" sx={{ flexGrow: 1 }}>
+                                                                <span dangerouslySetInnerHTML={{ __html: q.text }} />
+                                                                {isRequired && (
+                                                                    <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold', fontSize: 'inherit', verticalAlign: 'middle' }}>*</Typography>
+                                                                )}
+                                                            </Box>
                                                         </Typography>
                                                     );
                                                 })()}
