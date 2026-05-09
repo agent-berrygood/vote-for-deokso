@@ -18,12 +18,12 @@ interface SimpleRichEditorProps {
 
 export default function SimpleRichEditor({ value, onChange, placeholder, minHeight = 120 }: SimpleRichEditorProps) {
     const editorRef = useRef<HTMLDivElement>(null);
-    const lastValueRef = useRef<string>(value);
+    const lastValueRef = useRef<string>('');
 
     useEffect(() => {
         if (editorRef.current && value !== lastValueRef.current) {
-            editorRef.current.innerHTML = value;
-            lastValueRef.current = value;
+            editorRef.current.innerHTML = value || '';
+            lastValueRef.current = value || '';
         }
     }, [value]);
 
