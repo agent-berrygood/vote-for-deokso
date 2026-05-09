@@ -70,6 +70,7 @@ export default function SurveyPage() {
 
     const [memberName, setMemberName] = useState('');
     const [memberId, setMemberId] = useState('');
+    const [requiredError, setRequiredError] = useState<string[]>([]); // 미답변 필수 문항 id 목록
 
     // 시스템 설정 1회만 로드 (센드품 액션, 염야 SDK reactive 후크 무한루프 차단)
     useEffect(() => {
@@ -85,6 +86,28 @@ export default function SurveyPage() {
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // 현재 페이지의 필수 문항 중 미답변 항목 ID를 반환
+    const validateRequiredInCurrentPage = (): string[] => {
+        const currentGroup = renderGroups[currentPageIdx];
+        if (!currentGroup) return [];
+        const sectionQuestions = currentGroup.id === 'no-section'
+            ? questions.filter(q => !q.sectionId)
+            : questions.filter(q => q.sectionId === currentGroup.id);
+        const unAnswered: string[] = [];
+        for (const q of sectionQuestions) {
+            if (!isQuestionVisible(q)) continue;
+            let logic: any = {};
+            try { if (q.logic) logic = JSON.parse(q.logic); } catch(e) {}
+            if (!logic.isRequired) continue;
+            const ans = answers[q.id];
+            const isEmpty = ans === undefined || ans === null || ans === '' ||
+                (Array.isArray(ans) && ans.length === 0) ||
+                (typeof ans === 'object' && !Array.isArray(ans) && !ans.rank1 && !ans.rank2);
+            if (isEmpty) unAnswered.push(q.id);
+        }
+        return unAnswered;
+    };
 
     // Visibility Helper
     const isQuestionVisible = (q: Question) => {
@@ -219,6 +242,14 @@ export default function SurveyPage() {
     }, [activeSurveyId, sysLoading]);
 
     const handleSubmit = async () => {
+        // 마지막 페이지에서도 필수항목 검증
+        const unanswered = validateRequiredInCurrentPage();
+        if (unanswered.length > 0) {
+            setRequiredError(unanswered);
+            window.scrollTo(0, 0);
+            return;
+        }
+        setRequiredError([]);
         if (!activeSurveyId || !memberId) {
             setError('제출을 위한 정보가 부족합니다. 다시 로그인해 주세요.');
             return;
@@ -389,10 +420,16 @@ export default function SurveyPage() {
                                         if (!isQuestionVisible(q)) return null;
 
                                         return (
-                                            <Box key={q.id} sx={{ mb: 4 }}>
+                                            <Box key={q.id} sx={{ mb: 4, p: requiredError.includes(q.id) ? 2 : 0, borderRadius: 2, border: requiredError.includes(q.id) ? '2px solid #ef5350' : 'none', bgcolor: requiredError.includes(q.id) ? '#fff5f5' : 'transparent' }}>
                                                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                                                     {q.text}
+                                                    {(() => { try { return JSON.parse(q.logic || '{}').isRequired; } catch(e) { return false; } })() && (
+                                                        <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold' }}>*</Typography>
+                                                    )}
                                                 </Typography>
+                                                {requiredError.includes(q.id) && (
+                                                    <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1 }}>⚠ 필수 항목입니다. 답변해 주세요.</Typography>
+                                                )}
                                                 
                                                 {(() => {
                                                     let options = q.options ? JSON.parse(q.options) : null;
@@ -696,6 +733,7 @@ export default function SurveyPage() {
                                 onClick={() => {
                                     const prevIdx = currentPageIdx - 1;
                                     if (prevIdx >= 0) {
+                                        setRequiredError([]);
                                         setCurrentSectionId(renderGroups[prevIdx].id);
                                         window.scrollTo(0, 0);
                                     }
@@ -718,6 +756,13 @@ export default function SurveyPage() {
                                         fullWidth 
                                         size="large"
                                         onClick={() => {
+                                            const unanswered = validateRequiredInCurrentPage();
+                                            if (unanswered.length > 0) {
+                                                setRequiredError(unanswered);
+                                                window.scrollTo(0, 0);
+                                                return;
+                                            }
+                                            setRequiredError([]);
                                             const nextIdx = currentPageIdx + 1;
                                             if (nextIdx < totalPages) {
                                                 setCurrentSectionId(renderGroups[nextIdx].id);

@@ -143,6 +143,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qLogic, setQLogic] = useState('');
     const [qMaxChoices, setQMaxChoices] = useState<number>(1);
     const [qIsPrivate, setQIsPrivate] = useState(false);
+    const [qIsRequired, setQIsRequired] = useState(false);
     
     
     // Scale settings
@@ -188,6 +189,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             try {
                 const existing = JSON.parse(qLogic);
                 if (existing.isPrivate) logicObj.isPrivate = true;
+                if (existing.isRequired) logicObj.isRequired = true;
             } catch(e) {}
         }
 
@@ -200,13 +202,21 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         
         if (qIsPrivate) {
             logicObj.isPrivate = true;
+        } else {
+            delete logicObj.isPrivate;
+        }
+
+        if (qIsRequired) {
+            logicObj.isRequired = true;
+        } else {
+            delete logicObj.isRequired;
         }
 
         const newLogic = Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : '';
         if (qLogic !== newLogic) {
             setQLogic(newLogic);
         }
-    }, [logicQuestionId, logicValue, qIsPrivate]);
+    }, [logicQuestionId, logicValue, qIsPrivate, qIsRequired]);
     const [submitting, setSubmitting] = useState(false);
 
     const fetchData = useCallback(async () => {
@@ -479,15 +489,18 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                         setLogicValue('');
                     }
                     setQIsPrivate(!!parsed.isPrivate);
+                    setQIsRequired(!!parsed.isRequired);
                 } catch (e) {
                     setLogicQuestionId('');
                     setLogicValue('');
                     setQIsPrivate(false);
+                    setQIsRequired(false);
                 }
             } else {
                 setLogicQuestionId('');
                 setLogicValue('');
                 setQIsPrivate(false);
+                setQIsRequired(false);
             }
         } else {
             setEditingQuestion(null);
@@ -505,6 +518,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setGridCols(['']);
             setLogicQuestionId('');
             setLogicValue('');
+            setQIsPrivate(false);
+            setQIsRequired(false);
         }
         setDialogOpen(true);
     };
@@ -844,6 +859,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 } size="small" variant="outlined" />
                                 {q.logic && JSON.parse(q.logic || '{}').isPrivate && <Chip label="개인정보(분리)" size="small" color="warning" variant="filled" />}
                                 {q.logic && JSON.parse(q.logic || '{}').showIf && <Chip label="분기 로직 있음" size="small" color="info" variant="filled" />}
+                                {q.logic && JSON.parse(q.logic || '{}').isRequired && <Chip label="필수" size="small" color="error" variant="filled" />}
                             </Box>
                         }
                         secondary={
@@ -1540,6 +1556,24 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                     <Box>
                                         <Typography variant="body2" fontWeight="bold" color="warning.main">개인정보 수집 문항 (엑셀 분리)</Typography>
                                         <Typography variant="caption" color="text.secondary">체크 시 일반 응답 엑셀에서 제외되며, 추첨용 엑셀에만 나타납니다.</Typography>
+                                    </Box>
+                                }
+                            />
+                        </Box>
+
+                        <Box sx={{ mt: 1, p: 2, border: '1px solid #ef5350', bgcolor: '#fff5f5', borderRadius: 2 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox 
+                                        color="error" 
+                                        checked={qIsRequired} 
+                                        onChange={(e) => setQIsRequired(e.target.checked)} 
+                                    />
+                                }
+                                label={
+                                    <Box>
+                                        <Typography variant="body2" fontWeight="bold" color="error.main">필수 항목으로 설정</Typography>
+                                        <Typography variant="caption" color="text.secondary">체크 시 응답자가 이 문항에 답변하지 않으면 다음 페이지로 넘어갈 수 없습니다.</Typography>
                                     </Box>
                                 }
                             />
