@@ -40,7 +40,8 @@ import {
     TableRow,
     TableSortLabel,
     FormControlLabel,
-    Checkbox
+    Checkbox,
+    Slider
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
@@ -144,6 +145,8 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
     const [qMaxChoices, setQMaxChoices] = useState<number>(1);
     const [qIsPrivate, setQIsPrivate] = useState(false);
     const [qIsRequired, setQIsRequired] = useState(false);
+    const [qFontSize, setQFontSize] = useState<number>(1.1);
+
     
     
     // Scale settings
@@ -190,7 +193,12 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                 const existing = JSON.parse(qLogic);
                 if (existing.isPrivate) logicObj.isPrivate = true;
                 if (existing.isRequired) logicObj.isRequired = true;
+                if (existing.fontSize) logicObj.fontSize = existing.fontSize;
             } catch(e) {}
+        }
+
+        if (qFontSize && qFontSize !== 1.1) {
+            logicObj.fontSize = qFontSize;
         }
 
         if (logicQuestionId) {
@@ -216,7 +224,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         if (qLogic !== newLogic) {
             setQLogic(newLogic);
         }
-    }, [logicQuestionId, logicValue, qIsPrivate, qIsRequired]);
+    }, [logicQuestionId, logicValue, qIsPrivate, qIsRequired, qFontSize]);
     const [submitting, setSubmitting] = useState(false);
 
     const fetchData = useCallback(async () => {
@@ -490,17 +498,20 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                     }
                     setQIsPrivate(!!parsed.isPrivate);
                     setQIsRequired(!!parsed.isRequired);
+                    setQFontSize(parsed.fontSize || 1.1);
                 } catch (e) {
                     setLogicQuestionId('');
                     setLogicValue('');
                     setQIsPrivate(false);
                     setQIsRequired(false);
+                    setQFontSize(1.1);
                 }
             } else {
                 setLogicQuestionId('');
                 setLogicValue('');
                 setQIsPrivate(false);
                 setQIsRequired(false);
+                setQFontSize(1.1);
             }
         } else {
             setEditingQuestion(null);
@@ -520,6 +531,7 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
             setLogicValue('');
             setQIsPrivate(false);
             setQIsRequired(false);
+            setQFontSize(1.1);
         }
         setDialogOpen(true);
     };
@@ -1575,7 +1587,32 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                                 }
                             />
                         </Box>
+
+                        <Box sx={{ mt: 1, p: 2, border: '1px solid #9c27b0', bgcolor: '#f3e5f5', borderRadius: 2 }}>
+                            <Typography variant="body2" fontWeight="bold" color="secondary" gutterBottom>
+                                📏 문항 글자 크기 조절 ({qFontSize}rem)
+                            </Typography>
+                            <Box sx={{ px: 2, pt: 1 }}>
+                                <Slider
+                                    value={qFontSize}
+                                    min={0.8}
+                                    max={2.0}
+                                    step={0.1}
+                                    marks={[
+                                        { value: 1.1, label: '기본' },
+                                        { value: 1.5, label: '크게' },
+                                        { value: 2.0, label: '매우 크게' }
+                                    ]}
+                                    onChange={(_, newValue) => setQFontSize(newValue as number)}
+                                    color="secondary"
+                                />
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                    슬라이더를 조절하여 설문 문항의 글자 크기를 가독성 있게 조정할 수 있습니다.
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Stack>
+
                 </DialogContent>
                 <DialogActions sx={{ p: 3 }}>
                     <Button onClick={() => setDialogOpen(false)} disabled={submitting}>취소</Button>

@@ -425,12 +425,34 @@ export default function SurveyPage() {
 
                                         return (
                                             <Box key={q.id} sx={{ mb: 4, p: requiredError.includes(q.id) ? 2 : 0, borderRadius: 2, border: requiredError.includes(q.id) ? '2px solid #ef5350' : 'none', bgcolor: requiredError.includes(q.id) ? '#fff5f5' : 'transparent' }}>
-                                                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                                    {q.text}
-                                                    {(() => { try { return JSON.parse(q.logic || '{}').isRequired; } catch(e) { return false; } })() && (
-                                                        <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold' }}>*</Typography>
-                                                    )}
-                                                </Typography>
+                                                {(() => {
+                                                    let fontSize = 'inherit';
+                                                    let isRequired = false;
+                                                    try {
+                                                        if (q.logic) {
+                                                            const logic = JSON.parse(q.logic);
+                                                            if (logic.fontSize) fontSize = `${logic.fontSize}rem`;
+                                                            if (logic.isRequired) isRequired = true;
+                                                        }
+                                                    } catch(e) {}
+                                                    return (
+                                                        <Typography 
+                                                            variant="subtitle1" 
+                                                            fontWeight="bold" 
+                                                            gutterBottom
+                                                            sx={{ 
+                                                                fontSize,
+                                                                lineHeight: 1.4,
+                                                                wordBreak: 'keep-all'
+                                                            }}
+                                                        >
+                                                            {q.text}
+                                                            {isRequired && (
+                                                                <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold', fontSize: 'inherit' }}>*</Typography>
+                                                            )}
+                                                        </Typography>
+                                                    );
+                                                })()}
                                                 {requiredError.includes(q.id) && (
                                                     <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1 }}>⚠ 필수 항목입니다. 답변해 주세요.</Typography>
                                                 )}
