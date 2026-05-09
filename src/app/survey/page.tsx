@@ -481,8 +481,9 @@ export default function SurveyPage() {
                                                                         onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
                                                                     >
                                                                         {(options || []).map((opt: string, i: number) => (
-                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />}
-                                                                                label={<span dangerouslySetInnerHTML={{ __html: `${i + 1}. ${opt}` }} style={{ display: 'inline-block' }} />}
+                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" sx={{ mt: -0.5 }} />}
+                                                                                sx={{ alignItems: 'flex-start', mb: 1 }}
+                                                                                label={<span dangerouslySetInnerHTML={{ __html: `${i + 1}. ${opt}` }} style={{ display: 'block', whiteSpace: 'normal', wordBreak: 'keep-all', marginTop: '2px' }} />}
                                                                             />
                                                                         ))}
                                                                     </RadioGroup>
@@ -516,6 +517,7 @@ export default function SurveyPage() {
                                                                                         color="secondary"
                                                                                         checked={isChecked}
                                                                                         disabled={!isChecked && maxReached}
+                                                                                        sx={{ mt: -0.5 }}
                                                                                         onChange={(e) => {
                                                                                             let newAnswers;
                                                                                             if (e.target.checked) {
@@ -527,7 +529,8 @@ export default function SurveyPage() {
                                                                                         }}
                                                                                     />
                                                                                 } 
-                                                                                label={<span dangerouslySetInnerHTML={{ __html: `${i + 1}. ${opt}` }} style={{ display: 'inline-block' }} />} 
+                                                                                sx={{ alignItems: 'flex-start', mb: 1 }}
+                                                                                label={<span dangerouslySetInnerHTML={{ __html: `${i + 1}. ${opt}` }} style={{ display: 'block', whiteSpace: 'normal', wordBreak: 'keep-all', marginTop: '2px' }} />} 
                                                                             />
                                                                         );
                                                                     })}
@@ -557,7 +560,7 @@ export default function SurveyPage() {
                                                                     >
                                                                         <MenuItem value="" disabled>선택해 주세요</MenuItem>
                                                                         {(options || []).map((opt: string, i: number) => (
-                                                                            <MenuItem key={i} value={opt}>
+                                                                            <MenuItem key={i} value={opt} sx={{ whiteSpace: 'normal', wordBreak: 'keep-all' }}>
                                                                                 <span dangerouslySetInnerHTML={{ __html: `${i + 1}. ${opt}` }} />
                                                                             </MenuItem>
                                                                         ))}
@@ -582,7 +585,7 @@ export default function SurveyPage() {
                                                                             >
                                                                                 <MenuItem value="" disabled>1순위를 선택해 주세요</MenuItem>
                                                                                 {(options || []).map((opt: string, i: number) => (
-                                                                                    <MenuItem key={i} value={opt}>
+                                                                                    <MenuItem key={i} value={opt} sx={{ whiteSpace: 'normal', wordBreak: 'keep-all' }}>
                                                                                         <span dangerouslySetInnerHTML={{ __html: `${i + 1}. ${opt}` }} />
                                                                                     </MenuItem>
                                                                                 ))}
@@ -620,7 +623,7 @@ export default function SurveyPage() {
                                                                                     .map((opt: string, i: number) => ({ opt, originalIndex: i }))
                                                                                     .filter(({ opt }: { opt: string; originalIndex: number }) => opt !== rankAnswers.rank1)
                                                                                     .map(({ opt, originalIndex }: { opt: string; originalIndex: number }) => (
-                                                                                        <MenuItem key={originalIndex} value={opt}>
+                                                                                        <MenuItem key={originalIndex} value={opt} sx={{ whiteSpace: 'normal', wordBreak: 'keep-all' }}>
                                                                                             <span dangerouslySetInnerHTML={{ __html: `${originalIndex + 1}. ${opt}` }} />
                                                                                         </MenuItem>
                                                                                     ))
