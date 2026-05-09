@@ -438,17 +438,19 @@ export default function SurveyPage() {
                                                     return (
                                                         <Typography 
                                                             variant="subtitle1" 
+                                                            component="div"
                                                             fontWeight="bold" 
                                                             gutterBottom
                                                             sx={{ 
                                                                 fontSize,
                                                                 lineHeight: 1.4,
-                                                                wordBreak: 'keep-all'
+                                                                wordBreak: 'keep-all',
+                                                                '& p': { m: 0 } // quill의 기본 p 태그 여백 제거
                                                             }}
                                                         >
-                                                            {q.text}
+                                                            <span dangerouslySetInnerHTML={{ __html: q.text }} />
                                                             {isRequired && (
-                                                                <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold', fontSize: 'inherit' }}>*</Typography>
+                                                                <Typography component="span" color="error" sx={{ ml: 0.5, fontWeight: 'bold', fontSize: 'inherit', verticalAlign: 'middle' }}>*</Typography>
                                                             )}
                                                         </Typography>
                                                     );
