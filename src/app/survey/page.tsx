@@ -323,22 +323,35 @@ export default function SurveyPage() {
 
     if (submitted) {
         return (
-            <Container maxWidth="xs" sx={{ py: 8 }}>
-                <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4 }}>
-                    <Typography variant="h4" sx={{ mb: 2 }}>🙏</Typography>
-                    <Typography variant="h5" fontWeight="bold" gutterBottom>응답이 제출되었습니다</Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                        소중한 고견을 주셔서 감사합니다.<br />
-                        주신 의견은 교회 발전을 위해 <br />귀하게 사용하겠습니다.
-                    </Typography>
-                    <Button variant="contained" color="secondary" fullWidth onClick={() => {
-                        sessionStorage.clear();
-                        router.push('/');
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                p: 3
+            }}>
+                <Container maxWidth="xs">
+                    <Paper elevation={10} sx={{ 
+                        p: 6, 
+                        textAlign: 'center', 
+                        borderRadius: 8,
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
                     }}>
-                        닫기
-                    </Button>
-                </Paper>
-            </Container>
+                        <Typography variant="h1" sx={{ mb: 4, fontSize: '5rem' }}>✨</Typography>
+                        <Typography variant="h4" fontWeight="800" gutterBottom sx={{ color: 'secondary.main', mb: 3 }}>
+                            설문에 참여해주셔서<br />감사합니다
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 0, lineHeight: 1.8 }}>
+                            성도님의 소중한 의견이<br />
+                            우리 교회가 더욱 든든히 서가는 데<br />
+                            큰 힘이 됩니다.
+                        </Typography>
+                    </Paper>
+                </Container>
+            </Box>
         );
     }
 
