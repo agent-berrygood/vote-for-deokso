@@ -333,10 +333,10 @@ export default function SurveyPage() {
                 
                 <Box sx={{ mb: 4, textAlign: 'center' }}>
                 <Typography variant="h4" fontWeight="bold" color="secondary" gutterBottom>
-                    📋 교회 설문조사
+                    📋 전교인 설문조사
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                    {memberName} 성도님, 평안하신지요?<br />
+                    {memberName === '익명 사용자' ? '' : `${memberName} `}성도님, 평안하신지요?<br />
                     아래 설문에 응답해 주시면 큰 도움이 되겠습니다.
                 </Typography>
             </Box>
