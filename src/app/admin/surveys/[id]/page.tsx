@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, use, useMemo } from 'react';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 
 import * as XLSX from 'xlsx';
@@ -89,10 +88,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { GripVertical } from 'lucide-react';
-import 'react-quill/dist/quill.snow.css';
-
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import SimpleRichEditor from '@/components/SimpleRichEditor';
 
 
 
@@ -1332,19 +1328,9 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
 
                         <Box sx={{ mb: 2 }}>
                             <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="secondary">질문 내용 (글자별 스타일 설정 가능)</Typography>
-                            <ReactQuill 
-                                theme="snow" 
-                                value={qText} 
-                                onChange={setQText} 
-                                style={{ height: '180px', marginBottom: '45px' }}
-                                modules={{
-                                    toolbar: [
-                                        [{ 'size': ['small', false, 'large', 'huge'] }],
-                                        ['bold', 'italic', 'underline', 'strike'],
-                                        [{'color': []}, {'background': []}],
-                                        ['clean']
-                                    ],
-                                }}
+                            <SimpleRichEditor
+                                value={qText}
+                                onChange={setQText}
                             />
                         </Box>
 
