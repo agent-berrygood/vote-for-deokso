@@ -52,9 +52,28 @@ import {
     deleteSurveyQuestion as deleteSurveyQuestionSDK,
     createSurveySection as createSurveySectionSDK,
     updateSurveySection as updateSurveySectionSDK,
+    getSystemSetting as getSystemSettingSDK,
     deleteSurveySection as deleteSurveySectionSDK
 } from '@/lib/dataconnect';
 
+
+export async function getSystemSettingAction(id: string) {
+    try {
+        const res = await getSystemSettingSDK({ id });
+        const s = res.data.systemSetting;
+        return {
+            success: true,
+            data: {
+                activeService: (s?.activeService as 'ELECTION' | 'SURVEY') || 'ELECTION',
+                activeSurveyId: s?.activeSurveyId || null,
+                activeElectionId: s?.activeElection?.id || null,
+            }
+        };
+    } catch (error) {
+        console.error('getSystemSettingAction error:', error);
+        return { success: false, error: '시스템 설정을 불러오지 못했습니다.' };
+    }
+}
 
 // --- Queries ---
 export async function getElectionSettingsAction(electionId: string) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     Box, 
@@ -29,8 +29,7 @@ import {
     Divider,
     Stack
 } from '@mui/material';
-import { useElection } from '@/hooks/useElection';
-import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction, getSurveyResponseByMemberAction, updateSurveyResponseAction } from '@/app/actions/data';
+import { getSurveyAction, listSurveySectionsAction, listSurveyQuestionsAction, submitSurveyResponseAction, getSurveyResponseByMemberAction, updateSurveyResponseAction, getSystemSettingAction } from '@/app/actions/data';
 
 interface Question {
     id: string;
@@ -52,7 +51,11 @@ interface Section {
 
 export default function SurveyPage() {
     const router = useRouter();
-    const { activeSurveyId, activeService, loading: sysLoading } = useElection();
+    // useElection 대신 서버 액션으로 시스템 설정 1회 로드 (Firebase SDK reactive cache 무한루프 차단)
+    const [sysLoading, setSysLoading] = useState(true);
+    const [activeSurveyId, setActiveSurveyId] = useState<string | null>(null);
+    const [activeService, setActiveService] = useState<'ELECTION' | 'SURVEY'>('ELECTION');
+    const sysLoadedRef = useRef(false);
     
     const [survey, setSurvey] = useState<any>(null);
     const [sections, setSections] = useState<Section[]>([]);
@@ -67,6 +70,21 @@ export default function SurveyPage() {
 
     const [memberName, setMemberName] = useState('');
     const [memberId, setMemberId] = useState('');
+
+    // 시스템 설정 1회만 로드 (센드품 액션, 염야 SDK reactive 후크 무한루프 차단)
+    useEffect(() => {
+        if (sysLoadedRef.current) return;
+        sysLoadedRef.current = true;
+        getSystemSettingAction('system').then(res => {
+            if (res.success && res.data) {
+                setActiveService(res.data.activeService);
+                setActiveSurveyId(res.data.activeSurveyId);
+            }
+        }).finally(() => {
+            setSysLoading(false);
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Visibility Helper
     const isQuestionVisible = (q: Question) => {
@@ -117,6 +135,8 @@ export default function SurveyPage() {
 
     useEffect(() => {
         const checkAuth = async () => {
+            // 시스템 설정 로드 전엔 실행 차단 (잘못된 activeService='ELECTION'으로 리닠이렉트 방지)
+            if (sysLoading) return;
             // 설문 모드일 때는 기존 세션을 아예 보지 않고 항상 무조건 새 세션 생성 (보안 및 중복 방지 핵심)
             if (activeService === 'SURVEY') {
                 setLoading(true);
@@ -156,7 +176,7 @@ export default function SurveyPage() {
         };
 
         checkAuth();
-    }, [router, activeService]);
+    }, [router, activeService, sysLoading]);
 
     useEffect(() => {
         if (sysLoading) return;
@@ -196,7 +216,7 @@ export default function SurveyPage() {
         };
 
         fetchSurvey();
-    }, [activeSurveyId, sysLoading, activeService]);
+    }, [activeSurveyId, sysLoading]);
 
     const handleSubmit = async () => {
         if (!activeSurveyId || !memberId) {
