@@ -461,6 +461,13 @@ export default function SurveyPage() {
                                                 
                                                 {(() => {
                                                     let options = q.options ? JSON.parse(q.options) : null;
+                                                    let optionFontSize = 'inherit';
+                                                    try {
+                                                        if (q.logic) {
+                                                            const logic = JSON.parse(q.logic);
+                                                            if (logic.optionFontSize) optionFontSize = `${logic.optionFontSize}rem`;
+                                                        }
+                                                    } catch(e) {}
                                                     
                                                     // RANK_CHOICE의 경우 '기타' 항목이 옵션에 없다면 자동으로 추가 (사용자 편의성)
                                                     if (q.type === 'RANK_CHOICE') {
@@ -481,7 +488,9 @@ export default function SurveyPage() {
                                                                         onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
                                                                     >
                                                                         {(options || []).map((opt: string, i: number) => (
-                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />} label={`${i + 1}. ${opt}`} />
+                                                                            <FormControlLabel key={i} value={opt} control={<Radio color="secondary" />}
+                                                                                label={<span style={{ fontSize: optionFontSize }}>{i + 1}. {opt}</span>}
+                                                                            />
                                                                         ))}
                                                                     </RadioGroup>
                                                                     {isOtherSelected && (
@@ -525,7 +534,7 @@ export default function SurveyPage() {
                                                                                         }}
                                                                                     />
                                                                                 } 
-                                                                                label={`${i + 1}. ${opt}`} 
+                                                                                label={<span style={{ fontSize: optionFontSize }}>{i + 1}. {opt}</span>} 
                                                                             />
                                                                         );
                                                                     })}
@@ -555,7 +564,7 @@ export default function SurveyPage() {
                                                                     >
                                                                         <MenuItem value="" disabled>선택해 주세요</MenuItem>
                                                                         {(options || []).map((opt: string, i: number) => (
-                                                                            <MenuItem key={i} value={opt}>{i + 1}. {opt}</MenuItem>
+                                                                            <MenuItem key={i} value={opt} sx={{ fontSize: optionFontSize }}>{i + 1}. {opt}</MenuItem>
                                                                         ))}
                                                                     </Select>
                                                                 </FormControl>
@@ -578,7 +587,7 @@ export default function SurveyPage() {
                                                                             >
                                                                                 <MenuItem value="" disabled>1순위를 선택해 주세요</MenuItem>
                                                                                 {(options || []).map((opt: string, i: number) => (
-                                                                                    <MenuItem key={i} value={opt}>{i + 1}. {opt}</MenuItem>
+                                                                                    <MenuItem key={i} value={opt} sx={{ fontSize: optionFontSize }}>{i + 1}. {opt}</MenuItem>
                                                                                 ))}
                                                                             </Select>
                                                                         </FormControl>
@@ -614,7 +623,7 @@ export default function SurveyPage() {
                                                                                     .map((opt: string, i: number) => ({ opt, originalIndex: i }))
                                                                                     .filter(({ opt }: { opt: string; originalIndex: number }) => opt !== rankAnswers.rank1)
                                                                                     .map(({ opt, originalIndex }: { opt: string; originalIndex: number }) => (
-                                                                                        <MenuItem key={originalIndex} value={opt}>{originalIndex + 1}. {opt}</MenuItem>
+                                                                                        <MenuItem key={originalIndex} value={opt} sx={{ fontSize: optionFontSize }}>{originalIndex + 1}. {opt}</MenuItem>
                                                                                     ))
                                                                                 }
                                                                             </Select>
