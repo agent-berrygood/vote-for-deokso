@@ -161,6 +161,7 @@ export default function SurveyPage() {
     useEffect(() => {
         if (sysLoading) return;
         if (!activeSurveyId) {
+            console.log('[Survey] sysLoading done, activeSurveyId:', activeSurveyId, 'activeService:', activeService);
             setError('진행 중인 설문조사가 없습니다.');
             setLoading(false);
             return;
@@ -168,32 +169,34 @@ export default function SurveyPage() {
 
         const fetchSurvey = async () => {
             try {
+                console.log('[Survey] fetchSurvey start, activeSurveyId:', activeSurveyId);
                 const [surveyRes, sectionsRes, questionsRes] = await Promise.all([
                     getSurveyAction({ id: activeSurveyId }),
                     listSurveySectionsAction(activeSurveyId),
                     listSurveyQuestionsAction(activeSurveyId)
                 ]);
 
+                console.log('[Survey] surveyRes:', surveyRes);
+                console.log('[Survey] sectionsRes:', sectionsRes);
+                console.log('[Survey] questionsRes:', questionsRes);
+
                 if (surveyRes.success) setSurvey(surveyRes.data);
                 if (sectionsRes.success) setSections(sectionsRes.data as any);
                 if (questionsRes.success) setQuestions(questionsRes.data as any);
                 
-                // 설문 모드에서는 이전 응답을 불러오지 않음 (보안 및 중복 방지)
-                // ELECTION 등 실명 인증 모드에서만 필요한 로직이므로 설문 모드에서는 건너뜀
-                
-
                 if (!surveyRes.success) {
                     setError(surveyRes.error || '설문 정보를 불러오지 못했습니다.');
                 }
-            } catch (e) {
-                setError('오류가 발생했습니다.');
+            } catch (e: any) {
+                console.error('[Survey] fetchSurvey error:', e);
+                setError('오류가 발생했습니다: ' + (e?.message || String(e)));
             } finally {
                 setLoading(false);
             }
         };
 
         fetchSurvey();
-    }, [activeSurveyId, sysLoading]);
+    }, [activeSurveyId, sysLoading, activeService]);
 
     const handleSubmit = async () => {
         if (!activeSurveyId || !memberId) {
