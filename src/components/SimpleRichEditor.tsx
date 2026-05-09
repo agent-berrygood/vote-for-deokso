@@ -82,13 +82,13 @@ export default function SimpleRichEditor({ value, onChange, placeholder, minHeig
                 p: 0.5, bgcolor: '#f5f5f5', borderBottom: '1px solid rgba(0,0,0,0.12)'
             }}>
                 <Tooltip title="굵게 (Ctrl+B)">
-                    <IconButton size="small" onClick={() => exec('bold')}><FormatBoldIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('bold')}><FormatBoldIcon fontSize="small" /></IconButton>
                 </Tooltip>
                 <Tooltip title="기울임 (Ctrl+I)">
-                    <IconButton size="small" onClick={() => exec('italic')}><FormatItalicIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('italic')}><FormatItalicIcon fontSize="small" /></IconButton>
                 </Tooltip>
                 <Tooltip title="밑줄 (Ctrl+U)">
-                    <IconButton size="small" onClick={() => exec('underline')}><FormatUnderlinedIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('underline')}><FormatUnderlinedIcon fontSize="small" /></IconButton>
                 </Tooltip>
 
                 <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
@@ -100,6 +100,7 @@ export default function SimpleRichEditor({ value, onChange, placeholder, minHeig
                         {FONT_SIZES.map(fs => (
                             <Box
                                 key={fs.value}
+                                onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => applyFontSize(fs.value)}
                                 sx={{
                                     cursor: 'pointer', px: 0.7, py: 0.2,
@@ -124,6 +125,7 @@ export default function SimpleRichEditor({ value, onChange, placeholder, minHeig
                         {COLORS.map(c => (
                             <Box
                                 key={c}
+                                onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => applyColor(c)}
                                 sx={{
                                     width: 18, height: 18, borderRadius: '50%',
@@ -139,7 +141,7 @@ export default function SimpleRichEditor({ value, onChange, placeholder, minHeig
                 <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
                 <Tooltip title="서식 제거">
-                    <IconButton size="small" onClick={() => exec('removeFormat')}><FormatClearIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('removeFormat')}><FormatClearIcon fontSize="small" /></IconButton>
                 </Tooltip>
             </Box>
 
