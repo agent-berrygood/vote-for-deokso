@@ -2217,8 +2217,6 @@ The `ListSurveyResponsesNoJoin` query requires an argument of type `ListSurveyRe
 ```typescript
 export interface ListSurveyResponsesNoJoinVariables {
   surveyId: UUIDString;
-  limit?: number | null;
-  offset?: number | null;
 }
 ```
 ### Return Type
@@ -2243,15 +2241,13 @@ import { connectorConfig, listSurveyResponsesNoJoin, ListSurveyResponsesNoJoinVa
 // The `ListSurveyResponsesNoJoin` query requires an argument of type `ListSurveyResponsesNoJoinVariables`:
 const listSurveyResponsesNoJoinVars: ListSurveyResponsesNoJoinVariables = {
   surveyId: ..., 
-  limit: ..., // optional
-  offset: ..., // optional
 };
 
 // Call the `listSurveyResponsesNoJoin()` function to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await listSurveyResponsesNoJoin(listSurveyResponsesNoJoinVars);
 // Variables can be defined inline as well.
-const { data } = await listSurveyResponsesNoJoin({ surveyId: ..., limit: ..., offset: ..., });
+const { data } = await listSurveyResponsesNoJoin({ surveyId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -2275,14 +2271,12 @@ import { connectorConfig, listSurveyResponsesNoJoinRef, ListSurveyResponsesNoJoi
 // The `ListSurveyResponsesNoJoin` query requires an argument of type `ListSurveyResponsesNoJoinVariables`:
 const listSurveyResponsesNoJoinVars: ListSurveyResponsesNoJoinVariables = {
   surveyId: ..., 
-  limit: ..., // optional
-  offset: ..., // optional
 };
 
 // Call the `listSurveyResponsesNoJoinRef()` function to get a reference to the query.
 const ref = listSurveyResponsesNoJoinRef(listSurveyResponsesNoJoinVars);
 // Variables can be defined inline as well.
-const ref = listSurveyResponsesNoJoinRef({ surveyId: ..., limit: ..., offset: ..., });
+const ref = listSurveyResponsesNoJoinRef({ surveyId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
