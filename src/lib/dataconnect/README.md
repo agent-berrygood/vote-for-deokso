@@ -27,6 +27,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*GetSurvey*](#getsurvey)
   - [*GetSurveyResponseByMember*](#getsurveyresponsebymember)
   - [*ListSurveyResponsesNoJoin*](#listsurveyresponsesnojoin)
+  - [*ListSurveyResponsesPaginated*](#listsurveyresponsespaginated)
   - [*ListSurveyResponses*](#listsurveyresponses)
   - [*ListSurveySections*](#listsurveysections)
   - [*ListSurveyQuestions*](#listsurveyquestions)
@@ -2281,6 +2282,125 @@ const ref = listSurveyResponsesNoJoinRef({ surveyId: ..., });
 // You can also pass in a `DataConnect` instance to the `QueryRef` function.
 const dataConnect = getDataConnect(connectorConfig);
 const ref = listSurveyResponsesNoJoinRef(dataConnect, listSurveyResponsesNoJoinVars);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.surveyResponses);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponses);
+});
+```
+
+## ListSurveyResponsesPaginated
+You can execute the `ListSurveyResponsesPaginated` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect/index.d.ts](./index.d.ts):
+```typescript
+listSurveyResponsesPaginated(vars: ListSurveyResponsesPaginatedVariables): QueryPromise<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+
+interface ListSurveyResponsesPaginatedRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveyResponsesPaginatedVariables): QueryRef<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+}
+export const listSurveyResponsesPaginatedRef: ListSurveyResponsesPaginatedRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+listSurveyResponsesPaginated(dc: DataConnect, vars: ListSurveyResponsesPaginatedVariables): QueryPromise<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+
+interface ListSurveyResponsesPaginatedRef {
+  ...
+  (dc: DataConnect, vars: ListSurveyResponsesPaginatedVariables): QueryRef<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+}
+export const listSurveyResponsesPaginatedRef: ListSurveyResponsesPaginatedRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listSurveyResponsesPaginatedRef:
+```typescript
+const name = listSurveyResponsesPaginatedRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ListSurveyResponsesPaginated` query requires an argument of type `ListSurveyResponsesPaginatedVariables`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface ListSurveyResponsesPaginatedVariables {
+  surveyId: UUIDString;
+  limit: number;
+  offset: number;
+}
+```
+### Return Type
+Recall that executing the `ListSurveyResponsesPaginated` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ListSurveyResponsesPaginatedData`, which is defined in [dataconnect/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ListSurveyResponsesPaginatedData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    answers: string;
+  } & SurveyResponse_Key)[];
+}
+```
+### Using `ListSurveyResponsesPaginated`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, listSurveyResponsesPaginated, ListSurveyResponsesPaginatedVariables } from '@vote/dataconnect';
+
+// The `ListSurveyResponsesPaginated` query requires an argument of type `ListSurveyResponsesPaginatedVariables`:
+const listSurveyResponsesPaginatedVars: ListSurveyResponsesPaginatedVariables = {
+  surveyId: ..., 
+  limit: ..., 
+  offset: ..., 
+};
+
+// Call the `listSurveyResponsesPaginated()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await listSurveyResponsesPaginated(listSurveyResponsesPaginatedVars);
+// Variables can be defined inline as well.
+const { data } = await listSurveyResponsesPaginated({ surveyId: ..., limit: ..., offset: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await listSurveyResponsesPaginated(dataConnect, listSurveyResponsesPaginatedVars);
+
+console.log(data.surveyResponses);
+
+// Or, you can use the `Promise` API.
+listSurveyResponsesPaginated(listSurveyResponsesPaginatedVars).then((response) => {
+  const data = response.data;
+  console.log(data.surveyResponses);
+});
+```
+
+### Using `ListSurveyResponsesPaginated`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, listSurveyResponsesPaginatedRef, ListSurveyResponsesPaginatedVariables } from '@vote/dataconnect';
+
+// The `ListSurveyResponsesPaginated` query requires an argument of type `ListSurveyResponsesPaginatedVariables`:
+const listSurveyResponsesPaginatedVars: ListSurveyResponsesPaginatedVariables = {
+  surveyId: ..., 
+  limit: ..., 
+  offset: ..., 
+};
+
+// Call the `listSurveyResponsesPaginatedRef()` function to get a reference to the query.
+const ref = listSurveyResponsesPaginatedRef(listSurveyResponsesPaginatedVars);
+// Variables can be defined inline as well.
+const ref = listSurveyResponsesPaginatedRef({ surveyId: ..., limit: ..., offset: ..., });
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = listSurveyResponsesPaginatedRef(dataConnect, listSurveyResponsesPaginatedVars);
 
 // Call `executeQuery()` on the reference to execute the query.
 // You can use the `await` keyword to wait for the promise to resolve.

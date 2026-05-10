@@ -479,6 +479,17 @@ export function listSurveyResponsesNoJoin(dcOrVars, vars) {
   return executeQuery(listSurveyResponsesNoJoinRef(dcOrVars, vars));
 }
 
+export const listSurveyResponsesPaginatedRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListSurveyResponsesPaginated', inputVars);
+}
+listSurveyResponsesPaginatedRef.operationName = 'ListSurveyResponsesPaginated';
+
+export function listSurveyResponsesPaginated(dcOrVars, vars) {
+  return executeQuery(listSurveyResponsesPaginatedRef(dcOrVars, vars));
+}
+
 export const listSurveyResponsesRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

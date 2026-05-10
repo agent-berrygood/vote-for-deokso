@@ -450,6 +450,17 @@ query ListSurveyResponsesNoJoin($surveyId: UUID!) @auth(level: PUBLIC) {
   }
 }
 
+# 페이지네이션 전용 신규 쿼리 (API 캐시 우회를 위해 완전히 새로운 이름 사용)
+query ListSurveyResponsesPaginated($surveyId: UUID!, $limit: Int!, $offset: Int!) @auth(level: PUBLIC) {
+  surveyResponses(where: {
+    surveyId: { eq: $surveyId }
+  }, orderBy: [{ submittedAt: DESC }], limit: $limit, offset: $offset) {
+    id
+    submittedAt
+    answers
+  }
+}
+
 # 설문 응답 관리 쿼리 (member 조인 포함 - 기존 유지)
 query ListSurveyResponses($surveyId: UUID!) @auth(level: PUBLIC) {
   surveyResponses(where: {

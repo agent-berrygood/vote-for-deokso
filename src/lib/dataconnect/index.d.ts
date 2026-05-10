@@ -504,6 +504,20 @@ export interface ListSurveyResponsesNoJoinVariables {
   surveyId: UUIDString;
 }
 
+export interface ListSurveyResponsesPaginatedData {
+  surveyResponses: ({
+    id: UUIDString;
+    submittedAt: TimestampString;
+    answers: string;
+  } & SurveyResponse_Key)[];
+}
+
+export interface ListSurveyResponsesPaginatedVariables {
+  surveyId: UUIDString;
+  limit: number;
+  offset: number;
+}
+
 export interface ListSurveyResponsesVariables {
   surveyId: UUIDString;
 }
@@ -1265,6 +1279,18 @@ export const listSurveyResponsesNoJoinRef: ListSurveyResponsesNoJoinRef;
 
 export function listSurveyResponsesNoJoin(vars: ListSurveyResponsesNoJoinVariables): QueryPromise<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
 export function listSurveyResponsesNoJoin(dc: DataConnect, vars: ListSurveyResponsesNoJoinVariables): QueryPromise<ListSurveyResponsesNoJoinData, ListSurveyResponsesNoJoinVariables>;
+
+interface ListSurveyResponsesPaginatedRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ListSurveyResponsesPaginatedVariables): QueryRef<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ListSurveyResponsesPaginatedVariables): QueryRef<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+  operationName: string;
+}
+export const listSurveyResponsesPaginatedRef: ListSurveyResponsesPaginatedRef;
+
+export function listSurveyResponsesPaginated(vars: ListSurveyResponsesPaginatedVariables): QueryPromise<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
+export function listSurveyResponsesPaginated(dc: DataConnect, vars: ListSurveyResponsesPaginatedVariables): QueryPromise<ListSurveyResponsesPaginatedData, ListSurveyResponsesPaginatedVariables>;
 
 interface ListSurveyResponsesRef {
   /* Allow users to create refs without passing in DataConnect */
