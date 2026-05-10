@@ -443,7 +443,7 @@ query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level:
 query ListSurveyResponsesNoJoin($surveyId: UUID!) @auth(level: PUBLIC) {
   surveyResponses(where: {
     surveyId: { eq: $surveyId }
-  }, orderBy: [{ submittedAt: DESC }]) {
+  }, orderBy: [{ submittedAt: DESC }], limit: 5000) {
     id
     submittedAt
     answers
@@ -454,7 +454,7 @@ query ListSurveyResponsesNoJoin($surveyId: UUID!) @auth(level: PUBLIC) {
 query ListSurveyResponses($surveyId: UUID!) @auth(level: PUBLIC) {
   surveyResponses(where: {
     surveyId: { eq: $surveyId }
-  }, orderBy: [{ submittedAt: DESC }]) {
+  }, orderBy: [{ submittedAt: DESC }], limit: 5000) {
     id
     submittedAt
     answers
