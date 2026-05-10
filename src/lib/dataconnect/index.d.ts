@@ -502,8 +502,6 @@ export interface ListSurveyResponsesNoJoinData {
 
 export interface ListSurveyResponsesNoJoinVariables {
   surveyId: UUIDString;
-  myLimit?: number | null;
-  myOffset?: number | null;
 }
 
 export interface ListSurveyResponsesVariables {

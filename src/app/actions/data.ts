@@ -580,27 +580,13 @@ export async function listSurveyResponsesAction(surveyId: string) {
         console.log(`[DEBUG] Current Project ID: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
         console.log(`[DEBUG] Calling ListSurveyResponsesOnly for survey: ${surveyId}`);
 
-        let allData: any[] = [];
-        let currentOffset = 0;
-        const fetchLimit = 100;
-        let hasMore = true;
-
-        while (hasMore) {
-            const res = await listSurveyResponsesNoJoinSDK({ surveyId, myLimit: fetchLimit, myOffset: currentOffset });
-            const chunk = res.data.surveyResponses || [];
-            allData = allData.concat(chunk);
-            
-            if (chunk.length < fetchLimit) {
-                hasMore = false;
-            } else {
-                currentOffset += fetchLimit;
-            }
-        }
-        
-        console.log(`[DEBUG] Total SDK Response data received: ${allData.length}`);
+        // member 조인을 제외한 쿼리 호출 (SDK 내부 정규화 캐시 오염 원천 차단)
+        const res = await listSurveyResponsesNoJoinSDK({ surveyId });
+        console.log(`[DEBUG] SDK Response data received for survey: ${surveyId}`);
+        const raw = res.data.surveyResponses || [];
         
         // DataConnect SDK 캐시 참조 완전 차단
-        const data = JSON.parse(JSON.stringify(allData));
+        const data = JSON.parse(JSON.stringify(raw));
         
         // 어드민 UI와 기존 로직 호환성을 위해 가짜 member 객체 주입
         // NoJoin 쿼리이므로 memberId 필드가 없음 - 익명 표시용 더미 주입
