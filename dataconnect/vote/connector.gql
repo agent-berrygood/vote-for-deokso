@@ -440,10 +440,10 @@ query GetSurveyResponseByMember($surveyId: UUID!, $memberId: UUID!) @auth(level:
 }
 
 # 설문 응답 관리 쿼리 (member 조인 없음 - SDK 캐시 충돌 방지)
-query ListSurveyResponsesNoJoin($surveyId: UUID!) @auth(level: PUBLIC) {
+query ListSurveyResponsesNoJoin($surveyId: UUID!, $myLimit: Int = 100, $myOffset: Int = 0) @auth(level: PUBLIC) {
   surveyResponses(where: {
     surveyId: { eq: $surveyId }
-  }, orderBy: [{ submittedAt: DESC }], limit: 5000) {
+  }, orderBy: [{ submittedAt: DESC }], limit: $myLimit, offset: $myOffset) {
     id
     submittedAt
     answers
