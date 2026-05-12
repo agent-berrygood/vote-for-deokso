@@ -410,6 +410,79 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
         XLSX.writeFile(wb, fileName);
     };
 
+    const handleExportJson = (isPrivateOnly: boolean = false) => {
+        if (filteredResponses.length === 0) {
+            setMsg({ type: 'error', text: '내보낼 데이터가 없습니다.' });
+            return;
+        }
+
+        // Filter questions based on isPrivate flag in logic
+        const targetQuestions = questions.filter(q => {
+            let isPrivate = false;
+            if (q.logic) {
+                try {
+                    const logic = JSON.parse(q.logic);
+                    isPrivate = !!logic.isPrivate;
+                } catch(e) {}
+            }
+            return isPrivateOnly ? isPrivate : !isPrivate;
+        });
+
+        if (targetQuestions.length === 0) {
+            setMsg({ type: 'error', text: isPrivateOnly ? '개인정보로 설정된 문항이 없습니다.' : '일반 응답으로 설정된 문항이 없습니다.' });
+            return;
+        }
+
+        const data = filteredResponses.map(r => {
+            const row: any = {
+                '성함': r.member?.name || '정보 없음',
+                '전화번호': r.member?.phone || '정보 없음',
+                '신규여부': r.member?.isSelfRegistered ? 'NEW' : '',
+                '제출시간': new Date(r.submittedAt).toLocaleString('ko-KR')
+            };
+
+            // 질문들 매핑
+            const answers = r.answers ? JSON.parse(r.answers) : {};
+            targetQuestions.forEach((q, idx) => {
+                // 1. 기본 답변 값 찾기
+                let val = answers[q.id] || answers[q.text] || '';
+                
+                // 2. '기타' 주관식 답변이 별도 키로 존재할 경우 합치기
+                const otherVal = answers[`${q.id}_other`];
+                if (otherVal) {
+                    if (Array.isArray(val)) {
+                        val = val.map((v: string) => v.includes('기타') ? `기타(${otherVal})` : v);
+                    } else if (typeof val === 'string' && val.includes('기타')) {
+                        val = `기타(${otherVal})`;
+                    }
+                }
+
+                // 3. 순위 선택형 데이터 포맷팅
+                if (q.type === 'RANK_CHOICE' && val && typeof val === 'object') {
+                    const r1 = val.rank1 === '기타' && val.other1 ? `기타(${val.other1})` : (val.rank1 || '');
+                    const r2 = val.rank2 === '기타' && val.other2 ? `기타(${val.other2})` : (val.rank2 || '');
+                    val = `1순위: ${r1}, 2순위: ${r2}`;
+                }
+                
+                const qKey = isPrivateOnly ? `[개인정보] ${q.text}` : `Q${idx + 1}. ${q.text}`;
+                row[qKey] = Array.isArray(val) ? val.join(', ') : val;
+            });
+
+            return row;
+        });
+
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${surveyTitle}_${isPrivateOnly ? '개인정보' : '일반응답'}_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const handleDeleteResponse = async (id: string, label: string) => {
         if (!window.confirm(`${label}의 응답을 삭제하시겠습니까?`)) return;
         
@@ -1173,7 +1246,17 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             disabled={filteredResponses.length === 0}
                             sx={{ fontWeight: 'bold' }}
                         >
-                            📥 일반 응답 다운로드
+                            📥 일반 응답 엑셀
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="success"
+                            startIcon={<SaveIcon />}
+                            onClick={() => handleExportJson(false)}
+                            disabled={filteredResponses.length === 0}
+                            sx={{ fontWeight: 'bold' }}
+                        >
+                            📥 일반 응답 JSON
                         </Button>
                         <Button
                             variant="contained"
@@ -1183,7 +1266,17 @@ export default function SurveyQuestionEditorPage({ params }: { params: Promise<{
                             disabled={filteredResponses.length === 0}
                             sx={{ fontWeight: 'bold' }}
                         >
-                            🎁 추첨용(개인정보) 다운로드
+                            🎁 추첨용(개인) 엑셀
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            startIcon={<SaveIcon />}
+                            onClick={() => handleExportJson(true)}
+                            disabled={filteredResponses.length === 0}
+                            sx={{ fontWeight: 'bold' }}
+                        >
+                            🎁 추첨용(개인) JSON
                         </Button>
                     </Box>
 
